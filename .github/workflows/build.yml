@@ -23,9 +23,11 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.2.1'
 
       - name: Build mod
-        run: ./gradlew -p streamercounter build --no-daemon
+        run: gradle -p streamercounter build --no-daemon
 
       - name: Upload mod JAR
         uses: actions/upload-artifact@v4

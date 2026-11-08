@@ -190,7 +190,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         ctx.drawText(tr, "STREAMERS", 6, 6, 0xFFE8B64D, false);
 
         if (names.isEmpty()) {
-            ctx.drawText(tr, "Noch keine TPs", 6, 21, 0xFFCCCCCC, false);
+            ctx.drawText(tr, "No TPs yet", 6, 21, 0xFFCCCCCC, false);
         } else {
             int rowY = 20;
             for (String key : names) {
@@ -235,7 +235,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         private double dragOffsetY;
 
         protected HudEditScreen(Screen parent) {
-            super(Text.literal("HUD anpassen"));
+            super(Text.literal("Edit HUD"));
             this.parent = parent;
         }
 
@@ -250,12 +250,12 @@ public class StreamerCounterClient implements ClientModInitializer {
                 data.hudScale = Math.min(2.0f, data.hudScale + 0.1f);
                 save();
             }).dimensions(center - 65, this.height - 54, 42, 20).build());
-            addDrawableChild(ButtonWidget.builder(Text.literal("Position zurücksetzen"), button -> {
+            addDrawableChild(ButtonWidget.builder(Text.literal("Reset Position"), button -> {
                 data.hudX = -1;
                 data.hudY = 8;
                 save();
             }).dimensions(center - 18, this.height - 54, 112, 20).build());
-            addDrawableChild(ButtonWidget.builder(Text.literal("Fertig"), button -> close())
+            addDrawableChild(ButtonWidget.builder(Text.literal("Done"), button -> close())
                     .dimensions(center - 45, this.height - 27, 90, 20).build());
         }
 
@@ -318,11 +318,11 @@ public class StreamerCounterClient implements ClientModInitializer {
         @Override
         public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
             ctx.fill(0, 0, this.width, this.height, 0xB0000000);
-            ctx.drawCenteredTextWithShadow(textRenderer, "HUD-Vorschau", this.width / 2, 28, 0xFFFFFFFF);
-            ctx.drawCenteredTextWithShadow(textRenderer, "Ziehe das HUD mit der Maus an die gewünschte Stelle.",
+            ctx.drawCenteredTextWithShadow(textRenderer, "HUD Preview", this.width / 2, 28, 0xFFFFFFFF);
+            ctx.drawCenteredTextWithShadow(textRenderer, "Drag the HUD to your preferred position.",
                     this.width / 2, 46, 0xFFCCCCCC);
             drawHud(ctx, hudX(), data.hudY, data.hudScale);
-            ctx.drawCenteredTextWithShadow(textRenderer, "Größe: " + Math.round(data.hudScale * 100) + "%",
+            ctx.drawCenteredTextWithShadow(textRenderer, "Size: " + Math.round(data.hudScale * 100) + "%",
                     this.width / 2, this.height - 68, 0xFFFFC247);
             super.render(ctx, mouseX, mouseY, delta);
         }
@@ -386,7 +386,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                     save();
                     clearAndInit();
                 }).dimensions(left + toggleWidth + gap, rowY, actionWidth, 20).build());
-                addDrawableChild(ButtonWidget.builder(Text.literal("Löschen"), button -> {
+                addDrawableChild(ButtonWidget.builder(Text.literal("Delete"), button -> {
                     data.counts.remove(name);
                     data.streamerEnabled.remove(name);
                     data.displayNames.remove(name);
@@ -403,13 +403,13 @@ public class StreamerCounterClient implements ClientModInitializer {
 
             if (pageCount > 1) {
                 int navWidth = 90;
-                ButtonWidget previous = addDrawableChild(ButtonWidget.builder(Text.literal("Zurück"), button -> {
+                ButtonWidget previous = addDrawableChild(ButtonWidget.builder(Text.literal("Previous"), button -> {
                     page--;
                     clearAndInit();
                 }).dimensions(center - navWidth - 5, bottom - 28, navWidth, 20).build());
                 previous.active = page > 0;
 
-                ButtonWidget next = addDrawableChild(ButtonWidget.builder(Text.literal("Weiter"), button -> {
+                ButtonWidget next = addDrawableChild(ButtonWidget.builder(Text.literal("Next"), button -> {
                     page++;
                     clearAndInit();
                 }).dimensions(center + 5, bottom - 28, navWidth, 20).build());
@@ -423,11 +423,11 @@ public class StreamerCounterClient implements ClientModInitializer {
                 button.setMessage(hudButtonText());
             }).dimensions(left, this.height - 98, halfWidth, 20).build());
 
-            addDrawableChild(ButtonWidget.builder(Text.literal("HUD anpassen"), button ->
+            addDrawableChild(ButtonWidget.builder(Text.literal("Edit HUD"), button ->
                     MinecraftClient.getInstance().setScreen(new HudEditScreen(this)))
                     .dimensions(left + halfWidth + 6, this.height - 98, halfWidth, 20).build());
 
-            addDrawableChild(ButtonWidget.builder(Text.literal("Alle Zähler zurücksetzen"), button -> {
+            addDrawableChild(ButtonWidget.builder(Text.literal("Reset All Counters"), button -> {
                 data.counts.clear();
                 data.lastName = null;
                 pending = null;
@@ -435,17 +435,17 @@ public class StreamerCounterClient implements ClientModInitializer {
                 clearAndInit();
             }).dimensions(left, this.height - 70, buttonWidth, 20).build());
 
-            addDrawableChild(ButtonWidget.builder(Text.literal("Schließen"), button -> close())
+            addDrawableChild(ButtonWidget.builder(Text.literal("Close"), button -> close())
                     .dimensions(left, this.height - 42, buttonWidth, 20).build());
         }
 
         private Text streamerButtonText(String name, int count) {
             boolean enabled = data.streamerEnabled.getOrDefault(name, true);
-            return Text.literal(name + "  |  " + (enabled ? "AN" : "AUS") + "  |  " + count + " TPs");
+            return Text.literal(name + "  |  " + (enabled ? "ON" : "OFF") + "  |  " + count + " TPs");
         }
 
         private Text hudButtonText() {
-            return Text.literal("HUD: " + (data.showHud ? "AN" : "AUS"));
+            return Text.literal("HUD: " + (data.showHud ? "ON" : "OFF"));
         }
 
         @Override
@@ -466,13 +466,13 @@ public class StreamerCounterClient implements ClientModInitializer {
 
             ctx.drawCenteredTextWithShadow(textRenderer, title, this.width / 2, top + 16, 0xFFFFFFFF);
             ctx.drawCenteredTextWithShadow(textRenderer,
-                    "Streamer einzeln an- oder ausschalten", this.width / 2, top + 40, 0xFFFFD54F);
+                    "Enable or disable streamers individually", this.width / 2, top + 40, 0xFFFFD54F);
 
             if (streamerNames().isEmpty()) {
                 ctx.drawCenteredTextWithShadow(textRenderer,
-                        "Noch keine Streamer erkannt.", this.width / 2, top + 78, 0xFFFFFFFF);
+                        "No streamers detected yet.", this.width / 2, top + 78, 0xFFFFFFFF);
                 ctx.drawCenteredTextWithShadow(textRenderer,
-                        "Nach /tpahere Name erscheint der Streamer hier.", this.width / 2, top + 96, 0xFFCCCCCC);
+                        "Streamers will appear here after /tpahere <name>.", this.width / 2, top + 96, 0xFFCCCCCC);
             }
 
             super.render(ctx, mouseX, mouseY, delta);

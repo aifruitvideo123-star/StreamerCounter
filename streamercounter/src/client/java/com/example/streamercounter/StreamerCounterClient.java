@@ -482,6 +482,8 @@ public class StreamerCounterClient implements ClientModInitializer {
             }
 
             super.render(ctx, mouseX, mouseY, delta);
+            ctx.drawCenteredTextWithShadow(textRenderer, "Made by AlpBey3503",
+                    this.width / 2, this.height - 14, 0xFFE8B64D);
         }
 
         @Override

@@ -52,6 +52,9 @@ public class StreamerCounterClient implements ClientModInitializer {
         Map<String, Boolean> streamerEnabled = new HashMap<>();
         String lastName = null;
         boolean showHud = true;
+        int hudX = -1;
+        int hudY = 8;
+        float hudScale = 1.0f;
     }
 
     @Override
@@ -140,17 +143,35 @@ public class StreamerCounterClient implements ClientModInitializer {
         if (!data.showHud || data.lastName == null) return;
 
         MinecraftClient mc = MinecraftClient.getInstance();
-        TextRenderer tr = mc.textRenderer;
-        String line1 = data.lastName;
-        String line2 = "TPs: " + data.counts.getOrDefault(line1.toLowerCase(Locale.ROOT), 0);
-        int w = Math.max(tr.getWidth(line1), tr.getWidth(line2)) + 12;
-        int h = tr.fontHeight * 2 + 12;
-        int x = ctx.getScaledWindowWidth() - w - 6;
-        int y = 6;
+        drawHud(ctx, data.lastName,
+                data.counts.getOrDefault(data.lastName.toLowerCase(Locale.ROOT), 0),
+                data.hudX < 0 ? ctx.getScaledWindowWidth() - hudWidth(MinecraftClient.getInstance().textRenderer, data.lastName, data.hudScale) - 8 : data.hudX,
+                data.hudY, data.hudScale);
+    }
 
-        ctx.fill(x, y, x + w, y + h, 0xA0000000);
-        ctx.drawTextWithShadow(tr, line1, x + 6, y + 5, 0xFFFFFFFF);
-        ctx.drawTextWithShadow(tr, line2, x + 6, y + 7 + tr.fontHeight, 0xFFFFAA00);
+    private static int hudWidth(TextRenderer tr, String name, float scale) {
+        return (int) ((tr.getWidth(name) + tr.getWidth("•  0 TPs") + 30) * scale);
+    }
+
+    private static int hudHeight(TextRenderer tr, float scale) {
+        return (int) ((tr.fontHeight + 14) * scale);
+    }
+
+    private static void drawHud(DrawContext ctx, String name, int count, int x, int y, float scale) {
+        TextRenderer tr = MinecraftClient.getInstance().textRenderer;
+        String countText = "•  " + count + " TPs";
+        int width = tr.getWidth(name) + tr.getWidth(countText) + 30;
+        int height = tr.fontHeight + 14;
+
+        ctx.getMatrices().pushMatrix();
+        ctx.getMatrices().translate(x, y);
+        ctx.getMatrices().scale(scale, scale);
+        ctx.fill(0, 0, width, height, 0xE51B2635);
+        ctx.fill(0, 0, 3, height, 0xFFFFC247);
+        ctx.fill(3, 0, width, 1, 0xFF526B88);
+        ctx.drawTextWithShadow(tr, name, 10, 7, 0xFFFFFFFF);
+        ctx.drawTextWithShadow(tr, countText, 10 + tr.getWidth(name) + 8, 7, 0xFFFFC247);
+        ctx.getMatrices().popMatrix();
     }
 
     private static void load() {
@@ -173,6 +194,112 @@ public class StreamerCounterClient implements ClientModInitializer {
             Files.writeString(FILE, GSON.toJson(data));
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    private static class HudEditScreen extends Screen {
+        private final Screen parent;
+        private boolean dragging = false;
+        private double dragOffsetX;
+        private double dragOffsetY;
+
+        protected HudEditScreen(Screen parent) {
+            super(Text.literal("HUD anpassen"));
+            this.parent = parent;
+        }
+
+        @Override
+        protected void init() {
+            int center = this.width / 2;
+            addDrawableChild(ButtonWidget.builder(Text.literal("−"), button -> {
+                data.hudScale = Math.max(0.6f, data.hudScale - 0.1f);
+                save();
+            }).dimensions(center - 112, this.height - 54, 42, 20).build());
+            addDrawableChild(ButtonWidget.builder(Text.literal("+"), button -> {
+                data.hudScale = Math.min(2.0f, data.hudScale + 0.1f);
+                save();
+            }).dimensions(center - 65, this.height - 54, 42, 20).build());
+            addDrawableChild(ButtonWidget.builder(Text.literal("Position zurücksetzen"), button -> {
+                data.hudX = -1;
+                data.hudY = 8;
+                save();
+            }).dimensions(center - 18, this.height - 54, 112, 20).build());
+            addDrawableChild(ButtonWidget.builder(Text.literal("Fertig"), button -> close())
+                    .dimensions(center - 45, this.height - 27, 90, 20).build());
+        }
+
+        private String previewName() {
+            return data.lastName == null ? "StreamerName" : data.lastName;
+        }
+
+        private int previewCount() {
+            return data.lastName == null ? 12 :
+                    data.counts.getOrDefault(data.lastName.toLowerCase(Locale.ROOT), 0);
+        }
+
+        private int hudX() {
+            return data.hudX < 0
+                    ? this.width - hudWidth(MinecraftClient.getInstance().textRenderer, previewName(), data.hudScale) - 8
+                    : data.hudX;
+        }
+
+        private boolean overHud(double mouseX, double mouseY) {
+            int x = hudX();
+            int y = data.hudY;
+            int w = hudWidth(MinecraftClient.getInstance().textRenderer, previewName(), data.hudScale);
+            int h = hudHeight(MinecraftClient.getInstance().textRenderer, data.hudScale);
+            return mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + h;
+        }
+
+        @Override
+        public boolean mouseClicked(double mouseX, double mouseY, int button) {
+            if (button == 0 && overHud(mouseX, mouseY)) {
+                dragging = true;
+                dragOffsetX = mouseX - hudX();
+                dragOffsetY = mouseY - data.hudY;
+                return true;
+            }
+            return super.mouseClicked(mouseX, mouseY, button);
+        }
+
+        @Override
+        public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
+            if (dragging && button == 0) {
+                int w = hudWidth(MinecraftClient.getInstance().textRenderer, previewName(), data.hudScale);
+                int h = hudHeight(MinecraftClient.getInstance().textRenderer, data.hudScale);
+                data.hudX = Math.max(0, Math.min(this.width - w, (int) (mouseX - dragOffsetX)));
+                data.hudY = Math.max(0, Math.min(this.height - h, (int) (mouseY - dragOffsetY)));
+                return true;
+            }
+            return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+        }
+
+        @Override
+        public boolean mouseReleased(double mouseX, double mouseY, int button) {
+            if (button == 0 && dragging) {
+                dragging = false;
+                save();
+                return true;
+            }
+            return super.mouseReleased(mouseX, mouseY, button);
+        }
+
+        @Override
+        public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
+            ctx.fill(0, 0, this.width, this.height, 0xB0000000);
+            ctx.drawCenteredTextWithShadow(textRenderer, "HUD-Vorschau", this.width / 2, 28, 0xFFFFFFFF);
+            ctx.drawCenteredTextWithShadow(textRenderer, "Ziehe das HUD mit der Maus an die gewünschte Stelle.",
+                    this.width / 2, 46, 0xFFCCCCCC);
+            drawHud(ctx, previewName(), previewCount(), hudX(), data.hudY, data.hudScale);
+            ctx.drawCenteredTextWithShadow(textRenderer, "Größe: " + Math.round(data.hudScale * 100) + "%",
+                    this.width / 2, this.height - 68, 0xFFFFC247);
+            super.render(ctx, mouseX, mouseY, delta);
+        }
+
+        @Override
+        public void close() {
+            save();
+            MinecraftClient.getInstance().setScreen(parent);
         }
     }
 
@@ -213,12 +340,21 @@ public class StreamerCounterClient implements ClientModInitializer {
             for (int i = from; i < to; i++) {
                 String name = names.get(i);
                 int count = data.counts.getOrDefault(name, 0);
+                int rowY = firstRowY + (i - from) * ROW_HEIGHT;
+                int resetWidth = 66;
+                int gap = 5;
+                int toggleWidth = buttonWidth - resetWidth - gap;
                 addDrawableChild(ButtonWidget.builder(streamerButtonText(name, count), button -> {
                     boolean enabled = !data.streamerEnabled.getOrDefault(name, true);
                     data.streamerEnabled.put(name, enabled);
                     save();
                     button.setMessage(streamerButtonText(name, data.counts.getOrDefault(name, 0)));
-                }).dimensions(left, firstRowY + (i - from) * ROW_HEIGHT, buttonWidth, 20).build());
+                }).dimensions(left, rowY, toggleWidth, 20).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("Reset"), button -> {
+                    data.counts.put(name, 0);
+                    save();
+                    clearAndInit();
+                }).dimensions(left + toggleWidth + gap, rowY, resetWidth, 20).build());
             }
 
             if (pageCount > 1) {
@@ -236,11 +372,16 @@ public class StreamerCounterClient implements ClientModInitializer {
                 next.active = page < pageCount - 1;
             }
 
+            int halfWidth = (buttonWidth - 6) / 2;
             addDrawableChild(ButtonWidget.builder(hudButtonText(), button -> {
                 data.showHud = !data.showHud;
                 save();
                 button.setMessage(hudButtonText());
-            }).dimensions(left, this.height - 98, buttonWidth, 20).build());
+            }).dimensions(left, this.height - 98, halfWidth, 20).build());
+
+            addDrawableChild(ButtonWidget.builder(Text.literal("HUD anpassen"), button ->
+                    MinecraftClient.getInstance().setScreen(new HudEditScreen(this)))
+                    .dimensions(left + halfWidth + 6, this.height - 98, halfWidth, 20).build());
 
             addDrawableChild(ButtonWidget.builder(Text.literal("Alle Zähler zurücksetzen"), button -> {
                 data.counts.clear();

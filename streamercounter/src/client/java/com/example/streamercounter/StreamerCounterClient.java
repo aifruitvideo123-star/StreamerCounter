@@ -51,6 +51,7 @@ public class StreamerCounterClient implements ClientModInitializer {
     private static class Data {
         Map<String, Integer> counts = new HashMap<>();
         Map<String, Boolean> streamerEnabled = new HashMap<>();
+        Map<String, String> displayNames = new HashMap<>();
         String lastName = null;
         boolean showHud = true;
         int hudX = -1;
@@ -76,6 +77,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             if (args.length >= 2 && args[0].equalsIgnoreCase("tpahere")) {
                 pending = args[1];
                 data.streamerEnabled.putIfAbsent(pending.toLowerCase(Locale.ROOT), true);
+                data.displayNames.put(pending.toLowerCase(Locale.ROOT), pending);
                 save();
                 deadline = System.currentTimeMillis() + TIMEOUT_MS;
                 primed = false;
@@ -134,44 +136,71 @@ public class StreamerCounterClient implements ClientModInitializer {
         String key = name.toLowerCase(Locale.ROOT);
         if (data.streamerEnabled.getOrDefault(key, true)) {
             data.counts.merge(key, 1, Integer::sum);
+            data.displayNames.put(key, name);
             data.lastName = name;
         }
         pending = null;
         save();
     }
 
+    private static java.util.List<String> hudStreamerNames() {
+        return data.counts.keySet().stream()
+                .filter(name -> data.streamerEnabled.getOrDefault(name, true))
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .toList();
+    }
+
+    private static String displayName(String key) {
+        return data.displayNames.getOrDefault(key,
+                key.equalsIgnoreCase(data.lastName == null ? "" : data.lastName)
+                        ? data.lastName : key);
+    }
+
+    private static int hudWidth(float scale) {
+        return (int) (132 * scale);
+    }
+
+    private static int hudHeight(float scale) {
+        int rows = Math.max(1, hudStreamerNames().size());
+        return (int) ((18 + rows * 11 + 5) * scale);
+    }
+
     private static void renderHud(DrawContext ctx, RenderTickCounter tickCounter) {
-        if (!data.showHud || data.lastName == null) return;
+        if (!data.showHud || hudStreamerNames().isEmpty()) return;
 
-        MinecraftClient mc = MinecraftClient.getInstance();
-        drawHud(ctx, data.lastName,
-                data.counts.getOrDefault(data.lastName.toLowerCase(Locale.ROOT), 0),
-                data.hudX < 0 ? ctx.getScaledWindowWidth() - hudWidth(MinecraftClient.getInstance().textRenderer, data.lastName, data.hudScale) - 8 : data.hudX,
-                data.hudY, data.hudScale);
+        int width = ctx.getScaledWindowWidth();
+        int x = data.hudX < 0 ? width - hudWidth(data.hudScale) - 8 : data.hudX;
+        drawHud(ctx, x, data.hudY, data.hudScale);
     }
 
-    private static int hudWidth(TextRenderer tr, String name, float scale) {
-        return (int) ((tr.getWidth(name) + tr.getWidth("•  0 TPs") + 30) * scale);
-    }
-
-    private static int hudHeight(TextRenderer tr, float scale) {
-        return (int) ((tr.fontHeight + 14) * scale);
-    }
-
-    private static void drawHud(DrawContext ctx, String name, int count, int x, int y, float scale) {
+    // Compact, translucent rectangular panel with every enabled streamer that has been counted.
+    private static void drawHud(DrawContext ctx, int x, int y, float scale) {
         TextRenderer tr = MinecraftClient.getInstance().textRenderer;
-        String countText = "•  " + count + " TPs";
-        int width = tr.getWidth(name) + tr.getWidth(countText) + 30;
-        int height = tr.fontHeight + 14;
+        java.util.List<String> names = hudStreamerNames();
+        int width = 132;
+        int height = 18 + Math.max(1, names.size()) * 11 + 5;
 
         ctx.getMatrices().pushMatrix();
         ctx.getMatrices().translate(x, y);
         ctx.getMatrices().scale(scale, scale);
-        ctx.fill(0, 0, width, height, 0xE51B2635);
-        ctx.fill(0, 0, 3, height, 0xFFFFC247);
-        ctx.fill(3, 0, width, 1, 0xFF526B88);
-        ctx.drawTextWithShadow(tr, name, 10, 7, 0xFFFFFFFF);
-        ctx.drawTextWithShadow(tr, countText, 10 + tr.getWidth(name) + 8, 7, 0xFFFFC247);
+
+        // Semi-transparent charcoal background, square corners, subtle accent line.
+        ctx.fill(0, 0, width, height, 0x990B111A);
+        ctx.fill(0, 0, width, 2, 0xB8E8B64D);
+        ctx.drawText(tr, "STREAMERS", 6, 6, 0xFFE8B64D, false);
+
+        if (names.isEmpty()) {
+            ctx.drawText(tr, "Noch keine TPs", 6, 21, 0xFFCCCCCC, false);
+        } else {
+            int rowY = 20;
+            for (String key : names) {
+                String name = tr.trimToWidth(displayName(key), 83);
+                String count = String.valueOf(data.counts.getOrDefault(key, 0));
+                ctx.drawText(tr, name, 6, rowY, 0xFFE8EDF5, false);
+                ctx.drawText(tr, count, width - 7 - tr.getWidth(count), rowY, 0xFFFFC85A, false);
+                rowY += 11;
+            }
+        }
         ctx.getMatrices().popMatrix();
     }
 
@@ -182,6 +211,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                 if (loaded != null) {
                     if (loaded.counts == null) loaded.counts = new HashMap<>();
                     if (loaded.streamerEnabled == null) loaded.streamerEnabled = new HashMap<>();
+                    if (loaded.displayNames == null) loaded.displayNames = new HashMap<>();
                     data = loaded;
                 }
             }
@@ -239,16 +269,14 @@ public class StreamerCounterClient implements ClientModInitializer {
         }
 
         private int hudX() {
-            return data.hudX < 0
-                    ? this.width - hudWidth(MinecraftClient.getInstance().textRenderer, previewName(), data.hudScale) - 8
-                    : data.hudX;
+            return data.hudX < 0 ? this.width - hudWidth(data.hudScale) - 8 : data.hudX;
         }
 
         private boolean overHud(double mouseX, double mouseY) {
             int x = hudX();
             int y = data.hudY;
-            int w = hudWidth(MinecraftClient.getInstance().textRenderer, previewName(), data.hudScale);
-            int h = hudHeight(MinecraftClient.getInstance().textRenderer, data.hudScale);
+            int w = hudWidth(data.hudScale);
+            int h = hudHeight(data.hudScale);
             return mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + h;
         }
 
@@ -268,8 +296,8 @@ public class StreamerCounterClient implements ClientModInitializer {
         @Override
         public boolean mouseDragged(Click click, double offsetX, double offsetY) {
             if (dragging && click.button() == 0) {
-                int w = hudWidth(MinecraftClient.getInstance().textRenderer, previewName(), data.hudScale);
-                int h = hudHeight(MinecraftClient.getInstance().textRenderer, data.hudScale);
+                int w = hudWidth(data.hudScale);
+                int h = hudHeight(data.hudScale);
                 data.hudX = Math.max(0, Math.min(this.width - w, (int) (click.x() - dragOffsetX)));
                 data.hudY = Math.max(0, Math.min(this.height - h, (int) (click.y() - dragOffsetY)));
                 return true;
@@ -293,7 +321,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             ctx.drawCenteredTextWithShadow(textRenderer, "HUD-Vorschau", this.width / 2, 28, 0xFFFFFFFF);
             ctx.drawCenteredTextWithShadow(textRenderer, "Ziehe das HUD mit der Maus an die gewünschte Stelle.",
                     this.width / 2, 46, 0xFFCCCCCC);
-            drawHud(ctx, previewName(), previewCount(), hudX(), data.hudY, data.hudScale);
+            drawHud(ctx, hudX(), data.hudY, data.hudScale);
             ctx.drawCenteredTextWithShadow(textRenderer, "Größe: " + Math.round(data.hudScale * 100) + "%",
                     this.width / 2, this.height - 68, 0xFFFFC247);
             super.render(ctx, mouseX, mouseY, delta);

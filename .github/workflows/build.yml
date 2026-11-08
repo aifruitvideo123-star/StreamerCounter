@@ -24,7 +24,7 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '9.2.1'
+          gradle-version: '9.8.0'
 
       - name: Build mod
         run: gradle -p streamercounter build --no-daemon

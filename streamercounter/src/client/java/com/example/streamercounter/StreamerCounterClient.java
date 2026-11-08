@@ -13,6 +13,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
@@ -252,36 +253,38 @@ public class StreamerCounterClient implements ClientModInitializer {
         }
 
         @Override
-        public boolean mouseClicked(double mouseX, double mouseY, int button) {
-            if (button == 0 && overHud(mouseX, mouseY)) {
+        public boolean mouseClicked(Click click, boolean doubled) {
+            double mouseX = click.x();
+            double mouseY = click.y();
+            if (click.button() == 0 && overHud(mouseX, mouseY)) {
                 dragging = true;
                 dragOffsetX = mouseX - hudX();
                 dragOffsetY = mouseY - data.hudY;
                 return true;
             }
-            return super.mouseClicked(mouseX, mouseY, button);
+            return super.mouseClicked(click, doubled);
         }
 
         @Override
-        public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
-            if (dragging && button == 0) {
+        public boolean mouseDragged(Click click, double offsetX, double offsetY) {
+            if (dragging && click.button() == 0) {
                 int w = hudWidth(MinecraftClient.getInstance().textRenderer, previewName(), data.hudScale);
                 int h = hudHeight(MinecraftClient.getInstance().textRenderer, data.hudScale);
-                data.hudX = Math.max(0, Math.min(this.width - w, (int) (mouseX - dragOffsetX)));
-                data.hudY = Math.max(0, Math.min(this.height - h, (int) (mouseY - dragOffsetY)));
+                data.hudX = Math.max(0, Math.min(this.width - w, (int) (click.x() - dragOffsetX)));
+                data.hudY = Math.max(0, Math.min(this.height - h, (int) (click.y() - dragOffsetY)));
                 return true;
             }
-            return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+            return super.mouseDragged(click, offsetX, offsetY);
         }
 
         @Override
-        public boolean mouseReleased(double mouseX, double mouseY, int button) {
-            if (button == 0 && dragging) {
+        public boolean mouseReleased(Click click) {
+            if (click.button() == 0 && dragging) {
                 dragging = false;
                 save();
                 return true;
             }
-            return super.mouseReleased(mouseX, mouseY, button);
+            return super.mouseReleased(click);
         }
 
         @Override

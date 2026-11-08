@@ -372,9 +372,9 @@ public class StreamerCounterClient implements ClientModInitializer {
                 String name = names.get(i);
                 int count = data.counts.getOrDefault(name, 0);
                 int rowY = firstRowY + (i - from) * ROW_HEIGHT;
-                int resetWidth = 66;
-                int gap = 5;
-                int toggleWidth = buttonWidth - resetWidth - gap;
+                int actionWidth = 54;
+                int gap = 4;
+                int toggleWidth = buttonWidth - actionWidth * 2 - gap * 2;
                 addDrawableChild(ButtonWidget.builder(streamerButtonText(name, count), button -> {
                     boolean enabled = !data.streamerEnabled.getOrDefault(name, true);
                     data.streamerEnabled.put(name, enabled);
@@ -385,7 +385,20 @@ public class StreamerCounterClient implements ClientModInitializer {
                     data.counts.put(name, 0);
                     save();
                     clearAndInit();
-                }).dimensions(left + toggleWidth + gap, rowY, resetWidth, 20).build());
+                }).dimensions(left + toggleWidth + gap, rowY, actionWidth, 20).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("Löschen"), button -> {
+                    data.counts.remove(name);
+                    data.streamerEnabled.remove(name);
+                    data.displayNames.remove(name);
+                    if (data.lastName != null && data.lastName.equalsIgnoreCase(name)) {
+                        data.lastName = null;
+                    }
+                    if (pending != null && pending.equalsIgnoreCase(name)) {
+                        pending = null;
+                    }
+                    save();
+                    clearAndInit();
+                }).dimensions(left + toggleWidth + gap + actionWidth + gap, rowY, actionWidth, 20).build());
             }
 
             if (pageCount > 1) {

@@ -15,7 +15,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Java 21
+      - name: Set up Java 25
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -29,9 +29,20 @@ jobs:
       - name: Build mod
         run: gradle -p streamercounter build --no-daemon
 
+      - name: Prepare mod JAR
+        shell: bash
+        run: |
+          echo "Generated JAR files:"
+          find streamercounter/build/libs -maxdepth 1 -type f -name '*.jar' -printf '%f (%s bytes)\\n'
+          mkdir -p artifact
+          find streamercounter/build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' -exec cp {} artifact/ \\
+          test "$(find artifact -maxdepth 1 -type f -name '*.jar' | wc -l)" -eq 1
+          echo "Ready to upload:"
+          ls -lh artifact/
+
       - name: Upload mod JAR
         uses: actions/upload-artifact@v4
         with:
-          name: StreamerCounter-JAR
-          path: streamercounter/build/libs/*.jar
+          name: StreamerCounter-Mod
+          path: artifact/*.jar
           if-no-files-found: error

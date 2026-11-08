@@ -210,40 +210,38 @@ public class StreamerCounterClient implements ClientModInitializer {
         public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
             renderBackground(ctx, mouseX, mouseY, delta);
 
+            // Draw the buttons first; draw the custom panel and labels afterwards.
+            super.render(ctx, mouseX, mouseY, delta);
+
             int panelWidth = Math.min(340, this.width - 20);
             int left = (this.width - panelWidth) / 2;
             int top = 12;
             int right = left + panelWidth;
-            int bottom = this.height - 12;
+            int bottom = this.height - 126;
 
-            // Deutlich sichtbares Menüfenster mit Rahmen.
-            ctx.fill(left - 2, top - 2, right + 2, bottom + 2, 0xFF8AA4C0);
-            ctx.fill(left, top, right, bottom, 0xF018202C);
-            ctx.fill(left + 1, top + 1, right - 1, top + 3, 0xFF6C9BCB);
+            ctx.fill(left - 3, top - 3, right + 3, bottom + 3, 0xFFFFD54F);
+            ctx.fill(left, top, right, bottom, 0xFF18202C);
+            ctx.fill(left + 2, top + 2, right - 2, top + 5, 0xFF6C9BCB);
 
-            ctx.drawCenteredTextWithShadow(textRenderer, title, this.width / 2, top + 14, 0xFFFFFFFF);
+            ctx.drawCenteredTextWithShadow(textRenderer, title, this.width / 2, top + 16, 0xFFFFFFFF);
             ctx.drawCenteredTextWithShadow(textRenderer,
-                    "Deine Streamer und ihre Zaehler", this.width / 2, top + 36, 0xFFDAE6F2);
+                    "DEIN STREAMER-COUNTER", this.width / 2, top + 40, 0xFFFFD54F);
 
-            int y = top + 62;
-            int listBottom = this.height - 116;
+            int y = top + 70;
             if (data.counts.isEmpty()) {
                 ctx.drawCenteredTextWithShadow(textRenderer,
-                        "Noch keine Streamer gezaehlt.", this.width / 2, y, 0xFFCCCCCC);
+                        "Noch keine Streamer gezaehlt.", this.width / 2, y, 0xFFFFFFFF);
             } else {
                 for (Map.Entry<String, Integer> entry : data.counts.entrySet().stream()
                         .sorted(Map.Entry.comparingByKey(Comparator.naturalOrder())).toList()) {
-                    if (y > listBottom) break;
-                    String label = entry.getKey() + "  -  " + entry.getValue() + " TPs";
-                    ctx.drawCenteredTextWithShadow(textRenderer, label, this.width / 2, y, 0xFFFFFFFF);
-                    y += 14;
+                    if (y > bottom - 12) break;
+                    ctx.drawCenteredTextWithShadow(textRenderer,
+                            entry.getKey() + "  -  " + entry.getValue() + " TPs",
+                            this.width / 2, y, 0xFFFFFFFF);
+                    y += 16;
                 }
             }
-
-            // Widgets zuletzt zeichnen, damit die Buttons sicher ueber dem Panel liegen.
-            super.render(ctx, mouseX, mouseY, delta);
         }
-
         @Override
         public void close() {
             MinecraftClient.getInstance().setScreen(parent);

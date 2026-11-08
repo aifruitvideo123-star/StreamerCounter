@@ -49,6 +49,7 @@ public class StreamerCounterClient implements ClientModInitializer {
 
     private static class Data {
         Map<String, Integer> counts = new HashMap<>();
+        Map<String, Boolean> streamerEnabled = new HashMap<>();
         String lastName = null;
         boolean showHud = true;
     }
@@ -70,6 +71,8 @@ public class StreamerCounterClient implements ClientModInitializer {
             String[] args = command.trim().split("\\s+");
             if (args.length >= 2 && args[0].equalsIgnoreCase("tpahere")) {
                 pending = args[1];
+                data.streamerEnabled.putIfAbsent(pending.toLowerCase(Locale.ROOT), true);
+                save();
                 deadline = System.currentTimeMillis() + TIMEOUT_MS;
                 primed = false;
                 prevDistSq = Double.NaN;
@@ -125,8 +128,10 @@ public class StreamerCounterClient implements ClientModInitializer {
 
     private static void arrived(String name) {
         String key = name.toLowerCase(Locale.ROOT);
-        data.counts.merge(key, 1, Integer::sum);
-        data.lastName = name;
+        if (data.streamerEnabled.getOrDefault(key, true)) {
+            data.counts.merge(key, 1, Integer::sum);
+            data.lastName = name;
+        }
         pending = null;
         save();
     }
@@ -154,6 +159,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                 Data loaded = GSON.fromJson(Files.readString(FILE), Data.class);
                 if (loaded != null) {
                     if (loaded.counts == null) loaded.counts = new HashMap<>();
+                    if (loaded.streamerEnabled == null) loaded.streamerEnabled = new HashMap<>();
                     data = loaded;
                 }
             }
@@ -172,48 +178,96 @@ public class StreamerCounterClient implements ClientModInitializer {
 
     private static class CounterMenuScreen extends Screen {
         private final Screen parent;
-        private ButtonWidget hudButton;
+        private int page = 0;
+        private static final int ROW_HEIGHT = 24;
 
         protected CounterMenuScreen(Screen parent) {
             super(Text.literal("Streamer Counter"));
             this.parent = parent;
         }
 
+        private java.util.List<String> streamerNames() {
+            java.util.Set<String> names = new java.util.TreeSet<>();
+            names.addAll(data.counts.keySet());
+            names.addAll(data.streamerEnabled.keySet());
+            if (pending != null) names.add(pending.toLowerCase(Locale.ROOT));
+            return new java.util.ArrayList<>(names);
+        }
+
         @Override
         protected void init() {
             int center = this.width / 2;
-            int buttonWidth = Math.min(220, this.width - 40);
+            int buttonWidth = Math.min(300, this.width - 40);
             int left = center - buttonWidth / 2;
+            int top = 12;
+            int bottom = this.height - 126;
+            int firstRowY = top + 76;
+            int maxRows = Math.max(1, (bottom - firstRowY - 34) / ROW_HEIGHT);
 
-            hudButton = addDrawableChild(ButtonWidget.builder(hudButtonText(), button -> {
+            java.util.List<String> names = streamerNames();
+            int pageCount = Math.max(1, (names.size() + maxRows - 1) / maxRows);
+            page = Math.max(0, Math.min(page, pageCount - 1));
+            int from = page * maxRows;
+            int to = Math.min(names.size(), from + maxRows);
+
+            for (int i = from; i < to; i++) {
+                String name = names.get(i);
+                int count = data.counts.getOrDefault(name, 0);
+                addDrawableChild(ButtonWidget.builder(streamerButtonText(name, count), button -> {
+                    boolean enabled = !data.streamerEnabled.getOrDefault(name, true);
+                    data.streamerEnabled.put(name, enabled);
+                    save();
+                    button.setMessage(streamerButtonText(name, data.counts.getOrDefault(name, 0)));
+                }).dimensions(left, firstRowY + (i - from) * ROW_HEIGHT, buttonWidth, 20).build());
+            }
+
+            if (pageCount > 1) {
+                int navWidth = 90;
+                ButtonWidget previous = addDrawableChild(ButtonWidget.builder(Text.literal("Zurück"), button -> {
+                    page--;
+                    clearAndInit();
+                }).dimensions(center - navWidth - 5, bottom - 28, navWidth, 20).build());
+                previous.active = page > 0;
+
+                ButtonWidget next = addDrawableChild(ButtonWidget.builder(Text.literal("Weiter"), button -> {
+                    page++;
+                    clearAndInit();
+                }).dimensions(center + 5, bottom - 28, navWidth, 20).build());
+                next.active = page < pageCount - 1;
+            }
+
+            addDrawableChild(ButtonWidget.builder(hudButtonText(), button -> {
                 data.showHud = !data.showHud;
                 save();
                 button.setMessage(hudButtonText());
             }).dimensions(left, this.height - 98, buttonWidth, 20).build());
 
-            addDrawableChild(ButtonWidget.builder(Text.literal("Zähler zurücksetzen"), button -> {
+            addDrawableChild(ButtonWidget.builder(Text.literal("Alle Zähler zurücksetzen"), button -> {
                 data.counts.clear();
                 data.lastName = null;
                 pending = null;
                 save();
+                clearAndInit();
             }).dimensions(left, this.height - 70, buttonWidth, 20).build());
 
             addDrawableChild(ButtonWidget.builder(Text.literal("Schließen"), button -> close())
                     .dimensions(left, this.height - 42, buttonWidth, 20).build());
         }
 
+        private Text streamerButtonText(String name, int count) {
+            boolean enabled = data.streamerEnabled.getOrDefault(name, true);
+            return Text.literal(name + "  |  " + (enabled ? "AN" : "AUS") + "  |  " + count + " TPs");
+        }
+
         private Text hudButtonText() {
-            return Text.literal("HUD-Kasten: " + (data.showHud ? "AN" : "AUS"));
+            return Text.literal("HUD: " + (data.showHud ? "AN" : "AUS"));
         }
 
         @Override
         public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
             renderBackground(ctx, mouseX, mouseY, delta);
 
-            // Draw the buttons first; draw the custom panel and labels afterwards.
-            super.render(ctx, mouseX, mouseY, delta);
-
-            int panelWidth = Math.min(340, this.width - 20);
+            int panelWidth = Math.min(360, this.width - 20);
             int left = (this.width - panelWidth) / 2;
             int top = 12;
             int right = left + panelWidth;
@@ -225,26 +279,20 @@ public class StreamerCounterClient implements ClientModInitializer {
 
             ctx.drawCenteredTextWithShadow(textRenderer, title, this.width / 2, top + 16, 0xFFFFFFFF);
             ctx.drawCenteredTextWithShadow(textRenderer,
-                    "DEIN STREAMER-COUNTER", this.width / 2, top + 40, 0xFFFFD54F);
+                    "Streamer einzeln an- oder ausschalten", this.width / 2, top + 40, 0xFFFFD54F);
 
-            int y = top + 70;
-            if (data.counts.isEmpty()) {
+            if (streamerNames().isEmpty()) {
                 ctx.drawCenteredTextWithShadow(textRenderer,
-                        "Noch keine Streamer gezaehlt.", this.width / 2, y, 0xFFFFFFFF);
-            } else {
-                for (Map.Entry<String, Integer> entry : data.counts.entrySet().stream()
-                        .sorted(Map.Entry.comparingByKey(Comparator.naturalOrder())).toList()) {
-                    if (y > bottom - 12) break;
-                    ctx.drawCenteredTextWithShadow(textRenderer,
-                            entry.getKey() + "  -  " + entry.getValue() + " TPs",
-                            this.width / 2, y, 0xFFFFFFFF);
-                    y += 16;
-                }
+                        "Noch keine Streamer erkannt.", this.width / 2, top + 78, 0xFFFFFFFF);
+                ctx.drawCenteredTextWithShadow(textRenderer,
+                        "Nach /tpahere Name erscheint der Streamer hier.", this.width / 2, top + 96, 0xFFCCCCCC);
             }
+
+            super.render(ctx, mouseX, mouseY, delta);
         }
+
         @Override
         public void close() {
             MinecraftClient.getInstance().setScreen(parent);
         }
     }
-}

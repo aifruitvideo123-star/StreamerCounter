@@ -296,3 +296,4 @@ public class StreamerCounterClient implements ClientModInitializer {
             MinecraftClient.getInstance().setScreen(parent);
         }
     }
+}

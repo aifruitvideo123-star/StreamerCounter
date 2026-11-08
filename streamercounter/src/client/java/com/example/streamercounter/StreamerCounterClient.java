@@ -182,24 +182,24 @@ public class StreamerCounterClient implements ClientModInitializer {
         @Override
         protected void init() {
             int center = this.width / 2;
-            int buttonWidth = 190;
+            int buttonWidth = Math.min(220, this.width - 40);
             int left = center - buttonWidth / 2;
 
             hudButton = addDrawableChild(ButtonWidget.builder(hudButtonText(), button -> {
                 data.showHud = !data.showHud;
                 save();
                 button.setMessage(hudButtonText());
-            }).dimensions(left, this.height / 2 - 8, buttonWidth, 20).build());
+            }).dimensions(left, this.height - 98, buttonWidth, 20).build());
 
             addDrawableChild(ButtonWidget.builder(Text.literal("Zähler zurücksetzen"), button -> {
                 data.counts.clear();
                 data.lastName = null;
                 pending = null;
                 save();
-            }).dimensions(left, this.height / 2 + 18, buttonWidth, 20).build());
+            }).dimensions(left, this.height - 70, buttonWidth, 20).build());
 
             addDrawableChild(ButtonWidget.builder(Text.literal("Schließen"), button -> close())
-                    .dimensions(left, this.height / 2 + 44, buttonWidth, 20).build());
+                    .dimensions(left, this.height - 42, buttonWidth, 20).build());
         }
 
         private Text hudButtonText() {
@@ -209,29 +209,39 @@ public class StreamerCounterClient implements ClientModInitializer {
         @Override
         public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
             renderBackground(ctx, mouseX, mouseY, delta);
-            super.render(ctx, mouseX, mouseY, delta);
 
-            ctx.drawCenteredTextWithShadow(textRenderer, title, width / 2, 24, 0xFFFFFFFF);
+            int panelWidth = Math.min(340, this.width - 20);
+            int left = (this.width - panelWidth) / 2;
+            int top = 12;
+            int right = left + panelWidth;
+            int bottom = this.height - 12;
+
+            // Deutlich sichtbares Menüfenster mit Rahmen.
+            ctx.fill(left - 2, top - 2, right + 2, bottom + 2, 0xFF8AA4C0);
+            ctx.fill(left, top, right, bottom, 0xF018202C);
+            ctx.fill(left + 1, top + 1, right - 1, top + 3, 0xFF6C9BCB);
+
+            ctx.drawCenteredTextWithShadow(textRenderer, title, this.width / 2, top + 14, 0xFFFFFFFF);
             ctx.drawCenteredTextWithShadow(textRenderer,
-                    "Deine Streamer und ihre Zähler", width / 2, 48, 0xFFCCCCCC);
+                    "Deine Streamer und ihre Zaehler", this.width / 2, top + 36, 0xFFDAE6F2);
 
-            int y = 72;
+            int y = top + 62;
+            int listBottom = this.height - 116;
             if (data.counts.isEmpty()) {
                 ctx.drawCenteredTextWithShadow(textRenderer,
-                        "Noch keine Streamer gezählt.", width / 2, y, 0xFFAAAAAA);
+                        "Noch keine Streamer gezaehlt.", this.width / 2, y, 0xFFCCCCCC);
             } else {
                 for (Map.Entry<String, Integer> entry : data.counts.entrySet().stream()
                         .sorted(Map.Entry.comparingByKey(Comparator.naturalOrder())).toList()) {
+                    if (y > listBottom) break;
                     String label = entry.getKey() + "  -  " + entry.getValue() + " TPs";
-                    ctx.drawCenteredTextWithShadow(textRenderer, label, width / 2, y, 0xFFFFFFFF);
-                    y += 13;
-                    if (y > height / 2 - 24) break;
+                    ctx.drawCenteredTextWithShadow(textRenderer, label, this.width / 2, y, 0xFFFFFFFF);
+                    y += 14;
                 }
             }
 
-            ctx.drawCenteredTextWithShadow(textRenderer,
-                    "Menü-Taste: K (änderbar unter Optionen > Steuerung)",
-                    width / 2, height - 18, 0xFFAAAAAA);
+            // Widgets zuletzt zeichnen, damit die Buttons sicher ueber dem Panel liegen.
+            super.render(ctx, mouseX, mouseY, delta);
         }
 
         @Override
@@ -239,4 +249,5 @@ public class StreamerCounterClient implements ClientModInitializer {
             MinecraftClient.getInstance().setScreen(parent);
         }
     }
+}
 }

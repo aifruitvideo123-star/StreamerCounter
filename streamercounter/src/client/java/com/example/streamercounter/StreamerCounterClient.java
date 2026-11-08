@@ -165,12 +165,18 @@ public class StreamerCounterClient implements ClientModInitializer {
         return (int) ((18 + rows * 11 + 5) * scale);
     }
 
+    // Keep the full HUD visible when its growing list reaches the bottom of the screen.
+    private static int visibleHudY(int screenHeight) {
+        return Math.max(0, Math.min(data.hudY, screenHeight - hudHeight(data.hudScale) - 8));
+    }
+
     private static void renderHud(DrawContext ctx, RenderTickCounter tickCounter) {
         if (!data.showHud || hudStreamerNames().isEmpty()) return;
 
         int width = ctx.getScaledWindowWidth();
+        int height = ctx.getScaledWindowHeight();
         int x = data.hudX < 0 ? width - hudWidth(data.hudScale) - 8 : data.hudX;
-        drawHud(ctx, x, data.hudY, data.hudScale);
+        drawHud(ctx, x, visibleHudY(height), data.hudScale);
     }
 
     // Compact, translucent rectangular panel with every enabled streamer that has been counted.
@@ -274,7 +280,7 @@ public class StreamerCounterClient implements ClientModInitializer {
 
         private boolean overHud(double mouseX, double mouseY) {
             int x = hudX();
-            int y = data.hudY;
+            int y = visibleHudY(this.height);
             int w = hudWidth(data.hudScale);
             int h = hudHeight(data.hudScale);
             return mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + h;
@@ -287,7 +293,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             if (click.button() == 0 && overHud(mouseX, mouseY)) {
                 dragging = true;
                 dragOffsetX = mouseX - hudX();
-                dragOffsetY = mouseY - data.hudY;
+                dragOffsetY = mouseY - visibleHudY(this.height);
                 return true;
             }
             return super.mouseClicked(click, doubled);
@@ -321,7 +327,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             ctx.drawCenteredTextWithShadow(textRenderer, "HUD Preview", this.width / 2, 28, 0xFFFFFFFF);
             ctx.drawCenteredTextWithShadow(textRenderer, "Drag the HUD to your preferred position.",
                     this.width / 2, 46, 0xFFCCCCCC);
-            drawHud(ctx, hudX(), data.hudY, data.hudScale);
+            drawHud(ctx, hudX(), visibleHudY(this.height), data.hudScale);
             ctx.drawCenteredTextWithShadow(textRenderer, "Size: " + Math.round(data.hudScale * 100) + "%",
                     this.width / 2, this.height - 68, 0xFFFFC247);
             super.render(ctx, mouseX, mouseY, delta);

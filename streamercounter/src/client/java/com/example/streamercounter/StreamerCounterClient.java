@@ -2,7 +2,7 @@ package com.example.streamercounter;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.mojang.blaze3d.platform.InputUtil;
+import net.minecraft.client.util.InputUtil;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
@@ -77,7 +77,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         });
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            while (openMenuKey.consumeClick()) {
+            while (openMenuKey.wasPressed()) {
                 if (client.player != null) {
                     client.setScreen(new CounterMenuScreen(client.currentScreen));
                 }

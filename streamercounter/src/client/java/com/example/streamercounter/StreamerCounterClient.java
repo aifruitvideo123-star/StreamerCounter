@@ -265,7 +265,9 @@ public class StreamerCounterClient implements ClientModInitializer {
 
         @Override
         public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
-            renderBackground(ctx, mouseX, mouseY, delta);
+            // Draw a plain dim overlay instead of Lunar Client's blur-backed background.
+            // This avoids the 'Can only blur once per frame' conflict in Lunar Client.
+            ctx.fill(0, 0, this.width, this.height, 0x90000000);
 
             int panelWidth = Math.min(360, this.width - 20);
             int left = (this.width - panelWidth) / 2;

@@ -250,4 +250,3 @@ public class StreamerCounterClient implements ClientModInitializer {
         }
     }
 }
-}

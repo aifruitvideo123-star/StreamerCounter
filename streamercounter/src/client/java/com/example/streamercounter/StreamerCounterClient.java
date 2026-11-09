@@ -18,7 +18,7 @@ import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.lwjgl.glfw.GLFW;
 
 import java.io.IOException;
@@ -61,7 +61,7 @@ public class StreamerCounterClient implements ClientModInitializer {
     public void onInitializeClient() {
         load();
         KeyMapping.Category category = KeyMapping.Category.register(
-                ResourceLocation.fromNamespaceAndPath("streamercounter", "general"));
+                Identifier.fromNamespaceAndPath("streamercounter", "general"));
         openMenuKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.streamercounter.open_menu", InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_K, category));
@@ -83,7 +83,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (openMenuKey.consumeClick()) {
                 if (client.player != null) {
-                    client.gui.setScreen(new CounterMenuScreen(client.gui.getScreen(), 0));
+                    client.gui.setScreen(new CounterMenuScreen(client.gui.screen(), 0));
                 }
             }
             if (pending == null || client.level == null || client.player == null) return;
@@ -176,7 +176,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         graphics.text(mc.font, "STREAMERS", x + 6, y + 6, 0xFFE8B64D, false);
         int rowY = y + 20;
         for (String key : names) {
-            String name = mc.font.plainSubstrByWidth(displayName(key), Math.max(30, width - 48));
+            String name = displayName(key);
             String count = String.valueOf(data.counts.getOrDefault(key, 0));
             graphics.text(mc.font, name, x + 6, rowY, 0xFFE8EDF5, false);
             graphics.text(mc.font, count, x + width - 7 - mc.font.width(count), rowY, 0xFFFFC85A, false);

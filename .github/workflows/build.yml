@@ -27,7 +27,9 @@ jobs:
           gradle-version: '9.8.0'
 
       - name: Build mod
-        run: gradle -p streamercounter build --no-daemon
+        run: |
+          echo "Building StreamerCounter for Minecraft 26.2"
+          gradle -p streamercounter build --no-daemon
 
       - name: Prepare mod JAR
         shell: bash

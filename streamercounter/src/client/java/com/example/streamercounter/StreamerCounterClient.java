@@ -119,7 +119,7 @@ public class StreamerCounterClient implements ClientModInitializer {
 
         HudElementRegistry.attachElementAfter(
                 VanillaHudElements.MISC_OVERLAYS,
-                ResourceLocation.fromNamespaceAndPath("streamercounter", "hud"),
+                Identifier.fromNamespaceAndPath("streamercounter", "hud"),
                 StreamerCounterClient::renderHud);
     }
 

@@ -1,8 +1,8 @@
-name: Build Fabric Mod
+name: Build Fabric Mod (26.2)
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, port/26.2]
   workflow_dispatch:
 
 permissions:
@@ -32,17 +32,14 @@ jobs:
       - name: Prepare mod JAR
         shell: bash
         run: |
-          echo "Generated JAR files:"
-          find streamercounter/build/libs -maxdepth 1 -type f -name '*.jar' -printf '%f (%s bytes)\\n'
           mkdir -p artifact
           find streamercounter/build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' -exec cp {} artifact/ ';'
           test "$(find artifact -maxdepth 1 -type f -name '*.jar' | wc -l)" -eq 1
-          echo "Ready to upload:"
           ls -lh artifact/
 
       - name: Upload mod JAR
         uses: actions/upload-artifact@v4
         with:
-          name: StreamerCounter-Mod
+          name: StreamerCounter-Mod-26.2
           path: artifact/*.jar
           if-no-files-found: error

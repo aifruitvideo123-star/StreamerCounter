@@ -430,28 +430,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         @Override public boolean mouseReleased(Click click) {
             if(dragging&&click.button()==0){dragging=false;save();return true;}
             return super.mouseReleased(click);
-            @Override public void render(DrawContext ctx,int mx,int my,float delta) {
-            ctx.fill(0,0,width,height,0xB0000000);
-            ctx.fill(6,48,132,height-8,0x990B111A);
-            ctx.fill(140,48,width-8,height-8,0x990B111A);
-            ctx.drawText(textRenderer,"TEXT ELEMENTS",14,34,0xFFFFD45A,true);
-            ctx.drawText(textRenderer,"Select an item on the left. Hidden items stay in this list.",148,34,0xFFFFFFFF,true);
-            if(data.screenTexts!=null) for(ScreenText t:data.screenTexts) if(t!=null&&t.visible&&t.text!=null&&!t.text.isEmpty()) {
-                float scale=Math.max(8,Math.min(96,t.size))/9.0f;
-                ctx.getMatrices().pushMatrix();
-                ctx.getMatrices().translate(t.x,t.y);
-                ctx.getMatrices().scale(scale,scale);
-                ctx.drawText(textRenderer,Text.literal(t.text),0,0,t.color,t.shadow);
-                ctx.getMatrices().popMatrix();
-            }
-            ScreenText t=current();
-            if(t!=null) ctx.drawText(textRenderer,"Selected: "+(t.text==null?"":t.text)+" | Size: "+t.size,148,62,0xFFFFD45A,true);
-            else ctx.drawText(textRenderer,"Click + Add Text to create your first item.",148,62,0xFFCCCCCC,true);
-            super.render(ctx,mx,my,delta);
         }
-        @Override public void close(){save();MinecraftClient.getInstance().setScreen(parent);}
-    }
-
         @Override public void render(DrawContext ctx,int mx,int my,float delta) {
             int left=12, top=42, split=Math.max(150,(int)(width*0.34)), right=left+split+12;
             ctx.fill(0,0,width,height,0xB0000000);

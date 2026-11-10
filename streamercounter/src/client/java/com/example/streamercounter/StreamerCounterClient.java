@@ -459,7 +459,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             ScreenText t=current();if(t!=null){String info="Selected: "+t.text+" | "+t.size+"px | "+t.font;graphics.text(font,info,width/2-font.width(info)/2,height-112,0xFFFFD54F,true);}
             super.extractRenderState(graphics,mx,my,delta);
         }
-        @Override public void onClose(){save();Minecraft.getInstance().setScreen(parent);}
+        @Override public void onClose(){save();Minecraft.getInstance().gui.setScreen(parent);}
     }
 
     private static class CounterMenuScreen extends Screen {
@@ -545,7 +545,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             addRenderableWidget(Button.builder(Component.literal("Edit HUD"), button ->
                     Minecraft.getInstance().gui.setScreen(new HudEditScreen(this)))
                     .bounds(left + halfWidth + 6, height - 98, halfWidth, 20).build());
-            addRenderableWidget(Button.builder(Component.literal("Text on Screen"), b -> Minecraft.getInstance().setScreen(new TextOnScreenScreen(this)))
+            addRenderableWidget(Button.builder(Component.literal("Text on Screen"), b -> Minecraft.getInstance().gui.setScreen(new TextOnScreenScreen(this)))
                     .bounds(left + 2 * (halfWidth + 6), height - 98, halfWidth, 20).build());
             addRenderableWidget(Button.builder(Component.literal("Reset All Counters"), button -> {
                 data.counts.clear();

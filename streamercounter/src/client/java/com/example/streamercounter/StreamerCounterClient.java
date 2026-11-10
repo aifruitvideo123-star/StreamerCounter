@@ -16,6 +16,7 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.render.RenderTickCounter;
@@ -411,10 +412,16 @@ public class StreamerCounterClient implements ClientModInitializer {
         private int selected = -1;
         private boolean dragging = false;
         private double dx, dy;
+        private TextFieldWidget textInput;
         TextOnScreenScreen(Screen parent) { super(Text.literal("Text on Screen")); this.parent = parent; }
         @Override protected void init() {
             if (data.screenTexts == null) data.screenTexts = new ArrayList<>();
             int c = width / 2;
+            textInput = new TextFieldWidget(textRenderer, c - 125, height - 124, 250, 20, Text.literal("Text"));
+            textInput.setMaxLength(256);
+            ScreenText initial = current(); if (initial != null) textInput.setText(initial.text);
+            textInput.setChangedListener(value -> { ScreenText t=current(); if(t!=null){t.text=value;save();} });
+            addDrawableChild(textInput);
             addDrawableChild(ButtonWidget.builder(Text.literal("Add Text"), b -> {
                 ScreenText t = new ScreenText(); t.x = width / 2 - 40; t.y = height / 2;
                 data.screenTexts.add(t); selected = data.screenTexts.size() - 1; save(); clearAndInit();
@@ -444,7 +451,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             if (click.button()==0) {
                 for(int i=data.screenTexts.size()-1;i>=0;i--){ ScreenText t=data.screenTexts.get(i);
                     if(t.visible && click.x()>=t.x-3 && click.x()<=t.x+MinecraftClient.getInstance().textRenderer.getWidth(t.text)+6
-                            && click.y()>=t.y-4 && click.y()<=t.y+20){ selected=i; dragging=true; dx=click.x()-t.x; dy=click.y()-t.y; return true; }
+                            && click.y()>=t.y-4 && click.y()<=t.y+20){ selected=i; if(textInput!=null)textInput.setText(t.text); dragging=true; dx=click.x()-t.x; dy=click.y()-t.y; return true; }
                 }
             }
             return super.mouseClicked(click,doubled);
@@ -454,11 +461,6 @@ public class StreamerCounterClient implements ClientModInitializer {
             return super.mouseDragged(click,ox,oy);
         }
         @Override public boolean mouseReleased(Click click){ if(dragging && click.button()==0){dragging=false;save();return true;} return super.mouseReleased(click); }
-        @Override public boolean charTyped(char chr,int modifiers){ ScreenText t=current(); if(t!=null && !Character.isISOControl(chr)){t.text+=chr;save();return true;} return super.charTyped(chr,modifiers); }
-        @Override public boolean keyPressed(int key,int scan,int modifiers){
-            ScreenText t=current(); if(t!=null && key==GLFW.GLFW_KEY_BACKSPACE && !t.text.isEmpty()){t.text=t.text.substring(0,t.text.length()-1);save();return true;}
-            return super.keyPressed(key,scan,modifiers);
-        }
         @Override public void render(DrawContext ctx,int mx,int my,float delta){
             ctx.fill(0,0,width,height,0xB0000000);
             ctx.drawCenteredTextWithShadow(textRenderer,"Text on Screen — click text to select and drag",width/2,22,0xFFFFFFFF);

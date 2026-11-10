@@ -434,7 +434,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                     selected = index;
                     clearWidgets();
                     init();
-                }).bounds(left, top + i * row, 112, 20).build());
+                }).bounds(left, top + i * row, Math.max(112, (int)(width * 0.34) - 30), 20).build());
             }
             addRenderableWidget(Button.builder(Component.literal("+ Add Text"), b -> {
                 ScreenText item = new ScreenText();
@@ -443,8 +443,9 @@ public class StreamerCounterClient implements ClientModInitializer {
                 clearWidgets(); init();
             }).bounds(left, top + Math.min(data.screenTexts.size(),10) * row + 4, 112, 20).build());
 
-            int x = Math.max(138, width / 2 - 112);
-            textInput = new EditBox(font, x, height - 112, 224, 20, Component.literal("Text"));
+            int x = 12 + Math.max(150, (int)(width * 0.34)) + 26;
+            int fieldWidth = Math.max(120, width - x - 30);
+            textInput = new EditBox(font, x, 84, fieldWidth, 22, Component.literal("Text"));
             textInput.setMaxLength(256);
             ScreenText chosen = current();
             if (chosen != null) textInput.setValue(chosen.text == null ? "" : chosen.text);
@@ -453,21 +454,21 @@ public class StreamerCounterClient implements ClientModInitializer {
 
             addRenderableWidget(Button.builder(Component.literal(chosen != null && chosen.visible ? "Hide" : "Show"), b -> {
                 ScreenText t=current(); if(t!=null){t.visible=!t.visible;save();clearWidgets();init();}
-            }).bounds(x, height-84, 68, 20).build());
+            }).bounds(x, 132, 68, 20).build());
             addRenderableWidget(Button.builder(Component.literal("Delete"), b -> {
                 if(selected>=0 && selected<data.screenTexts.size()){data.screenTexts.remove(selected);selected=-1;save();clearWidgets();init();}
-            }).bounds(x+74, height-84, 68, 20).build());
+            }).bounds(x+74, 132, 68, 20).build());
             addRenderableWidget(Button.builder(Component.literal("Size −"), b -> {
                 ScreenText t=current(); if(t!=null){t.size=Math.max(8,t.size-2);save();}
-            }).bounds(x, height-56, 68, 20).build());
+            }).bounds(x, 160, 68, 20).build());
             addRenderableWidget(Button.builder(Component.literal("Size +"), b -> {
                 ScreenText t=current(); if(t!=null){t.size=Math.min(96,t.size+2);save();}
-            }).bounds(x+74, height-56, 68, 20).build());
+            }).bounds(x+74, 160, 68, 20).build());
             addRenderableWidget(Button.builder(Component.literal("Color"), b -> {
                 ScreenText t=current(); if(t!=null){int[] colors={0xFFFFFFFF,0xFFFFD54F,0xFF69D8FF,0xFFFF6B6B,0xFF78E08F};int i=0;for(;i<colors.length;i++)if(colors[i]==t.color)break;t.color=colors[(i+1)%colors.length];save();}
-            }).bounds(x, height-28, 68, 20).build());
+            }).bounds(x, 188, 68, 20).build());
             addRenderableWidget(Button.builder(Component.literal("Done"), b -> onClose())
-                .bounds(x+74, height-28, 68, 20).build());
+                .bounds(x+74, 188, 68, 20).build());
         }
         private ScreenText current(){return selected>=0&&selected<data.screenTexts.size()?data.screenTexts.get(selected):null;}
         @Override public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
@@ -518,6 +519,33 @@ public class StreamerCounterClient implements ClientModInitializer {
         @Override public void onClose(){save();Minecraft.getInstance().gui.setScreen(parent);}
     }
 
+        @Override public void extractRenderState(GuiGraphicsExtractor graphics,int mx,int my,float delta) {
+            int left=12, top=42, split=Math.max(150,(int)(width*0.34)), right=left+split+12;
+            graphics.fill(0,0,width,height,0xB0000000);
+            graphics.fill(left-2,top-2,left+split,height-10,0xFFFFD54F);
+            graphics.fill(left,top,left+split-2,height-12,0xFF18202C);
+            graphics.fill(left+2,top+2,left+split-4,top+5,0xFF6C9BCB);
+            graphics.fill(right-2,top-2,width-10,height-10,0xFFFFD54F);
+            graphics.fill(right,top,width-12,height-12,0xFF18202C);
+            graphics.fill(right+2,top+2,width-14,top+5,0xFF6C9BCB);
+            graphics.text(font,"TEXT ON SCREEN",left+14,top+14,0xFFFFFFFF,true);
+            graphics.text(font,"PLACED TEXTS",left+14,top+38,0xFFFFD54F,true);
+            graphics.text(font,"EDIT TEXT",right+16,top+14,0xFFFFFFFF,true);
+            graphics.text(font,"Select a text on the left. Hidden texts stay in this list.",right+16,top+38,0xFFB8C7D9,true);
+            graphics.text(font,"TEXT",right+16,top+67,0xFFFFD54F,true);
+            graphics.text(font,"STYLE / SIZE",right+16,top+119,0xFFFFD54F,true);
+            graphics.text(font,"COLOR",right+16,top+174,0xFFFFD54F,true);
+            if(data.screenTexts!=null) for(ScreenText item:data.screenTexts) if(item!=null&&item.visible&&item.text!=null&&!item.text.isEmpty()) {
+                float scale=Math.max(8,Math.min(96,item.size))/9.0f;
+                graphics.pose().pushMatrix(); graphics.pose().translate(item.x,item.y); graphics.pose().scale(scale,scale);
+                graphics.text(font,item.text,0,0,item.color,item.shadow); graphics.pose().popMatrix();
+            }
+            ScreenText chosen=current();
+            if(chosen!=null) graphics.text(font,"Selected: "+(chosen.text==null?"":chosen.text)+"   |   Size: "+chosen.size,right+16,top+218,0xFFB8C7D9,true);
+            else graphics.text(font,"Add a text to begin editing.",right+16,top+218,0xFFB8C7D9,true);
+            graphics.text(font,"Drag visible text to move it.",right+16,height-34,0xFF6C9BCB,true);
+            super.extractRenderState(graphics,mx,my,delta);
+        }
     private static class CounterMenuScreen extends Screen {
         private final Screen parent;
         private final int page;

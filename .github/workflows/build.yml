@@ -37,7 +37,7 @@ jobs:
           gradle --version
 
       - name: Build mod
-        run: gradle -p streamercounter --no-daemon --stacktrace --warning-mode all clean build
+        run: gradle -p streamercounter --no-daemon --no-configuration-cache --stacktrace --warning-mode all clean build
 
       - name: Prepare mod JAR
         shell: bash

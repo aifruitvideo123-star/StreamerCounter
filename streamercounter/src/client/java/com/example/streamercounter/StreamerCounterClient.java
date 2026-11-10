@@ -131,7 +131,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             data.displayNames.put(key, name);
             data.lastName = name;
             Minecraft mc = Minecraft.getInstance();
-            if (mc.player != null) mc.player.displayClientMessage(Component.literal("VIP: " + name + " joined your TPAHERE!"), true);
+            if (mc.player != null) mc.player.sendOverlayMessage(Component.literal("VIP: " + name + " joined your TPAHERE!"));
         }
         pending = null;
         save();

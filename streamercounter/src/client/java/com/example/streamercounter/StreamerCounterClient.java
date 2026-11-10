@@ -33,7 +33,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 public class StreamerCounterClient implements ClientModInitializer {
-    private static final Path FILE = FabricLoader.getInstance().getConfigDir().resolve("streamer-counter.json");
+    private static final Path FILE = FabricLoader.getInstance().getConfigDir().resolve("streamer-counter-vip.json");
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final long TIMEOUT_MS = 60_000;
     private static final double NEAR_SQ = 8 * 8;
@@ -55,15 +55,16 @@ public class StreamerCounterClient implements ClientModInitializer {
         int hudX = -1;
         int hudY = 8;
         float hudScale = 1.0f;
+        boolean iceTheme = false;
     }
 
     @Override
     public void onInitializeClient() {
         load();
         KeyMapping.Category category = KeyMapping.Category.register(
-                Identifier.fromNamespaceAndPath("streamercounter", "general"));
+                Identifier.fromNamespaceAndPath("streamercounter_vip", "general"));
         openMenuKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-                "key.streamercounter.open_menu", InputConstants.Type.KEYSYM,
+                "key.streamercounter_vip.open_menu", InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_K, category));
 
         ClientSendMessageEvents.COMMAND.register(command -> {
@@ -119,7 +120,7 @@ public class StreamerCounterClient implements ClientModInitializer {
 
         HudElementRegistry.attachElementAfter(
                 VanillaHudElements.MISC_OVERLAYS,
-                Identifier.fromNamespaceAndPath("streamercounter", "hud"),
+                Identifier.fromNamespaceAndPath("streamercounter_vip", "hud"),
                 StreamerCounterClient::renderHud);
     }
 
@@ -129,6 +130,8 @@ public class StreamerCounterClient implements ClientModInitializer {
             data.counts.merge(key, 1, Integer::sum);
             data.displayNames.put(key, name);
             data.lastName = name;
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.player != null) mc.player.displayClientMessage(Component.literal("VIP: " + name + " joined your TPAHERE!"), true);
         }
         pending = null;
         save();
@@ -172,14 +175,16 @@ public class StreamerCounterClient implements ClientModInitializer {
         int width = hudWidth();
         int height = hudHeight();
         graphics.fill(x, y, x + width, y + height, 0x990B111A);
-        graphics.fill(x, y, x + width, y + 2, 0xB8E8B64D);
-        graphics.text(mc.font, "STREAMERS", x + 6, y + 6, 0xFFE8B64D, false);
+        int accent = data.iceTheme ? 0xFF69D8FF : 0xFFE8B64D;
+        int countColor = data.iceTheme ? 0xFF8DE5FF : 0xFFFFC85A;
+        graphics.fill(x, y, x + width, y + 2, accent);
+        graphics.text(mc.font, "STREAMERS VIP", x + 6, y + 6, accent, false);
         int rowY = y + 20;
         for (String key : names) {
             String name = displayName(key);
             String count = String.valueOf(data.counts.getOrDefault(key, 0));
             graphics.text(mc.font, name, x + 6, rowY, 0xFFE8EDF5, false);
-            graphics.text(mc.font, count, x + width - 7 - mc.font.width(count), rowY, 0xFFFFC85A, false);
+            graphics.text(mc.font, count, x + width - 7 - mc.font.width(count), rowY, countColor, false);
             rowY += 11;
         }
     }
@@ -339,13 +344,18 @@ public class StreamerCounterClient implements ClientModInitializer {
             addRenderableWidget(Button.builder(Component.literal("Edit HUD"), button ->
                     Minecraft.getInstance().gui.setScreen(new HudEditScreen(this)))
                     .bounds(left + halfWidth + 6, height - 98, halfWidth, 20).build());
-            addRenderableWidget(Button.builder(Component.literal("Reset All Counters"), button -> {
+            addRenderableWidget(Button.builder(themeButtonText(), button -> {
+                data.iceTheme = !data.iceTheme;
+                save();
+                button.setMessage(themeButtonText());
+            }).bounds(left, height - 70, halfWidth, 20).build());
+            addRenderableWidget(Button.builder(Component.literal("Reset All"), button -> {
                 data.counts.clear();
                 data.lastName = null;
                 pending = null;
                 save();
                 reopen(0);
-            }).bounds(left, height - 70, buttonWidth, 20).build());
+            }).bounds(left + halfWidth + 6, height - 70, halfWidth, 20).build());
             addRenderableWidget(Button.builder(Component.literal("Close"), button -> onClose())
                     .bounds(left, height - 42, buttonWidth, 20).build());
         }
@@ -353,6 +363,10 @@ public class StreamerCounterClient implements ClientModInitializer {
         private Component streamerButtonText(String name, int count) {
             boolean enabled = data.streamerEnabled.getOrDefault(name, true);
             return Component.literal(name + "  |  " + (enabled ? "ON" : "OFF") + "  |  " + count + " TPs");
+        }
+
+        private Component themeButtonText() {
+            return Component.literal("VIP Theme: " + (data.iceTheme ? "ICE" : "GOLD"));
         }
 
         private Component hudButtonText() {
@@ -367,13 +381,13 @@ public class StreamerCounterClient implements ClientModInitializer {
             int top = 12;
             int right = left + panelWidth;
             int bottom = height - 126;
-            graphics.fill(left - 3, top - 3, right + 3, bottom + 3, 0xFFFFD54F);
+            graphics.fill(left - 3, top - 3, right + 3, bottom + 3, data.iceTheme ? 0xFF69D8FF : 0xFFFFD54F);
             graphics.fill(left, top, right, bottom, 0xFF18202C);
             graphics.fill(left + 2, top + 2, right - 2, top + 5, 0xFF6C9BCB);
-            String heading = "Streamer Counter";
+            String heading = "Streamer Counter VIP";
             graphics.text(font, heading, width / 2 - font.width(heading) / 2, top + 16, 0xFFFFFFFF, true);
             String subtitle = "Enable or disable streamers individually";
-            graphics.text(font, subtitle, width / 2 - font.width(subtitle) / 2, top + 40, 0xFFFFD54F, true);
+            graphics.text(font, subtitle, width / 2 - font.width(subtitle) / 2, top + 40, data.iceTheme ? 0xFF69D8FF : 0xFFFFD54F, true);
             if (streamerNames().isEmpty()) {
                 String line1 = "No streamers detected yet.";
                 String line2 = "Streamers will appear here after /tpahere <name>.";
@@ -381,7 +395,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                 graphics.text(font, line2, width / 2 - font.width(line2) / 2, top + 96, 0xFFCCCCCC, true);
             }
             super.extractRenderState(graphics, mouseX, mouseY, delta);
-            String credit = "Made by AlpBey3503";
+            String credit = "VIP Edition | Made by AlpBey3503";
             graphics.text(font, credit, width / 2 - font.width(credit) / 2, height - 14, 0xFFE8B64D, true);
         }
 

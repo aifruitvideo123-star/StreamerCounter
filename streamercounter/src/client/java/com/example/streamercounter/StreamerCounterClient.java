@@ -429,9 +429,6 @@ public class StreamerCounterClient implements ClientModInitializer {
             int left = center - buttonWidth / 2;
             int bottom = height - 126;
             int firstRowY = 88;
-            addRenderableWidget(Button.builder(Component.literal("Menu Text Color: " + hudColorName()), b ->
-                    Minecraft.getInstance().setScreen(new HudColorScreen(this)))
-                    .bounds(center - 90, 58, 180, 20).build());
             int maxRows = Math.max(1, (bottom - firstRowY - 34) / ROW_HEIGHT);
             List<String> names = streamerNames();
             int pageCount = Math.max(1, (names.size() + maxRows - 1) / maxRows);
@@ -506,6 +503,18 @@ public class StreamerCounterClient implements ClientModInitializer {
             return Component.literal(name + "  |  " + (enabled ? "ON" : "OFF") + "  |  " + count + " TPs");
         }
 
+        private int menuAccentColor() {
+            return data.iceTheme ? 0xFF69D8FF : 0xFFFFD54F;
+        }
+
+        private int menuTextColor() {
+            return data.iceTheme ? 0xFF9BE8FF : 0xFFFFD878;
+        }
+
+        private int menuPanelColor() {
+            return data.iceTheme ? 0xFF101F2B : 0xFF241D12;
+        }
+
         private Component themeButtonText() {
             return Component.literal("VIP Theme: " + (data.iceTheme ? "ICE" : "GOLD"));
         }
@@ -522,25 +531,25 @@ public class StreamerCounterClient implements ClientModInitializer {
             int top = 12;
             int right = left + panelWidth;
             int bottom = height - 126;
-            graphics.fill(left - 3, top - 3, right + 3, bottom + 3, data.iceTheme ? 0xFF69D8FF : 0xFFFFD54F);
-            graphics.fill(left, top, right, bottom, 0xFF18202C);
-            graphics.fill(left + 2, top + 2, right - 2, top + 5, 0xFF6C9BCB);
+            graphics.fill(left - 3, top - 3, right + 3, bottom + 3, menuAccentColor());
+            graphics.fill(left, top, right, bottom, menuPanelColor());
+            graphics.fill(left + 2, top + 2, right - 2, top + 5, menuAccentColor());
             String heading = "Streamer Counter VIP";
             drawFlowText(graphics, font, heading, width / 2 - font.width(heading) / 2,
-                    top + 16, data.textColor, true);
+                    top + 16, menuTextColor(), true);
             String subtitle = "Enable or disable streamers individually";
             drawFlowText(graphics, font, subtitle, width / 2 - font.width(subtitle) / 2,
-                    top + 40, data.textColor, true);
+                    top + 40, menuTextColor(), true);
             if (streamerNames().isEmpty()) {
                 String line1 = "No streamers detected yet.";
                 String line2 = "Streamers will appear here after /tpahere <name>.";
-                graphics.text(font, line1, width / 2 - font.width(line1) / 2, top + 78, 0xFFFFFFFF, true);
-                graphics.text(font, line2, width / 2 - font.width(line2) / 2, top + 96, 0xFFCCCCCC, true);
+                graphics.text(font, line1, width / 2 - font.width(line1) / 2, top + 78, menuTextColor(), true);
+                graphics.text(font, line2, width / 2 - font.width(line2) / 2, top + 96, menuTextColor(), true);
             }
             super.extractRenderState(graphics, mouseX, mouseY, delta);
             String credit = "VIP Edition | Made by AlpBey3503";
             drawFlowText(graphics, font, credit, width / 2 - font.width(credit) / 2,
-                    height - 14, data.textColor, true);
+                    height - 14, menuTextColor(), true);
         }
 
         @Override

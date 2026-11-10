@@ -162,12 +162,18 @@ public class StreamerCounterClient implements ClientModInitializer {
     }
 
     private static void renderHud(GuiGraphicsExtractor graphics, DeltaTracker tickCounter) {
-        if (!data.showHud || hudNames().isEmpty()) return;
         Minecraft mc = Minecraft.getInstance();
         int width = mc.getWindow().getGuiScaledWidth();
         int height = mc.getWindow().getGuiScaledHeight();
-        int x = visibleHudX(width);
-        drawHud(graphics, x, visibleHudY(height));
+        if (data.showHud && !hudNames().isEmpty()) {
+            int x = visibleHudX(width);
+            drawHud(graphics, x, visibleHudY(height));
+        }
+        if (data.screenTexts == null) data.screenTexts = new ArrayList<>();
+        for (ScreenText entry : data.screenTexts) {
+            if (entry != null && entry.visible && entry.text != null && !entry.text.isEmpty())
+                graphics.text(mc.font, entry.text, entry.x, entry.y, entry.color, entry.shadow);
+        }
     }
 
     private static void drawHud(GuiGraphicsExtractor graphics, int x, int y) {
@@ -384,6 +390,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                     if (loaded.counts == null) loaded.counts = new HashMap<>();
                     if (loaded.streamerEnabled == null) loaded.streamerEnabled = new HashMap<>();
                     if (loaded.displayNames == null) loaded.displayNames = new HashMap<>();
+                    if (loaded.screenTexts == null) loaded.screenTexts = new ArrayList<>();
                     data = loaded;
                 }
             }
@@ -398,6 +405,55 @@ public class StreamerCounterClient implements ClientModInitializer {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private static class TextOnScreenScreen extends Screen {
+        private final Screen parent;
+        private int selected = -1;
+        private boolean dragging;
+        private double dx, dy;
+        TextOnScreenScreen(Screen parent) { super(Component.literal("Text on Screen")); this.parent=parent; }
+        @Override protected void init() {
+            if(data.screenTexts==null)data.screenTexts=new ArrayList<>();
+            int c=width/2;
+            addRenderableWidget(Button.builder(Component.literal("Add Text"),b->{ScreenText t=new ScreenText();t.x=c-40;t.y=height/2;data.screenTexts.add(t);selected=data.screenTexts.size()-1;save();clearWidgets();init();})
+                .bounds(c-150,height-92,92,20).build());
+            addRenderableWidget(Button.builder(Component.literal("Show / Hide"),b->{ScreenText t=current();if(t!=null){t.visible=!t.visible;save();b.setMessage(Component.literal(t.visible?"Hide Text":"Show Text"));}})
+                .bounds(c-52,height-92,92,20).build());
+            addRenderableWidget(Button.builder(Component.literal("Delete"),b->{if(selected>=0&&selected<data.screenTexts.size()){data.screenTexts.remove(selected);selected=-1;save();clearWidgets();init();}})
+                .bounds(c+46,height-92,92,20).build());
+            addRenderableWidget(Button.builder(Component.literal("Size −"),b->{ScreenText t=current();if(t!=null){t.size=Math.max(8,t.size-2);save();}})
+                .bounds(c-150,height-64,70,20).build());
+            addRenderableWidget(Button.builder(Component.literal("Size +"),b->{ScreenText t=current();if(t!=null){t.size=Math.min(48,t.size+2);save();}})
+                .bounds(c-75,height-64,70,20).build());
+            addRenderableWidget(Button.builder(Component.literal("Font: "+fontName()),b->{ScreenText t=current();if(t!=null){t.font=t.font.equals("default")?"uniform":t.font.equals("uniform")?"alt":"default";save();b.setMessage(Component.literal("Font: "+fontName()));}})
+                .bounds(c,height-64,90,20).build());
+            addRenderableWidget(Button.builder(Component.literal("Color"),b->{ScreenText t=current();if(t!=null){int[] colors={0xFFFFFFFF,0xFFFFD54F,0xFF69D8FF,0xFFFF6B6B,0xFF78E08F};int i=0;for(;i<colors.length;i++)if(colors[i]==t.color)break;t.color=colors[(i+1)%colors.length];save();}})
+                .bounds(c+95,height-64,55,20).build());
+            addRenderableWidget(Button.builder(Component.literal("Done"),b->onClose()).bounds(c-45,height-32,90,20).build());
+        }
+        private ScreenText current(){return selected>=0&&selected<data.screenTexts.size()?data.screenTexts.get(selected):null;}
+        private String fontName(){ScreenText t=current();return t==null?"default":t.font;}
+        @Override public boolean mouseClicked(MouseButtonEvent event,boolean doubleClick){
+            if(event.button()==0){for(int i=data.screenTexts.size()-1;i>=0;i--){ScreenText t=data.screenTexts.get(i);
+                if(t.visible&&event.x()>=t.x-3&&event.x()<=t.x+Minecraft.getInstance().font.width(t.text)+6&&event.y()>=t.y-4&&event.y()<=t.y+20){selected=i;dragging=true;dx=event.x()-t.x;dy=event.y()-t.y;return true;}}}
+            return super.mouseClicked(event,doubleClick);
+        }
+        @Override public boolean mouseDragged(MouseButtonEvent event,double ox,double oy){ScreenText t=current();if(dragging&&t!=null&&event.button()==0){t.x=Math.max(0,(int)(event.x()-dx));t.y=Math.max(0,(int)(event.y()-dy));return true;}return super.mouseDragged(event,ox,oy);}
+        @Override public boolean mouseReleased(MouseButtonEvent event){if(dragging&&event.button()==0){dragging=false;save();return true;}return super.mouseReleased(event);}
+        @Override public boolean charTyped(char chr,int modifiers){ScreenText t=current();if(t!=null&&!Character.isISOControl(chr)){t.text+=chr;save();return true;}return super.charTyped(chr,modifiers);}
+        @Override public boolean keyPressed(int key,int scan,int modifiers){ScreenText t=current();if(t!=null&&key==GLFW.GLFW_KEY_BACKSPACE&&!t.text.isEmpty()){t.text=t.text.substring(0,t.text.length()-1);save();return true;}return super.keyPressed(key,scan,modifiers);}
+        @Override public void extractRenderState(GuiGraphicsExtractor graphics,int mx,int my,float delta){
+            graphics.fill(0,0,width,height,0xB0000000);
+            String heading="Text on Screen — click text to select and drag";
+            graphics.text(font,heading,width/2-font.width(heading)/2,22,0xFFFFFFFF,true);
+            String help="Select a text, then type to edit it. Backspace deletes.";
+            graphics.text(font,help,width/2-font.width(help)/2,40,0xFFCCCCCC,true);
+            if(data.screenTexts!=null)for(ScreenText t:data.screenTexts)if(t.visible)graphics.text(font,t.text,t.x,t.y,t.color,true);
+            ScreenText t=current();if(t!=null){String info="Selected: "+t.text+" | "+t.size+"px | "+t.font;graphics.text(font,info,width/2-font.width(info)/2,height-112,0xFFFFD54F,true);}
+            super.extractRenderState(graphics,mx,my,delta);
+        }
+        @Override public void onClose(){save();Minecraft.getInstance().setScreen(parent);}
     }
 
     private static class CounterMenuScreen extends Screen {
@@ -474,7 +530,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                 next.active = currentPage < pageCount - 1;
             }
 
-            int halfWidth = (buttonWidth - 6) / 2;
+            int halfWidth = (buttonWidth - 12) / 3;
             addRenderableWidget(Button.builder(hudButtonText(), button -> {
                 data.showHud = !data.showHud;
                 save();
@@ -483,6 +539,8 @@ public class StreamerCounterClient implements ClientModInitializer {
             addRenderableWidget(Button.builder(Component.literal("Edit HUD"), button ->
                     Minecraft.getInstance().gui.setScreen(new HudEditScreen(this)))
                     .bounds(left + halfWidth + 6, height - 98, halfWidth, 20).build());
+            addRenderableWidget(Button.builder(Component.literal("Text on Screen"), b -> Minecraft.getInstance().setScreen(new TextOnScreenScreen(this)))
+                    .bounds(left + 2 * (halfWidth + 6), height - 98, halfWidth, 20).build());
             addRenderableWidget(Button.builder(themeButtonText(), button -> {
                 data.iceTheme = !data.iceTheme;
                 save();

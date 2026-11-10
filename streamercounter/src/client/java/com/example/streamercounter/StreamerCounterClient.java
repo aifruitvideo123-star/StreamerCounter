@@ -525,6 +525,26 @@ public class StreamerCounterClient implements ClientModInitializer {
             else graphics.text(font,"Add a text to begin editing.",right+16,top+252,0xFFB8C7D9,true);
             graphics.text(font,"Drag visible text to move it.",right+16,height-34,0xFF6C9BCB,true);
             super.extractRenderState(graphics,mx,my,delta);
+            // Draw a consistent StreamerCounter button skin over vanilla widgets.
+            int sx = 12 + Math.max(150, (int)(width * 0.34)) + 26;
+            int[] bx = {sx,sx+74,sx,sx+74,sx,sx+74};
+            int[] by = {132,132,160,160,188,216};
+            int[] bw = {68,68,68,68,146,68};
+            String[] bl = {"Show / Hide","Delete","Size -","Size +","Font / Style","Color"};
+            for(int bi=0;bi<bl.length;bi++){
+                int x0=bx[bi], y0=by[bi], w0=bw[bi];
+                int edge=(mx>=x0&&mx<=x0+w0&&my>=y0&&my<=y0+20)?0xFFFFD54F:0xFF6C9BCB;
+                graphics.fill(x0,y0,x0+w0,y0+20,0xFF050A12);
+                graphics.fill(x0+1,y0+1,x0+w0-1,y0+19,edge);
+                graphics.fill(x0+3,y0+3,x0+w0-3,y0+17,0xFF202D40);
+                int tw=font.width(bl[bi]);
+                graphics.text(font,bl[bi],x0+(w0-tw)/2,y0+6,0xFFFFFFFF,true);
+            }
+            int doneX=sx+74, doneY=216;
+            graphics.fill(doneX,doneY,doneX+68,doneY+20,0xFFFFD54F);
+            graphics.fill(doneX+2,doneY+2,doneX+66,doneY+18,0xFF202D40);
+            graphics.text(font,"Done",doneX+22,doneY+6,0xFFFFFFFF,true);
+
         }
     }
 

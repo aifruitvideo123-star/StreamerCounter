@@ -14,6 +14,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.DeltaTracker;
@@ -309,8 +310,10 @@ public class StreamerCounterClient implements ClientModInitializer {
         }
 
         @Override
-        public boolean mouseClicked(double mouseX, double mouseY, int button) {
-            if (button == 0) {
+        public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+            if (event.button() == 0) {
+                double mouseX = event.x();
+                double mouseY = event.y();
                 int hudX = visibleHudX(width);
                 int hudY = visibleHudY(height);
                 if (mouseX >= hudX && mouseX <= hudX + hudWidth()
@@ -321,29 +324,29 @@ public class StreamerCounterClient implements ClientModInitializer {
                     return true;
                 }
             }
-            return super.mouseClicked(mouseX, mouseY, button);
+            return super.mouseClicked(event, doubleClick);
         }
 
         @Override
-        public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-            if (draggingHud && button == 0) {
-                data.hudX = Math.max(0, Math.min((int) Math.round(mouseX - dragOffsetX),
+        public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
+            if (draggingHud && event.button() == 0) {
+                data.hudX = Math.max(0, Math.min((int) Math.round(event.x() - dragOffsetX),
                         Math.max(0, width - hudWidth())));
-                data.hudY = Math.max(0, Math.min((int) Math.round(mouseY - dragOffsetY),
+                data.hudY = Math.max(0, Math.min((int) Math.round(event.y() - dragOffsetY),
                         Math.max(0, height - hudHeight())));
                 return true;
             }
-            return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+            return super.mouseDragged(event, dragX, dragY);
         }
 
         @Override
-        public boolean mouseReleased(double mouseX, double mouseY, int button) {
-            if (draggingHud && button == 0) {
+        public boolean mouseReleased(MouseButtonEvent event) {
+            if (draggingHud && event.button() == 0) {
                 draggingHud = false;
                 save();
                 return true;
             }
-            return super.mouseReleased(mouseX, mouseY, button);
+            return super.mouseReleased(event);
         }
 
         @Override
@@ -390,54 +393,6 @@ public class StreamerCounterClient implements ClientModInitializer {
             Files.writeString(FILE, GSON.toJson(data));
         } catch (IOException e) {
             e.printStackTrace();
-        }
-    }
-
-    private static class HudEditScreen extends Screen {
-        private final Screen parent;
-
-        HudEditScreen(Screen parent) {
-            super(Component.literal("Edit HUD"));
-            this.parent = parent;
-        }
-
-        @Override
-        protected void init() {
-            int center = width / 2;
-            addRenderableWidget(Button.builder(Component.literal("Smaller"), b -> {
-                data.hudScale = Math.max(0.6f, data.hudScale - 0.1f);
-                save();
-            }).bounds(center - 112, height - 58, 68, 20).build());
-            addRenderableWidget(Button.builder(Component.literal("Larger"), b -> {
-                data.hudScale = Math.min(2.0f, data.hudScale + 0.1f);
-                save();
-            }).bounds(center - 38, height - 58, 68, 20).build());
-            addRenderableWidget(Button.builder(Component.literal("Reset Position"), b -> {
-                data.hudX = -1;
-                data.hudY = 8;
-                save();
-            }).bounds(center + 36, height - 58, 112, 20).build());
-            addRenderableWidget(Button.builder(Component.literal("Done"), b -> onClose())
-                    .bounds(center - 45, height - 30, 90, 20).build());
-        }
-
-        @Override
-        public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
-            graphics.fill(0, 0, width, height, 0xB0000000);
-            graphics.text(font, "HUD Preview", width / 2 - font.width("HUD Preview") / 2, 28, 0xFFFFFFFF, true);
-            graphics.text(font, "Use the controls below to resize or reset the HUD.",
-                    width / 2 - 115, 46, 0xFFCCCCCC, true);
-            int x = visibleHudX(width);
-            drawHud(graphics, x, visibleHudY(height));
-            graphics.text(font, "Size: " + Math.round(data.hudScale * 100) + "%",
-                    width / 2 - 35, height - 78, 0xFFFFC247, true);
-            super.extractRenderState(graphics, mouseX, mouseY, delta);
-        }
-
-        @Override
-        public void onClose() {
-            save();
-            Minecraft.getInstance().gui.setScreen(parent);
         }
     }
 

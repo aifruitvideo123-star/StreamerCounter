@@ -267,7 +267,8 @@ public class StreamerCounterClient implements ClientModInitializer {
             }
             addDrawableChild(ButtonWidget.builder(Text.literal("Back"), button -> MinecraftClient.getInstance().setScreen(parent))
                     .dimensions(center - 50, firstY + 88, 100, 20).build());
-            @Override public void render(DrawContext ctx, int mx, int my, float delta) {
+        }
+        @Override public void render(DrawContext ctx, int mx, int my, float delta) {
             ctx.fill(0, 0, width, height, 0xC0000000);
             ctx.drawCenteredTextWithShadow(textRenderer, "Choose HUD text color", width / 2, height / 2 - 76, 0xFFFFFFFF);
             String preview = "Streamer Counter VIP";

@@ -494,8 +494,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         @Override public boolean mouseReleased(MouseButtonEvent event) {
             if(dragging&&event.button()==0){dragging=false;save();return true;}
             return super.mouseReleased(event);
-        }
-        @Override public void extractRenderState(GuiGraphicsExtractor graphics,int mx,int my,float delta) {
+            @Override public void extractRenderState(GuiGraphicsExtractor graphics,int mx,int my,float delta) {
             graphics.fill(0,0,width,height,0xB0000000);
             graphics.fill(6,48,132,height-8,0x990B111A);
             graphics.fill(140,48,width-8,height-8,0x990B111A);
@@ -546,6 +545,8 @@ public class StreamerCounterClient implements ClientModInitializer {
             graphics.text(font,"Drag visible text to move it.",right+16,height-34,0xFF6C9BCB,true);
             super.extractRenderState(graphics,mx,my,delta);
         }
+    }
+
     private static class CounterMenuScreen extends Screen {
         private final Screen parent;
         private final int page;

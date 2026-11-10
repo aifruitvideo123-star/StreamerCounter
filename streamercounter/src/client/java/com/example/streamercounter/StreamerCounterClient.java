@@ -182,7 +182,19 @@ public class StreamerCounterClient implements ClientModInitializer {
                 graphics.pose().pushMatrix();
                 graphics.pose().translate(entry.x, entry.y);
                 graphics.pose().scale(scale, scale);
-                graphics.text(mc.font, entry.text, 0, 0, entry.color, entry.shadow);
+                
+                if ("flow".equals(entry.font)) {
+                    int[] flow = {0xFFFF5C8A,0xFFFFB347,0xFFFFFF66,0xFF75E08A,0xFF62D9FF,0xFFB58CFF};
+                    int px=0;
+                    for(int ci=0;ci<entry.text.length();ci++){
+                        String ch=String.valueOf(entry.text.charAt(ci));
+                        graphics.text(mc.font,ch,px,0,flow[ci%flow.length],entry.shadow);
+                        px+=mc.font.width(ch);
+                    }
+                } else {
+                    Component styled=Component.literal(entry.text).withStyle(st->st.withBold(entry.bold).withItalic(entry.italic));
+                    graphics.text(mc.font,styled,0,0,entry.color,entry.shadow);
+                }
                 graphics.pose().popMatrix();
             }
         }
@@ -519,7 +531,11 @@ public class StreamerCounterClient implements ClientModInitializer {
             if(data.screenTexts!=null) for(ScreenText item:data.screenTexts) if(item!=null&&item.visible&&item.text!=null&&!item.text.isEmpty()) {
                 float scale=Math.max(8,Math.min(96,item.size))/9.0f;
                 graphics.pose().pushMatrix(); graphics.pose().translate(item.x,item.y); graphics.pose().scale(scale,scale);
-                graphics.text(font,item.text,0,0,item.color,item.shadow); graphics.pose().popMatrix();
+                
+                if("flow".equals(item.font)){
+                    int[] flow={0xFFFF5C8A,0xFFFFB347,0xFFFFFF66,0xFF75E08A,0xFF62D9FF,0xFFB58CFF};int px=0;
+                    for(int ci=0;ci<item.text.length();ci++){String ch=String.valueOf(item.text.charAt(ci));graphics.text(font,ch,px,0,flow[ci%flow.length],item.shadow);px+=font.width(ch);}
+                }else{Component styled=Component.literal(item.text).withStyle(st->st.withBold(item.bold).withItalic(item.italic));graphics.text(font,styled,0,0,item.color,item.shadow);} graphics.pose().popMatrix();
             }
             ScreenText chosen=current();
             if(chosen!=null) graphics.text(font,"Selected: "+(chosen.text==null?"":chosen.text)+"   |   Size: "+chosen.size,right+16,top+252,0xFFB8C7D9,true);

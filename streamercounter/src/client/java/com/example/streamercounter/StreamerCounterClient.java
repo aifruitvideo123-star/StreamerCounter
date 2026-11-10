@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -175,12 +177,18 @@ public class StreamerCounterClient implements ClientModInitializer {
     }
 
     private static void renderHud(DrawContext ctx, RenderTickCounter tickCounter) {
-        if (!data.showHud || hudStreamerNames().isEmpty()) return;
-
+        if (data.showHud && !hudStreamerNames().isEmpty()) {
         int width = ctx.getScaledWindowWidth();
         int height = ctx.getScaledWindowHeight();
         int x = data.hudX < 0 ? width - hudWidth(data.hudScale) - 8 : data.hudX;
         drawHud(ctx, x, visibleHudY(height), data.hudScale);
+        }
+        if (data.screenTexts == null) data.screenTexts = new ArrayList<>();
+        for (ScreenText entry : data.screenTexts) {
+            if (entry == null || !entry.visible || entry.text == null || entry.text.isEmpty()) continue;
+            ctx.drawText(MinecraftClient.getInstance().textRenderer, Text.literal(entry.text),
+                    entry.x, entry.y, entry.color, entry.shadow);
+        }
     }
 
     private static final String[] HUD_COLOR_NAMES = {"Gold", "Ice", "Red", "Green", "Purple", "White"};
@@ -263,6 +271,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                     if (loaded.counts == null) loaded.counts = new HashMap<>();
                     if (loaded.streamerEnabled == null) loaded.streamerEnabled = new HashMap<>();
                     if (loaded.displayNames == null) loaded.displayNames = new HashMap<>();
+                    if (loaded.screenTexts == null) loaded.screenTexts = new ArrayList<>();
                     data = loaded;
                 }
             }
@@ -386,6 +395,71 @@ public class StreamerCounterClient implements ClientModInitializer {
             save();
             MinecraftClient.getInstance().setScreen(parent);
         }
+    }
+
+    private static class TextOnScreenScreen extends Screen {
+        private final Screen parent;
+        private int selected = -1;
+        private boolean dragging = false;
+        private double dx, dy;
+        TextOnScreenScreen(Screen parent) { super(Text.literal("Text on Screen")); this.parent = parent; }
+        @Override protected void init() {
+            if (data.screenTexts == null) data.screenTexts = new ArrayList<>();
+            int c = width / 2;
+            addDrawableChild(ButtonWidget.builder(Text.literal("Add Text"), b -> {
+                ScreenText t = new ScreenText(); t.x = width / 2 - 40; t.y = height / 2;
+                data.screenTexts.add(t); selected = data.screenTexts.size() - 1; save(); clearAndInit();
+            }).dimensions(c - 150, height - 92, 92, 20).build());
+            addDrawableChild(ButtonWidget.builder(Text.literal("Show / Hide"), b -> {
+                ScreenText t = current(); if (t != null) { t.visible = !t.visible; save(); b.setMessage(Text.literal(t.visible ? "Hide Text" : "Show Text")); }
+            }).dimensions(c - 52, height - 92, 92, 20).build());
+            addDrawableChild(ButtonWidget.builder(Text.literal("Delete"), b -> {
+                if (selected >= 0 && selected < data.screenTexts.size()) { data.screenTexts.remove(selected); selected = -1; save(); clearAndInit(); }
+            }).dimensions(c + 46, height - 92, 92, 20).build());
+            addDrawableChild(ButtonWidget.builder(Text.literal("Size −"), b -> { ScreenText t=current(); if(t!=null){t.size=Math.max(8,t.size-2);save();} })
+                    .dimensions(c - 150, height - 64, 70, 20).build());
+            addDrawableChild(ButtonWidget.builder(Text.literal("Size +"), b -> { ScreenText t=current(); if(t!=null){t.size=Math.min(48,t.size+2);save();} })
+                    .dimensions(c - 75, height - 64, 70, 20).build());
+            addDrawableChild(ButtonWidget.builder(Text.literal("Font: " + fontName()), b -> {
+                ScreenText t=current(); if(t!=null){ t.font = t.font.equals("default") ? "uniform" : t.font.equals("uniform") ? "alt" : "default"; save(); b.setMessage(Text.literal("Font: "+fontName())); }
+            }).dimensions(c, height - 64, 90, 20).build());
+            addDrawableChild(ButtonWidget.builder(Text.literal("Color"), b -> {
+                ScreenText t=current(); if(t!=null){ int[] colors={0xFFFFFFFF,0xFFFFD54F,0xFF69D8FF,0xFFFF6B6B,0xFF78E08F}; int i=0; for(;i<colors.length;i++)if(colors[i]==t.color)break; t.color=colors[(i+1)%colors.length]; save(); }
+            }).dimensions(c + 95, height - 64, 55, 20).build());
+            addDrawableChild(ButtonWidget.builder(Text.literal("Done"), b -> close())
+                    .dimensions(c - 45, height - 32, 90, 20).build());
+        }
+        private ScreenText current(){ return selected>=0 && selected<data.screenTexts.size()?data.screenTexts.get(selected):null; }
+        private String fontName(){ ScreenText t=current(); return t==null?"default":t.font; }
+        @Override public boolean mouseClicked(Click click, boolean doubled) {
+            if (click.button()==0) {
+                for(int i=data.screenTexts.size()-1;i>=0;i--){ ScreenText t=data.screenTexts.get(i);
+                    if(t.visible && click.x()>=t.x-3 && click.x()<=t.x+MinecraftClient.getInstance().textRenderer.getWidth(t.text)+6
+                            && click.y()>=t.y-4 && click.y()<=t.y+20){ selected=i; dragging=true; dx=click.x()-t.x; dy=click.y()-t.y; return true; }
+                }
+            }
+            return super.mouseClicked(click,doubled);
+        }
+        @Override public boolean mouseDragged(Click click,double ox,double oy){
+            ScreenText t=current(); if(dragging && t!=null && click.button()==0){t.x=Math.max(0,(int)(click.x()-dx));t.y=Math.max(0,(int)(click.y()-dy));return true;}
+            return super.mouseDragged(click,ox,oy);
+        }
+        @Override public boolean mouseReleased(Click click){ if(dragging && click.button()==0){dragging=false;save();return true;} return super.mouseReleased(click); }
+        @Override public boolean charTyped(char chr,int modifiers){ ScreenText t=current(); if(t!=null && !Character.isISOControl(chr)){t.text+=chr;save();return true;} return super.charTyped(chr,modifiers); }
+        @Override public boolean keyPressed(int key,int scan,int modifiers){
+            ScreenText t=current(); if(t!=null && key==GLFW.GLFW_KEY_BACKSPACE && !t.text.isEmpty()){t.text=t.text.substring(0,t.text.length()-1);save();return true;}
+            return super.keyPressed(key,scan,modifiers);
+        }
+        @Override public void render(DrawContext ctx,int mx,int my,float delta){
+            ctx.fill(0,0,width,height,0xB0000000);
+            ctx.drawCenteredTextWithShadow(textRenderer,"Text on Screen — click text to select and drag",width/2,22,0xFFFFFFFF);
+            ctx.drawCenteredTextWithShadow(textRenderer,"Select a text, then type to edit it. Backspace deletes.",width/2,40,0xFFCCCCCC);
+            if(data.screenTexts!=null) for(int i=0;i<data.screenTexts.size();i++){ScreenText t=data.screenTexts.get(i); if(t.visible)
+                ctx.drawText(textRenderer,Text.literal(t.text),t.x,t.y,t.color,true);}
+            ScreenText t=current(); if(t!=null) ctx.drawCenteredTextWithShadow(textRenderer,"Selected: "+t.text+" | "+t.size+"px | "+t.font,width/2,height-112,0xFFFFD54F);
+            super.render(ctx,mx,my,delta);
+        }
+        @Override public void close(){save();MinecraftClient.getInstance().setScreen(parent);}
     }
 
     private static class CounterMenuScreen extends Screen {

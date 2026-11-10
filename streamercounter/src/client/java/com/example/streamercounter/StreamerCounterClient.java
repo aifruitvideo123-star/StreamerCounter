@@ -384,7 +384,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         TextOnScreenScreen(Screen parent) { super(Text.literal("Text on Screen")); this.parent=parent; }
         @Override protected void init() {
             if (data.screenTexts == null) data.screenTexts = new ArrayList<>();
-            int left = 12, top = 64, row = 22;
+            int left = 12, top = 100, row = 24;
             for (int i = 0; i < data.screenTexts.size() && i < 10; i++) {
                 final int index = i;
                 ScreenText item = data.screenTexts.get(i);
@@ -401,7 +401,7 @@ public class StreamerCounterClient implements ClientModInitializer {
 
             int x = 12 + Math.max(150, (int)(width * 0.34)) + 26;
             int fieldWidth = Math.max(120, width - x - 30);
-            textInput = new TextFieldWidget(textRenderer,x,84,fieldWidth,22,Text.literal("Text"));
+            textInput = new TextFieldWidget(textRenderer,x,124,fieldWidth,22,Text.literal("Text"));
             textInput.setMaxLength(256);
             ScreenText chosen=current();
             if(chosen!=null) textInput.setText(chosen.text==null?"":chosen.text);
@@ -409,24 +409,23 @@ public class StreamerCounterClient implements ClientModInitializer {
             addDrawableChild(textInput);
             addDrawableChild(ButtonWidget.builder(Text.literal(chosen!=null&&chosen.visible?"Hide":"Show"),b->{
                 ScreenText t=current();if(t!=null){t.visible=!t.visible;save();clearAndInit();}
-            }).dimensions(x,132,68,20).build());
+            }).dimensions(x,184,68,20).build());
             addDrawableChild(ButtonWidget.builder(Text.literal("Delete"),b->{
                 if(selected>=0&&selected<data.screenTexts.size()){data.screenTexts.remove(selected);selected=-1;save();clearAndInit();}
-            }).dimensions(x+74,132,68,20).build());
+            }).dimensions(x+74,184,68,20).build());
             addDrawableChild(ButtonWidget.builder(Text.literal("Size −"),b->{ScreenText t=current();if(t!=null){t.size=Math.max(8,t.size-2);save();}})
-                .dimensions(x,160,68,20).build());
+                .dimensions(x,268,68,20).build());
             addDrawableChild(ButtonWidget.builder(Text.literal("Size +"),b->{ScreenText t=current();if(t!=null){t.size=Math.min(96,t.size+2);save();}})
-                .dimensions(x+74,160,68,20).build());
+                .dimensions(x+74,212,68,20).build());
             addDrawableChild(ButtonWidget.builder(Text.literal("Font / Style"),b->{
                 ScreenText t=current(); if(t!=null){String[] styles={"default","bold","italic","bold_italic","flow"};int n=0;for(;n<styles.length;n++)if(styles[n].equals(t.font))break;t.font=styles[(n+1)%styles.length];t.bold=t.font.equals("bold")||t.font.equals("bold_italic");t.italic=t.font.equals("italic")||t.font.equals("bold_italic");save();clearAndInit();}
-            }).dimensions(x,188,146,20).build());
+            }).dimensions(x,240,146,20).build());
             addDrawableChild(ButtonWidget.builder(Text.literal("Color"),b->{
                 ScreenText t=current();if(t!=null){int[] colors={0xFFFFFFFF,0xFFFFD54F,0xFF69D8FF,0xFFFF6B6B,0xFF78E08F};int n=0;for(;n<colors.length;n++)if(colors[n]==t.color)break;t.color=colors[(n+1)%colors.length];save();}
-            }).dimensions(x,212,68,20).build());
+            }).dimensions(x,268,68,20).build());
             addDrawableChild(ButtonWidget.builder(Text.literal("Done"),b->close())
                 .dimensions(x+74,212,68,20).build());
-            addDrawableChild(ButtonWidget.builder(Text.literal("Done"),b->close()).dimensions(x+74,212,68,20).build());
-        }
+            }
         private ScreenText current(){return selected>=0&&selected<data.screenTexts.size()?data.screenTexts.get(selected):null;}
         @Override public boolean mouseClicked(Click click,boolean doubled) {
             if(click.button()==0) for(int i=data.screenTexts.size()-1;i>=0;i--) {
@@ -474,29 +473,10 @@ public class StreamerCounterClient implements ClientModInitializer {
                 }else{Text styled=Text.literal(item.text).styled(st->st.withBold(item.bold).withItalic(item.italic));ctx.drawText(textRenderer,styled,0,0,item.color,item.shadow);} ctx.getMatrices().popMatrix();
             }
             ScreenText chosen=current();
-            if(chosen!=null) ctx.drawText(textRenderer,"Selected: "+(chosen.text==null?"":chosen.text)+"   |   Size: "+chosen.size,right+16,top+252,0xFFB8C7D9,true);
+            if(chosen!=null) ctx.drawText(textRenderer,"Selected: "+(chosen.text==null?"":chosen.text)+"   |   Size: "+chosen.size,right+16,top+310,0xFFB8C7D9,true);
             else ctx.drawText(textRenderer,"Add a text to begin editing.",right+16,top+252,0xFFB8C7D9,true);
             ctx.drawText(textRenderer,"Drag visible text to move it.",right+16,height-34,0xFF6C9BCB,true);
             super.render(ctx,mx,my,delta);
-            // Draw a consistent StreamerCounter button skin over vanilla widgets.
-            int sx = 12 + Math.max(150, (int)(width * 0.34)) + 26;
-            int[] bx = {sx,sx+74,sx,sx+74,sx,sx+74};
-            int[] by = {132,132,160,160,188,212};
-            int[] bw = {68,68,68,68,146,68};
-            String[] bl = {"Show / Hide","Delete","Size -","Size +","Font / Style","Color"};
-            for(int bi=0;bi<bl.length;bi++){
-                int x0=bx[bi], y0=by[bi], w0=bw[bi];
-                int edge=(mx>=x0&&mx<=x0+w0&&my>=y0&&my<=y0+20)?0xFFFFD54F:0xFF6C9BCB;
-                ctx.fill(x0,y0,x0+w0,y0+20,0xFF050A12);
-                ctx.fill(x0+1,y0+1,x0+w0-1,y0+19,edge);
-                ctx.fill(x0+3,y0+3,x0+w0-3,y0+17,0xFF202D40);
-                int tw=textRenderer.getWidth(bl[bi]);
-                ctx.drawText(textRenderer,bl[bi],x0+(w0-tw)/2,y0+6,0xFFFFFFFF,true);
-            }
-            int doneX=sx+74, doneY=212;
-            ctx.fill(doneX,doneY,doneX+68,doneY+20,0xFFFFD54F);
-            ctx.fill(doneX+2,doneY+2,doneX+66,doneY+18,0xFF202D40);
-            ctx.drawText(textRenderer,"Done",doneX+22,doneY+6,0xFFFFFFFF,true);
 
         }
     }

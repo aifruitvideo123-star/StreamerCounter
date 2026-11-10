@@ -195,8 +195,13 @@ public class StreamerCounterClient implements ClientModInitializer {
         if (data.screenTexts == null) data.screenTexts = new ArrayList<>();
         for (ScreenText entry : data.screenTexts) {
             if (entry == null || !entry.visible || entry.text == null || entry.text.isEmpty()) continue;
+            float scale = Math.max(8, Math.min(96, entry.size)) / 9.0f;
+            ctx.getMatrices().pushMatrix();
+            ctx.getMatrices().translate(entry.x, entry.y);
+            ctx.getMatrices().scale(scale, scale);
             ctx.drawText(MinecraftClient.getInstance().textRenderer, Text.literal(entry.text),
-                    entry.x, entry.y, entry.color, entry.shadow);
+                    0, 0, entry.color, entry.shadow);
+            ctx.getMatrices().popMatrix();
         }
     }
 
@@ -410,64 +415,87 @@ public class StreamerCounterClient implements ClientModInitializer {
     private static class TextOnScreenScreen extends Screen {
         private final Screen parent;
         private int selected = -1;
-        private boolean dragging = false;
+        private boolean dragging;
         private double dx, dy;
         private TextFieldWidget textInput;
-        TextOnScreenScreen(Screen parent) { super(Text.literal("Text on Screen")); this.parent = parent; }
+        TextOnScreenScreen(Screen parent) { super(Text.literal("Text on Screen")); this.parent=parent; }
         @Override protected void init() {
             if (data.screenTexts == null) data.screenTexts = new ArrayList<>();
-            int c = width / 2;
-            textInput = new TextFieldWidget(textRenderer, c - 125, height - 124, 250, 20, Text.literal("Text"));
+            int left = 12, top = 64, row = 22;
+            for (int i = 0; i < data.screenTexts.size() && i < 10; i++) {
+                final int index = i;
+                ScreenText item = data.screenTexts.get(i);
+                String label = (item.visible ? "§a● " : "§7○ ") + (item.text == null || item.text.isBlank() ? "Text " + (i+1) : item.text);
+                if (label.length() > 17) label = label.substring(0, 17) + "…";
+                addDrawableChild(ButtonWidget.builder(Text.literal(label), b -> {
+                    selected = index; clearAndInit();
+                }).dimensions(left, top + i * row, 112, 20).build());
+            }
+            addDrawableChild(ButtonWidget.builder(Text.literal("+ Add Text"), b -> {
+                ScreenText item = new ScreenText(); item.x=width/2; item.y=height/2;
+                data.screenTexts.add(item); selected=data.screenTexts.size()-1; save(); clearAndInit();
+            }).dimensions(left, top + Math.min(data.screenTexts.size(),10)*row + 4, 112, 20).build());
+
+            int x = Math.max(138, width/2 - 112);
+            textInput = new TextFieldWidget(textRenderer,x,height-112,224,20,Text.literal("Text"));
             textInput.setMaxLength(256);
-            ScreenText initial = current(); if (initial != null) textInput.setText(initial.text);
-            textInput.setChangedListener(value -> { ScreenText t=current(); if(t!=null){t.text=value;save();} });
+            ScreenText chosen=current();
+            if(chosen!=null) textInput.setText(chosen.text==null?"":chosen.text);
+            textInput.setChangedListener(value->{ScreenText t=current();if(t!=null){t.text=value;save();}});
             addDrawableChild(textInput);
-            addDrawableChild(ButtonWidget.builder(Text.literal("Add Text"), b -> {
-                ScreenText t = new ScreenText(); t.x = width / 2 - 40; t.y = height / 2;
-                data.screenTexts.add(t); selected = data.screenTexts.size() - 1; save(); clearAndInit();
-            }).dimensions(c - 150, height - 92, 92, 20).build());
-            addDrawableChild(ButtonWidget.builder(Text.literal("Show / Hide"), b -> {
-                ScreenText t = current(); if (t != null) { t.visible = !t.visible; save(); b.setMessage(Text.literal(t.visible ? "Hide Text" : "Show Text")); }
-            }).dimensions(c - 52, height - 92, 92, 20).build());
-            addDrawableChild(ButtonWidget.builder(Text.literal("Delete"), b -> {
-                if (selected >= 0 && selected < data.screenTexts.size()) { data.screenTexts.remove(selected); selected = -1; save(); clearAndInit(); }
-            }).dimensions(c + 46, height - 92, 92, 20).build());
-            addDrawableChild(ButtonWidget.builder(Text.literal("Size −"), b -> { ScreenText t=current(); if(t!=null){t.size=Math.max(8,t.size-2);save();} })
-                    .dimensions(c - 150, height - 64, 70, 20).build());
-            addDrawableChild(ButtonWidget.builder(Text.literal("Size +"), b -> { ScreenText t=current(); if(t!=null){t.size=Math.min(48,t.size+2);save();} })
-                    .dimensions(c - 75, height - 64, 70, 20).build());
-            addDrawableChild(ButtonWidget.builder(Text.literal("Font: " + fontName()), b -> {
-                ScreenText t=current(); if(t!=null){ t.font = t.font.equals("default") ? "uniform" : t.font.equals("uniform") ? "alt" : "default"; save(); b.setMessage(Text.literal("Font: "+fontName())); }
-            }).dimensions(c, height - 64, 90, 20).build());
-            addDrawableChild(ButtonWidget.builder(Text.literal("Color"), b -> {
-                ScreenText t=current(); if(t!=null){ int[] colors={0xFFFFFFFF,0xFFFFD54F,0xFF69D8FF,0xFFFF6B6B,0xFF78E08F}; int i=0; for(;i<colors.length;i++)if(colors[i]==t.color)break; t.color=colors[(i+1)%colors.length]; save(); }
-            }).dimensions(c + 95, height - 64, 55, 20).build());
-            addDrawableChild(ButtonWidget.builder(Text.literal("Done"), b -> close())
-                    .dimensions(c - 45, height - 32, 90, 20).build());
+            addDrawableChild(ButtonWidget.builder(Text.literal(chosen!=null&&chosen.visible?"Hide":"Show"),b->{
+                ScreenText t=current();if(t!=null){t.visible=!t.visible;save();clearAndInit();}
+            }).dimensions(x,height-84,68,20).build());
+            addDrawableChild(ButtonWidget.builder(Text.literal("Delete"),b->{
+                if(selected>=0&&selected<data.screenTexts.size()){data.screenTexts.remove(selected);selected=-1;save();clearAndInit();}
+            }).dimensions(x+74,height-84,68,20).build());
+            addDrawableChild(ButtonWidget.builder(Text.literal("Size −"),b->{ScreenText t=current();if(t!=null){t.size=Math.max(8,t.size-2);save();}})
+                .dimensions(x,height-56,68,20).build());
+            addDrawableChild(ButtonWidget.builder(Text.literal("Size +"),b->{ScreenText t=current();if(t!=null){t.size=Math.min(96,t.size+2);save();}})
+                .dimensions(x+74,height-56,68,20).build());
+            addDrawableChild(ButtonWidget.builder(Text.literal("Color"),b->{
+                ScreenText t=current();if(t!=null){int[] colors={0xFFFFFFFF,0xFFFFD54F,0xFF69D8FF,0xFFFF6B6B,0xFF78E08F};int i=0;for(;i<colors.length;i++)if(colors[i]==t.color)break;t.color=colors[(i+1)%colors.length];save();}
+            }).dimensions(x,height-28,68,20).build());
+            addDrawableChild(ButtonWidget.builder(Text.literal("Done"),b->close()).dimensions(x+74,height-28,68,20).build());
         }
-        private ScreenText current(){ return selected>=0 && selected<data.screenTexts.size()?data.screenTexts.get(selected):null; }
-        private String fontName(){ ScreenText t=current(); return t==null?"default":t.font; }
-        @Override public boolean mouseClicked(Click click, boolean doubled) {
-            if (click.button()==0) {
-                for(int i=data.screenTexts.size()-1;i>=0;i--){ ScreenText t=data.screenTexts.get(i);
-                    if(t.visible && click.x()>=t.x-3 && click.x()<=t.x+MinecraftClient.getInstance().textRenderer.getWidth(t.text)+6
-                            && click.y()>=t.y-4 && click.y()<=t.y+20){ selected=i; if(textInput!=null)textInput.setText(t.text); dragging=true; dx=click.x()-t.x; dy=click.y()-t.y; return true; }
+        private ScreenText current(){return selected>=0&&selected<data.screenTexts.size()?data.screenTexts.get(selected):null;}
+        @Override public boolean mouseClicked(Click click,boolean doubled) {
+            if(click.button()==0) for(int i=data.screenTexts.size()-1;i>=0;i--) {
+                ScreenText t=data.screenTexts.get(i);
+                int scale=Math.max(8,Math.min(96,t.size));
+                int textWidth=(int)(MinecraftClient.getInstance().textRenderer.getWidth(t.text==null?"":t.text)*scale/9.0);
+                if(t.visible&&click.x()>=t.x-3&&click.x()<=t.x+textWidth+6&&click.y()>=t.y-4&&click.y()<=t.y+scale+3) {
+                    selected=i;if(textInput!=null)textInput.setText(t.text==null?"":t.text);
+                    dragging=true;dx=click.x()-t.x;dy=click.y()-t.y;return true;
                 }
             }
             return super.mouseClicked(click,doubled);
         }
-        @Override public boolean mouseDragged(Click click,double ox,double oy){
-            ScreenText t=current(); if(dragging && t!=null && click.button()==0){t.x=Math.max(0,(int)(click.x()-dx));t.y=Math.max(0,(int)(click.y()-dy));return true;}
+        @Override public boolean mouseDragged(Click click,double ox,double oy) {
+            ScreenText t=current();if(dragging&&t!=null&&click.button()==0){t.x=Math.max(0,(int)(click.x()-dx));t.y=Math.max(0,(int)(click.y()-dy));return true;}
             return super.mouseDragged(click,ox,oy);
         }
-        @Override public boolean mouseReleased(Click click){ if(dragging && click.button()==0){dragging=false;save();return true;} return super.mouseReleased(click); }
-        @Override public void render(DrawContext ctx,int mx,int my,float delta){
+        @Override public boolean mouseReleased(Click click) {
+            if(dragging&&click.button()==0){dragging=false;save();return true;}
+            return super.mouseReleased(click);
+        }
+        @Override public void render(DrawContext ctx,int mx,int my,float delta) {
             ctx.fill(0,0,width,height,0xB0000000);
-            ctx.drawCenteredTextWithShadow(textRenderer,"Text on Screen — click text to select and drag",width/2,22,0xFFFFFFFF);
-            ctx.drawCenteredTextWithShadow(textRenderer,"Select a text, then type to edit it. Backspace deletes.",width/2,40,0xFFCCCCCC);
-            if(data.screenTexts!=null) for(int i=0;i<data.screenTexts.size();i++){ScreenText t=data.screenTexts.get(i); if(t.visible)
-                ctx.drawText(textRenderer,Text.literal(t.text),t.x,t.y,t.color,true);}
-            ScreenText t=current(); if(t!=null) ctx.drawCenteredTextWithShadow(textRenderer,"Selected: "+t.text+" | "+t.size+"px | "+t.font,width/2,height-112,0xFFFFD54F);
+            ctx.fill(6,48,132,height-8,0x990B111A);
+            ctx.fill(140,48,width-8,height-8,0x990B111A);
+            ctx.drawText(textRenderer,"TEXT ELEMENTS",14,34,0xFFFFD45A,true);
+            ctx.drawText(textRenderer,"Select an item on the left. Hidden items stay in this list.",148,34,0xFFFFFFFF,true);
+            if(data.screenTexts!=null) for(ScreenText t:data.screenTexts) if(t!=null&&t.visible&&t.text!=null&&!t.text.isEmpty()) {
+                float scale=Math.max(8,Math.min(96,t.size))/9.0f;
+                ctx.getMatrices().pushMatrix();
+                ctx.getMatrices().translate(t.x,t.y);
+                ctx.getMatrices().scale(scale,scale);
+                ctx.drawText(textRenderer,Text.literal(t.text),0,0,t.color,t.shadow);
+                ctx.getMatrices().popMatrix();
+            }
+            ScreenText t=current();
+            if(t!=null) ctx.drawText(textRenderer,"Selected: "+(t.text==null?"":t.text)+" | Size: "+t.size,148,62,0xFFFFD45A,true);
+            else ctx.drawText(textRenderer,"Click + Add Text to create your first item.",148,62,0xFFCCCCCC,true);
             super.render(ctx,mx,my,delta);
         }
         @Override public void close(){save();MinecraftClient.getInstance().setScreen(parent);}

@@ -456,8 +456,8 @@ public class StreamerCounterClient implements ClientModInitializer {
                 .dimensions(x+74,160,68,20).build());
             addDrawableChild(ButtonWidget.builder(Text.literal("Color"),b->{
                 ScreenText t=current();if(t!=null){int[] colors={0xFFFFFFFF,0xFFFFD54F,0xFF69D8FF,0xFFFF6B6B,0xFF78E08F};int i=0;for(;i<colors.length;i++)if(colors[i]==t.color)break;t.color=colors[(i+1)%colors.length];save();}
-            }).dimensions(x,188,68,20).build());
-            addDrawableChild(ButtonWidget.builder(Text.literal("Done"),b->close()).dimensions(x+74,188,68,20).build());
+            }).dimensions(x,212,68,20).build());
+            addDrawableChild(ButtonWidget.builder(Text.literal("Done"),b->close()).dimensions(x+74,212,68,20).build());
         }
         private ScreenText current(){return selected>=0&&selected<data.screenTexts.size()?data.screenTexts.get(selected):null;}
         @Override public boolean mouseClicked(Click click,boolean doubled) {
@@ -516,16 +516,16 @@ public class StreamerCounterClient implements ClientModInitializer {
             ctx.drawText(textRenderer,"EDIT TEXT",right+16,top+14,0xFFFFFFFF,true);
             ctx.drawText(textRenderer,"Select a text on the left. Hidden texts stay in this list.",right+16,top+38,0xFFB8C7D9,true);
             ctx.drawText(textRenderer,"TEXT",right+16,top+67,0xFFFFD54F,true);
-            ctx.drawText(textRenderer,"STYLE / SIZE",right+16,top+119,0xFFFFD54F,true);
-            ctx.drawText(textRenderer,"COLOR",right+16,top+174,0xFFFFD54F,true);
+            ctx.drawText(textRenderer,"STYLE / SIZE",right+16,top+105,0xFFFFD54F,true);
+            ctx.drawText(textRenderer,"COLOR",right+16,top+145,0xFFFFD54F,true);
             if(data.screenTexts!=null) for(ScreenText item:data.screenTexts) if(item!=null&&item.visible&&item.text!=null&&!item.text.isEmpty()) {
                 float scale=Math.max(8,Math.min(96,item.size))/9.0f;
                 ctx.getMatrices().pushMatrix(); ctx.getMatrices().translate(item.x,item.y); ctx.getMatrices().scale(scale,scale);
                 ctx.drawText(textRenderer,Text.literal(item.text),0,0,item.color,item.shadow); ctx.getMatrices().popMatrix();
             }
             ScreenText chosen=current();
-            if(chosen!=null) ctx.drawText(textRenderer,"Selected: "+(chosen.text==null?"":chosen.text)+"   |   Size: "+chosen.size,right+16,top+218,0xFFB8C7D9,true);
-            else ctx.drawText(textRenderer,"Add a text to begin editing.",right+16,top+218,0xFFB8C7D9,true);
+            if(chosen!=null) ctx.drawText(textRenderer,"Selected: "+(chosen.text==null?"":chosen.text)+"   |   Size: "+chosen.size,right+16,top+252,0xFFB8C7D9,true);
+            else ctx.drawText(textRenderer,"Add a text to begin editing.",right+16,top+252,0xFFB8C7D9,true);
             ctx.drawText(textRenderer,"Drag visible text to move it.",right+16,height-34,0xFF6C9BCB,true);
             super.render(ctx,mx,my,delta);
         }

@@ -174,13 +174,13 @@ public class StreamerCounterClient implements ClientModInitializer {
         int height = hudHeight();
         graphics.fill(x, y, x + width, y + height, 0x990B111A);
         graphics.fill(x, y, x + width, y + 2, data.textColor);
-        drawFlowText(graphics, mc.font, "STREAMERS", x + 6, y + 6, data.textColor, false);
+        graphics.text(mc.font, "STREAMERS", x + 6, y + 6, data.textColor, false);
         int rowY = y + 20;
         for (String key : names) {
             String name = displayName(key);
             String count = String.valueOf(data.counts.getOrDefault(key, 0));
-            drawFlowText(graphics, mc.font, name, x + 6, rowY, data.textColor, false);
-            drawFlowText(graphics, mc.font, count, x + width - 7 - mc.font.width(count),
+            graphics.text(mc.font, name, x + 6, rowY, data.textColor, false);
+            graphics.text(mc.font, count, x + width - 7 - mc.font.width(count),
                     rowY, data.textColor, false);
             rowY += 11;
         }
@@ -269,7 +269,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             String heading = "Choose HUD text color";
             graphics.text(font, heading, width / 2 - font.width(heading) / 2, height / 2 - 76, 0xFFFFFFFF, true);
             String preview = "Streamer Counter";
-            drawFlowText(graphics, font, preview, width / 2 - font.width(preview) / 2,
+            graphics.text(font, preview, width / 2 - font.width(preview) / 2,
                     height / 2 - 57, data.textColor, true);
             super.extractRenderState(graphics, mouseX, mouseY, delta);
         }
@@ -313,9 +313,6 @@ public class StreamerCounterClient implements ClientModInitializer {
         @Override
         protected void init() {
             int center = width / 2;
-            addRenderableWidget(Button.builder(Component.literal("Text Color: " + hudColorName()), b ->
-                    Minecraft.getInstance().setScreen(new HudColorScreen(this)))
-                    .bounds(center - 90, height - 86, 180, 20).build());
             addRenderableWidget(Button.builder(Component.literal("Smaller"), b -> {
                 data.hudScale = Math.max(0.6f, data.hudScale - 0.1f);
                 save();
@@ -382,7 +379,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             graphics.text(font, instruction, width / 2 - font.width(instruction) / 2, 46, 0xFFCCCCCC, true);
             drawHud(graphics, visibleHudX(width), visibleHudY(height));
             String size = "Size: " + Math.round(data.hudScale * 100) + "%";
-            drawFlowText(graphics, font, size, width / 2 - font.width(size) / 2,
+            graphics.text(font, size, width / 2 - font.width(size) / 2,
                     height - 110, data.textColor, true);
             super.extractRenderState(graphics, mouseX, mouseY, delta);
         }

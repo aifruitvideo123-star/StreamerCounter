@@ -199,8 +199,20 @@ public class StreamerCounterClient implements ClientModInitializer {
             ctx.getMatrices().pushMatrix();
             ctx.getMatrices().translate(entry.x, entry.y);
             ctx.getMatrices().scale(scale, scale);
-            ctx.drawText(MinecraftClient.getInstance().textRenderer, Text.literal(entry.text),
-                    0, 0, entry.color, entry.shadow);
+            
+            if ("flow".equals(entry.font)) {
+                int[] flow = {0xFFFF5C8A,0xFFFFB347,0xFFFFFF66,0xFF75E08A,0xFF62D9FF,0xFFB58CFF};
+                int px=0;
+                for(int ci=0;ci<entry.text.length();ci++){
+                    String ch=String.valueOf(entry.text.charAt(ci));
+                    int color=flow[ci%flow.length];
+                    ctx.drawText(MinecraftClient.getInstance().textRenderer,Text.literal(ch),px,0,color,entry.shadow);
+                    px+=MinecraftClient.getInstance().textRenderer.getWidth(ch);
+                }
+            } else {
+                Text styled=Text.literal(entry.text).styled(st->st.withBold(entry.bold).withItalic(entry.italic));
+                ctx.drawText(MinecraftClient.getInstance().textRenderer,styled,0,0,entry.color,entry.shadow);
+            }
             ctx.getMatrices().popMatrix();
         }
     }
@@ -504,7 +516,11 @@ public class StreamerCounterClient implements ClientModInitializer {
             if(data.screenTexts!=null) for(ScreenText item:data.screenTexts) if(item!=null&&item.visible&&item.text!=null&&!item.text.isEmpty()) {
                 float scale=Math.max(8,Math.min(96,item.size))/9.0f;
                 ctx.getMatrices().pushMatrix(); ctx.getMatrices().translate(item.x,item.y); ctx.getMatrices().scale(scale,scale);
-                ctx.drawText(textRenderer,Text.literal(item.text),0,0,item.color,item.shadow); ctx.getMatrices().popMatrix();
+                
+                if("flow".equals(item.font)){
+                    int[] flow={0xFFFF5C8A,0xFFFFB347,0xFFFFFF66,0xFF75E08A,0xFF62D9FF,0xFFB58CFF};int px=0;
+                    for(int ci=0;ci<item.text.length();ci++){String ch=String.valueOf(item.text.charAt(ci));ctx.drawText(textRenderer,Text.literal(ch),px,0,flow[ci%flow.length],item.shadow);px+=textRenderer.getWidth(ch);}
+                }else{Text styled=Text.literal(item.text).styled(st->st.withBold(item.bold).withItalic(item.italic));ctx.drawText(textRenderer,styled,0,0,item.color,item.shadow);} ctx.getMatrices().popMatrix();
             }
             ScreenText chosen=current();
             if(chosen!=null) ctx.drawText(textRenderer,"Selected: "+(chosen.text==null?"":chosen.text)+"   |   Size: "+chosen.size,right+16,top+252,0xFFB8C7D9,true);

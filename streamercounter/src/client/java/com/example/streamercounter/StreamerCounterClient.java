@@ -180,13 +180,14 @@ public class StreamerCounterClient implements ClientModInitializer {
         }
         if (data.screenTexts == null) data.screenTexts = new ArrayList<>();
         for (ScreenText entry : data.screenTexts) {
-            if (entry != null && entry.visible && entry.text != null && !entry.text.isEmpty())
+            if (entry != null && entry.visible && entry.text != null && !entry.text.isEmpty()) {
                 float scale = Math.max(8, Math.min(96, entry.size)) / 9.0f;
                 graphics.pose().pushMatrix();
                 graphics.pose().translate(entry.x, entry.y);
                 graphics.pose().scale(scale, scale);
                 graphics.text(mc.font, entry.text, 0, 0, entry.color, entry.shadow);
                 graphics.pose().popMatrix();
+            }
         }
     }
 

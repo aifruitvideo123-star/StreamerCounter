@@ -13,6 +13,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -412,10 +413,16 @@ public class StreamerCounterClient implements ClientModInitializer {
         private int selected = -1;
         private boolean dragging;
         private double dx, dy;
+        private EditBox textInput;
         TextOnScreenScreen(Screen parent) { super(Component.literal("Text on Screen")); this.parent=parent; }
         @Override protected void init() {
             if(data.screenTexts==null)data.screenTexts=new ArrayList<>();
             int c=width/2;
+            textInput = new EditBox(font, c-125, height-124, 250, 20, Component.literal("Text"));
+            textInput.setMaxLength(256);
+            ScreenText initial=current(); if(initial!=null)textInput.setValue(initial.text);
+            textInput.setResponder(value->{ScreenText t=current();if(t!=null){t.text=value;save();}});
+            addRenderableWidget(textInput);
             addRenderableWidget(Button.builder(Component.literal("Add Text"),b->{ScreenText t=new ScreenText();t.x=c-40;t.y=height/2;data.screenTexts.add(t);selected=data.screenTexts.size()-1;save();clearWidgets();init();})
                 .bounds(c-150,height-92,92,20).build());
             addRenderableWidget(Button.builder(Component.literal("Show / Hide"),b->{ScreenText t=current();if(t!=null){t.visible=!t.visible;save();b.setMessage(Component.literal(t.visible?"Hide Text":"Show Text"));}})
@@ -436,13 +443,11 @@ public class StreamerCounterClient implements ClientModInitializer {
         private String fontName(){ScreenText t=current();return t==null?"default":t.font;}
         @Override public boolean mouseClicked(MouseButtonEvent event,boolean doubleClick){
             if(event.button()==0){for(int i=data.screenTexts.size()-1;i>=0;i--){ScreenText t=data.screenTexts.get(i);
-                if(t.visible&&event.x()>=t.x-3&&event.x()<=t.x+Minecraft.getInstance().font.width(t.text)+6&&event.y()>=t.y-4&&event.y()<=t.y+20){selected=i;dragging=true;dx=event.x()-t.x;dy=event.y()-t.y;return true;}}}
+                if(t.visible&&event.x()>=t.x-3&&event.x()<=t.x+Minecraft.getInstance().font.width(t.text)+6&&event.y()>=t.y-4&&event.y()<=t.y+20){selected=i;if(textInput!=null)textInput.setValue(t.text);dragging=true;dx=event.x()-t.x;dy=event.y()-t.y;return true;}}}
             return super.mouseClicked(event,doubleClick);
         }
         @Override public boolean mouseDragged(MouseButtonEvent event,double ox,double oy){ScreenText t=current();if(dragging&&t!=null&&event.button()==0){t.x=Math.max(0,(int)(event.x()-dx));t.y=Math.max(0,(int)(event.y()-dy));return true;}return super.mouseDragged(event,ox,oy);}
         @Override public boolean mouseReleased(MouseButtonEvent event){if(dragging&&event.button()==0){dragging=false;save();return true;}return super.mouseReleased(event);}
-        @Override public boolean charTyped(char chr,int modifiers){ScreenText t=current();if(t!=null&&!Character.isISOControl(chr)){t.text+=chr;save();return true;}return super.charTyped(chr,modifiers);}
-        @Override public boolean keyPressed(int key,int scan,int modifiers){ScreenText t=current();if(t!=null&&key==GLFW.GLFW_KEY_BACKSPACE&&!t.text.isEmpty()){t.text=t.text.substring(0,t.text.length()-1);save();return true;}return super.keyPressed(key,scan,modifiers);}
         @Override public void extractRenderState(GuiGraphicsExtractor graphics,int mx,int my,float delta){
             graphics.fill(0,0,width,height,0xB0000000);
             String heading="Text on Screen — click text to select and drag";

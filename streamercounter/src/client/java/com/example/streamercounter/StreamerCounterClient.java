@@ -84,7 +84,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (openMenuKey.consumeClick()) {
                 if (client.player != null) {
-                    client.gui.setScreen(new CounterMenuScreen(client.gui.screen(), 0));
+                    client.setScreen(new CounterMenuScreen(client.screen, 0));
                 }
             }
             if (pending == null || client.level == null || client.player == null) return;
@@ -131,7 +131,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             data.displayNames.put(key, name);
             data.lastName = name;
             Minecraft mc = Minecraft.getInstance();
-            if (mc.player != null) mc.player.displayClientMessage(Component.literal("VIP: " + name + " joined your TPAHERE!"), true);
+            if (mc.player != null) mc.player.sendOverlayMessage(Component.literal("VIP: " + name + " joined your TPAHERE!"));
         }
         pending = null;
         save();
@@ -257,7 +257,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         @Override
         public void onClose() {
             save();
-            Minecraft.getInstance().gui.setScreen(parent);
+            Minecraft.getInstance().setScreen(parent);
         }
     }
 
@@ -281,7 +281,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         }
 
         private void reopen(int newPage) {
-            Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent, newPage));
+            Minecraft.getInstance().setScreen(new CounterMenuScreen(parent, newPage));
         }
 
         @Override
@@ -342,7 +342,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                 button.setMessage(hudButtonText());
             }).bounds(left, height - 98, halfWidth, 20).build());
             addRenderableWidget(Button.builder(Component.literal("Edit HUD"), button ->
-                    Minecraft.getInstance().gui.setScreen(new HudEditScreen(this)))
+                    Minecraft.getInstance().setScreen(new HudEditScreen(this)))
                     .bounds(left + halfWidth + 6, height - 98, halfWidth, 20).build());
             addRenderableWidget(Button.builder(themeButtonText(), button -> {
                 data.iceTheme = !data.iceTheme;
@@ -401,7 +401,7 @@ public class StreamerCounterClient implements ClientModInitializer {
 
         @Override
         public void onClose() {
-            Minecraft.getInstance().gui.setScreen(parent);
+            Minecraft.getInstance().setScreen(parent);
         }
     }
 }

@@ -1,17 +1,13 @@
 {
   "schemaVersion": 1,
-  "id": "streamercounter",
+  "id": "streamercounter_vip",
   "version": "${version}",
-  "name": "Streamer Counter",
-  "description": "Z\u00e4hlt erkannte Spieler-Teleports nach /tpahere und zeigt den Counter im HUD.",
-  "authors": [
-    "aifruitvideo123-star"
-  ],
+  "name": "Streamer Counter VIP",
+  "description": "VIP edition with animated HUD text, selectable colors, GOLD/ICE menu themes and TPAHERE tracking.",
+  "authors": ["aifruitvideo123-star"],
   "environment": "client",
   "entrypoints": {
-    "client": [
-      "com.example.streamercounter.StreamerCounterClient"
-    ]
+    "client": ["com.example.streamercounter.StreamerCounterClient"]
   },
   "depends": {
     "fabricloader": ">=0.16.0",

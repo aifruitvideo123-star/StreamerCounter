@@ -543,8 +543,8 @@ public class StreamerCounterClient implements ClientModInitializer {
                 }else{Component styled=Component.literal(item.text).withStyle(st->st.withBold(item.bold).withItalic(item.italic));graphics.text(font,styled,0,0,item.color,item.shadow);} graphics.pose().popMatrix();
             }
             ScreenText chosen=current();
-            if(chosen!=null) graphics.text(font,"Selected: "+(chosen.text==null?"":chosen.text)+"   |   Size: "+chosen.size,right+16,top+330,0xFFB8C7D9,true;
-            else graphics.text(font,"Add a text to begin editing.",right+16,top+330,0xFFB8C7D9,true;
+            if(chosen!=null) graphics.text(font,"Selected: "+(chosen.text==null?"":chosen.text)+"   |   Size: "+chosen.size,right+16,top+330,0xFFB8C7D9,true);
+            else graphics.text(font,"Add a text to begin editing.",right+16,top+330,0xFFB8C7D9,true);
             graphics.text(font,"Drag visible text to move it.",right+16,height-34,0xFF6C9BCB,true);
             super.extractRenderState(graphics,mx,my,delta);
 

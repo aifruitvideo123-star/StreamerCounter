@@ -36,7 +36,7 @@ import java.util.TreeSet;
 public class StreamerCounterClient implements ClientModInitializer {
     private static final Path FILE = FabricLoader.getInstance().getConfigDir().resolve("streamer-counter-vip.json");
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final long TIMEOUT_MS = 60_000;
+    private static final long TIMEOUT_MS = 300_000;
     private static final double NEAR_SQ = 8 * 8;
     private static final double JUMP_SQ = 20 * 20;
 
@@ -70,9 +70,21 @@ public class StreamerCounterClient implements ClientModInitializer {
                 GLFW.GLFW_KEY_K, category));
 
         ClientSendMessageEvents.COMMAND.register(command -> {
-            String[] args = command.trim().split("\\s+");
-            if (args.length >= 2 && args[0].equalsIgnoreCase("tpahere")) {
-                pending = args[1];
+            String normalized = command.trim();
+            while (normalized.startsWith("/")) normalized = normalized.substring(1).trim();
+            String[] args = normalized.split("\\s+");
+            String commandName = args.length == 0 ? "" : args[0];
+            int colon = commandName.lastIndexOf(':');
+            if (colon >= 0) commandName = commandName.substring(colon + 1);
+            String target = null;
+            if (commandName.equalsIgnoreCase("tpahere") && args.length >= 2) {
+                target = args[1];
+            } else if (commandName.equalsIgnoreCase("tpa") && args.length >= 3
+                    && args[1].equalsIgnoreCase("here")) {
+                target = args[2];
+            }
+            if (target != null && !target.isBlank()) {
+                pending = target;
                 String key = pending.toLowerCase(Locale.ROOT);
                 data.streamerEnabled.putIfAbsent(key, true);
                 data.displayNames.put(key, pending);

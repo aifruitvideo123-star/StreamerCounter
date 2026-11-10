@@ -380,15 +380,16 @@ public class StreamerCounterClient implements ClientModInitializer {
                 if (label.length() > 17) label = label.substring(0, 17) + "…";
                 addDrawableChild(ButtonWidget.builder(Text.literal(label), b -> {
                     selected = index; clearAndInit();
-                }).dimensions(left, top + i * row, 112, 20).build());
+                }).dimensions(left, top + i * row, Math.max(112, (int)(width * 0.34) - 30), 20).build());
             }
             addDrawableChild(ButtonWidget.builder(Text.literal("+ Add Text"), b -> {
                 ScreenText item = new ScreenText(); item.x=width/2; item.y=height/2;
                 data.screenTexts.add(item); selected=data.screenTexts.size()-1; save(); clearAndInit();
             }).dimensions(left, top + Math.min(data.screenTexts.size(),10)*row + 4, 112, 20).build());
 
-            int x = Math.max(138, width/2 - 112);
-            textInput = new TextFieldWidget(textRenderer,x,height-112,224,20,Text.literal("Text"));
+            int x = 12 + Math.max(150, (int)(width * 0.34)) + 26;
+            int fieldWidth = Math.max(120, width - x - 30);
+            textInput = new TextFieldWidget(textRenderer,x,84,fieldWidth,22,Text.literal("Text"));
             textInput.setMaxLength(256);
             ScreenText chosen=current();
             if(chosen!=null) textInput.setText(chosen.text==null?"":chosen.text);
@@ -396,18 +397,18 @@ public class StreamerCounterClient implements ClientModInitializer {
             addDrawableChild(textInput);
             addDrawableChild(ButtonWidget.builder(Text.literal(chosen!=null&&chosen.visible?"Hide":"Show"),b->{
                 ScreenText t=current();if(t!=null){t.visible=!t.visible;save();clearAndInit();}
-            }).dimensions(x,height-84,68,20).build());
+            }).dimensions(x,132,68,20).build());
             addDrawableChild(ButtonWidget.builder(Text.literal("Delete"),b->{
                 if(selected>=0&&selected<data.screenTexts.size()){data.screenTexts.remove(selected);selected=-1;save();clearAndInit();}
-            }).dimensions(x+74,height-84,68,20).build());
+            }).dimensions(x+74,132,68,20).build());
             addDrawableChild(ButtonWidget.builder(Text.literal("Size −"),b->{ScreenText t=current();if(t!=null){t.size=Math.max(8,t.size-2);save();}})
-                .dimensions(x,height-56,68,20).build());
+                .dimensions(x,160,68,20).build());
             addDrawableChild(ButtonWidget.builder(Text.literal("Size +"),b->{ScreenText t=current();if(t!=null){t.size=Math.min(96,t.size+2);save();}})
-                .dimensions(x+74,height-56,68,20).build());
+                .dimensions(x+74,160,68,20).build());
             addDrawableChild(ButtonWidget.builder(Text.literal("Color"),b->{
                 ScreenText t=current();if(t!=null){int[] colors={0xFFFFFFFF,0xFFFFD54F,0xFF69D8FF,0xFFFF6B6B,0xFF78E08F};int i=0;for(;i<colors.length;i++)if(colors[i]==t.color)break;t.color=colors[(i+1)%colors.length];save();}
-            }).dimensions(x,height-28,68,20).build());
-            addDrawableChild(ButtonWidget.builder(Text.literal("Done"),b->close()).dimensions(x+74,height-28,68,20).build());
+            }).dimensions(x,188,68,20).build());
+            addDrawableChild(ButtonWidget.builder(Text.literal("Done"),b->close()).dimensions(x+74,188,68,20).build());
         }
         private ScreenText current(){return selected>=0&&selected<data.screenTexts.size()?data.screenTexts.get(selected):null;}
         @Override public boolean mouseClicked(Click click,boolean doubled) {
@@ -452,6 +453,33 @@ public class StreamerCounterClient implements ClientModInitializer {
         @Override public void close(){save();MinecraftClient.getInstance().setScreen(parent);}
     }
 
+        @Override public void render(DrawContext ctx,int mx,int my,float delta) {
+            int left=12, top=42, split=Math.max(150,(int)(width*0.34)), right=left+split+12;
+            ctx.fill(0,0,width,height,0xB0000000);
+            ctx.fill(left-2,top-2,left+split,height-10,0xFFFFD54F);
+            ctx.fill(left,top,left+split-2,height-12,0xFF18202C);
+            ctx.fill(left+2,top+2,left+split-4,top+5,0xFF6C9BCB);
+            ctx.fill(right-2,top-2,width-10,height-10,0xFFFFD54F);
+            ctx.fill(right,top,width-12,height-12,0xFF18202C);
+            ctx.fill(right+2,top+2,width-14,top+5,0xFF6C9BCB);
+            ctx.drawText(textRenderer,"TEXT ON SCREEN",left+14,top+14,0xFFFFFFFF,true);
+            ctx.drawText(textRenderer,"PLACED TEXTS",left+14,top+38,0xFFFFD54F,true);
+            ctx.drawText(textRenderer,"EDIT TEXT",right+16,top+14,0xFFFFFFFF,true);
+            ctx.drawText(textRenderer,"Select a text on the left. Hidden texts stay in this list.",right+16,top+38,0xFFB8C7D9,true);
+            ctx.drawText(textRenderer,"TEXT",right+16,top+67,0xFFFFD54F,true);
+            ctx.drawText(textRenderer,"STYLE / SIZE",right+16,top+119,0xFFFFD54F,true);
+            ctx.drawText(textRenderer,"COLOR",right+16,top+174,0xFFFFD54F,true);
+            if(data.screenTexts!=null) for(ScreenText item:data.screenTexts) if(item!=null&&item.visible&&item.text!=null&&!item.text.isEmpty()) {
+                float scale=Math.max(8,Math.min(96,item.size))/9.0f;
+                ctx.getMatrices().pushMatrix(); ctx.getMatrices().translate(item.x,item.y); ctx.getMatrices().scale(scale,scale);
+                ctx.drawText(textRenderer,Text.literal(item.text),0,0,item.color,item.shadow); ctx.getMatrices().popMatrix();
+            }
+            ScreenText chosen=current();
+            if(chosen!=null) ctx.drawText(textRenderer,"Selected: "+(chosen.text==null?"":chosen.text)+"   |   Size: "+chosen.size,right+16,top+218,0xFFB8C7D9,true);
+            else ctx.drawText(textRenderer,"Add a text to begin editing.",right+16,top+218,0xFFB8C7D9,true);
+            ctx.drawText(textRenderer,"Drag visible text to move it.",right+16,height-34,0xFF6C9BCB,true);
+            super.render(ctx,mx,my,delta);
+        }
     private static class CounterMenuScreen extends Screen {
         private final Screen parent;
         private int page = 0;

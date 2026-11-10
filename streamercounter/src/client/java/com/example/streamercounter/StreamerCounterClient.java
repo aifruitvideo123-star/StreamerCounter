@@ -454,9 +454,14 @@ public class StreamerCounterClient implements ClientModInitializer {
                 .dimensions(x,160,68,20).build());
             addDrawableChild(ButtonWidget.builder(Text.literal("Size +"),b->{ScreenText t=current();if(t!=null){t.size=Math.min(96,t.size+2);save();}})
                 .dimensions(x+74,160,68,20).build());
+            addDrawableChild(ButtonWidget.builder(Text.literal("Font / Style"),b->{
+                ScreenText t=current(); if(t!=null){String[] styles={"default","bold","italic","bold_italic","flow"};int n=0;for(;n<styles.length;n++)if(styles[n].equals(t.font))break;t.font=styles[(n+1)%styles.length];t.bold=t.font.equals("bold")||t.font.equals("bold_italic");t.italic=t.font.equals("italic")||t.font.equals("bold_italic");save();clearAndInit();}
+            }).dimensions(x,188,146,20).build());
             addDrawableChild(ButtonWidget.builder(Text.literal("Color"),b->{
-                ScreenText t=current();if(t!=null){int[] colors={0xFFFFFFFF,0xFFFFD54F,0xFF69D8FF,0xFFFF6B6B,0xFF78E08F};int i=0;for(;i<colors.length;i++)if(colors[i]==t.color)break;t.color=colors[(i+1)%colors.length];save();}
+                ScreenText t=current();if(t!=null){int[] colors={0xFFFFFFFF,0xFFFFD54F,0xFF69D8FF,0xFFFF6B6B,0xFF78E08F};int n=0;for(;n<colors.length;n++)if(colors[n]==t.color)break;t.color=colors[(n+1)%colors.length];save();}
             }).dimensions(x,212,68,20).build());
+            addDrawableChild(ButtonWidget.builder(Text.literal("Done"),b->close())
+                .dimensions(x+74,212,68,20).build());
             addDrawableChild(ButtonWidget.builder(Text.literal("Done"),b->close()).dimensions(x+74,212,68,20).build());
         }
         private ScreenText current(){return selected>=0&&selected<data.screenTexts.size()?data.screenTexts.get(selected):null;}
@@ -494,8 +499,8 @@ public class StreamerCounterClient implements ClientModInitializer {
             ctx.drawText(textRenderer,"EDIT TEXT",right+16,top+14,0xFFFFFFFF,true);
             ctx.drawText(textRenderer,"Select a text on the left. Hidden texts stay in this list.",right+16,top+38,0xFFB8C7D9,true);
             ctx.drawText(textRenderer,"TEXT",right+16,top+67,0xFFFFD54F,true);
-            ctx.drawText(textRenderer,"STYLE / SIZE",right+16,top+105,0xFFFFD54F,true);
-            ctx.drawText(textRenderer,"COLOR",right+16,top+145,0xFFFFD54F,true);
+            ctx.drawText(textRenderer,"SIZE / FONT STYLE",right+16,top+105,0xFFFFD54F,true);
+            ctx.drawText(textRenderer,"COLOR",right+16,top+185,0xFFFFD54F,true);
             if(data.screenTexts!=null) for(ScreenText item:data.screenTexts) if(item!=null&&item.visible&&item.text!=null&&!item.text.isEmpty()) {
                 float scale=Math.max(8,Math.min(96,item.size))/9.0f;
                 ctx.getMatrices().pushMatrix(); ctx.getMatrices().translate(item.x,item.y); ctx.getMatrices().scale(scale,scale);

@@ -1,6 +1,6 @@
 name: Build Streamer Counter VIP (26.1.2)
 
-# Re-trigger the VIP build after the Gradle 9.7.1 configuration fix.
+# Build the VIP edition for Minecraft 26.1.2.
 on:
   push:
     branches: [main, master, port/26.1, vip/26.1.2]

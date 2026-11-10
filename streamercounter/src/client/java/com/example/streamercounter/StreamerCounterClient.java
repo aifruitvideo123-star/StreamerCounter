@@ -431,7 +431,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             int bottom = height - 126;
             int firstRowY = 88;
             addRenderableWidget(Button.builder(Component.literal("Menu Text Color: " + hudColorName()), b ->
-                    Minecraft.getInstance().setScreen(new HudColorScreen(this)))
+                    Minecraft.getInstance().gui.setScreen(new HudColorScreen(this)))
                     .bounds(center - 90, 58, 180, 20).build());
             int maxRows = Math.max(1, (bottom - firstRowY - 34) / ROW_HEIGHT);
             List<String> names = streamerNames();

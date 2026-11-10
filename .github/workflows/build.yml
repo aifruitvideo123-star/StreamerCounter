@@ -1,5 +1,6 @@
 name: Build Fabric Mod (26.2)
 
+ # Standard edition: static text only; VIP owns animated text and color selection.
 on:
   push:
     branches: [main, master, port/26.2]

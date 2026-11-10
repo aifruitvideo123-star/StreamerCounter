@@ -178,7 +178,12 @@ public class StreamerCounterClient implements ClientModInitializer {
         if (data.screenTexts == null) data.screenTexts = new ArrayList<>();
         for (ScreenText entry : data.screenTexts) {
             if (entry != null && entry.visible && entry.text != null && !entry.text.isEmpty())
-                graphics.text(mc.font, entry.text, entry.x, entry.y, entry.color, entry.shadow);
+                float scale = Math.max(8, Math.min(96, entry.size)) / 9.0f;
+                graphics.pose().pushMatrix();
+                graphics.pose().translate(entry.x, entry.y);
+                graphics.pose().scale(scale, scale);
+                graphics.text(mc.font, entry.text, 0, 0, entry.color, entry.shadow);
+                graphics.pose().popMatrix();
         }
     }
 
@@ -417,46 +422,96 @@ public class StreamerCounterClient implements ClientModInitializer {
         private EditBox textInput;
         TextOnScreenScreen(Screen parent) { super(Component.literal("Text on Screen")); this.parent=parent; }
         @Override protected void init() {
-            if(data.screenTexts==null)data.screenTexts=new ArrayList<>();
-            int c=width/2;
-            textInput = new EditBox(font, c-125, height-124, 250, 20, Component.literal("Text"));
+            if (data.screenTexts == null) data.screenTexts = new ArrayList<>();
+            int left = 12, top = 64, row = 22;
+            for (int i = 0; i < data.screenTexts.size() && i < 10; i++) {
+                final int index = i;
+                ScreenText item = data.screenTexts.get(i);
+                String label = (item.visible ? "§a● " : "§7○ ") + (item.text == null || item.text.isBlank() ? "Text " + (i+1) : item.text);
+                if (label.length() > 17) label = label.substring(0, 17) + "…";
+                addRenderableWidget(Button.builder(Component.literal(label), b -> {
+                    selected = index;
+                    clearWidgets();
+                    init();
+                }).bounds(left, top + i * row, 112, 20).build());
+            }
+            addRenderableWidget(Button.builder(Component.literal("+ Add Text"), b -> {
+                ScreenText item = new ScreenText();
+                item.x = width / 2; item.y = height / 2;
+                data.screenTexts.add(item); selected = data.screenTexts.size()-1; save();
+                clearWidgets(); init();
+            }).bounds(left, top + Math.min(data.screenTexts.size(),10) * row + 4, 112, 20).build());
+
+            int x = Math.max(138, width / 2 - 112);
+            textInput = new EditBox(font, x, height - 112, 224, 20, Component.literal("Text"));
             textInput.setMaxLength(256);
-            ScreenText initial=current(); if(initial!=null)textInput.setValue(initial.text);
-            textInput.setResponder(value->{ScreenText t=current();if(t!=null){t.text=value;save();}});
+            ScreenText chosen = current();
+            if (chosen != null) textInput.setValue(chosen.text == null ? "" : chosen.text);
+            textInput.setResponder(value -> { ScreenText t=current(); if(t!=null){t.text=value;save();} });
             addRenderableWidget(textInput);
-            addRenderableWidget(Button.builder(Component.literal("Add Text"),b->{ScreenText t=new ScreenText();t.x=c-40;t.y=height/2;data.screenTexts.add(t);selected=data.screenTexts.size()-1;save();clearWidgets();init();})
-                .bounds(c-150,height-92,92,20).build());
-            addRenderableWidget(Button.builder(Component.literal("Show / Hide"),b->{ScreenText t=current();if(t!=null){t.visible=!t.visible;save();b.setMessage(Component.literal(t.visible?"Hide Text":"Show Text"));}})
-                .bounds(c-52,height-92,92,20).build());
-            addRenderableWidget(Button.builder(Component.literal("Delete"),b->{if(selected>=0&&selected<data.screenTexts.size()){data.screenTexts.remove(selected);selected=-1;save();clearWidgets();init();}})
-                .bounds(c+46,height-92,92,20).build());
-            addRenderableWidget(Button.builder(Component.literal("Size −"),b->{ScreenText t=current();if(t!=null){t.size=Math.max(8,t.size-2);save();}})
-                .bounds(c-150,height-64,70,20).build());
-            addRenderableWidget(Button.builder(Component.literal("Size +"),b->{ScreenText t=current();if(t!=null){t.size=Math.min(48,t.size+2);save();}})
-                .bounds(c-75,height-64,70,20).build());
-            addRenderableWidget(Button.builder(Component.literal("Font: "+fontName()),b->{ScreenText t=current();if(t!=null){t.font=t.font.equals("default")?"uniform":t.font.equals("uniform")?"alt":"default";save();b.setMessage(Component.literal("Font: "+fontName()));}})
-                .bounds(c,height-64,90,20).build());
-            addRenderableWidget(Button.builder(Component.literal("Color"),b->{ScreenText t=current();if(t!=null){int[] colors={0xFFFFFFFF,0xFFFFD54F,0xFF69D8FF,0xFFFF6B6B,0xFF78E08F};int i=0;for(;i<colors.length;i++)if(colors[i]==t.color)break;t.color=colors[(i+1)%colors.length];save();}})
-                .bounds(c+95,height-64,55,20).build());
-            addRenderableWidget(Button.builder(Component.literal("Done"),b->onClose()).bounds(c-45,height-32,90,20).build());
+
+            addRenderableWidget(Button.builder(Component.literal(chosen != null && chosen.visible ? "Hide" : "Show"), b -> {
+                ScreenText t=current(); if(t!=null){t.visible=!t.visible;save();clearWidgets();init();}
+            }).bounds(x, height-84, 68, 20).build());
+            addRenderableWidget(Button.builder(Component.literal("Delete"), b -> {
+                if(selected>=0 && selected<data.screenTexts.size()){data.screenTexts.remove(selected);selected=-1;save();clearWidgets();init();}
+            }).bounds(x+74, height-84, 68, 20).build());
+            addRenderableWidget(Button.builder(Component.literal("Size −"), b -> {
+                ScreenText t=current(); if(t!=null){t.size=Math.max(8,t.size-2);save();}
+            }).bounds(x, height-56, 68, 20).build());
+            addRenderableWidget(Button.builder(Component.literal("Size +"), b -> {
+                ScreenText t=current(); if(t!=null){t.size=Math.min(96,t.size+2);save();}
+            }).bounds(x+74, height-56, 68, 20).build());
+            addRenderableWidget(Button.builder(Component.literal("Color"), b -> {
+                ScreenText t=current(); if(t!=null){int[] colors={0xFFFFFFFF,0xFFFFD54F,0xFF69D8FF,0xFFFF6B6B,0xFF78E08F};int i=0;for(;i<colors.length;i++)if(colors[i]==t.color)break;t.color=colors[(i+1)%colors.length];save();}
+            }).bounds(x, height-28, 68, 20).build());
+            addRenderableWidget(Button.builder(Component.literal("Done"), b -> onClose())
+                .bounds(x+74, height-28, 68, 20).build());
         }
         private ScreenText current(){return selected>=0&&selected<data.screenTexts.size()?data.screenTexts.get(selected):null;}
-        private String fontName(){ScreenText t=current();return t==null?"default":t.font;}
-        @Override public boolean mouseClicked(MouseButtonEvent event,boolean doubleClick){
-            if(event.button()==0){for(int i=data.screenTexts.size()-1;i>=0;i--){ScreenText t=data.screenTexts.get(i);
-                if(t.visible&&event.x()>=t.x-3&&event.x()<=t.x+Minecraft.getInstance().font.width(t.text)+6&&event.y()>=t.y-4&&event.y()<=t.y+20){selected=i;if(textInput!=null)textInput.setValue(t.text);dragging=true;dx=event.x()-t.x;dy=event.y()-t.y;return true;}}}
+        @Override public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+            if(event.button()==0) {
+                for(int i=data.screenTexts.size()-1;i>=0;i--) {
+                    ScreenText t=data.screenTexts.get(i);
+                    int scale=Math.max(8,Math.min(96,t.size));
+                    int textWidth=(int)(Minecraft.getInstance().font.width(t.text == null ? "" : t.text)*scale/9.0);
+                    int textHeight=scale+3;
+                    if(t.visible && event.x()>=t.x-3 && event.x()<=t.x+textWidth+6 && event.y()>=t.y-4 && event.y()<=t.y+textHeight) {
+                        selected=i; if(textInput!=null)textInput.setValue(t.text == null ? "" : t.text);
+                        dragging=true; dx=event.x()-t.x; dy=event.y()-t.y; return true;
+                    }
+                }
+            }
             return super.mouseClicked(event,doubleClick);
         }
-        @Override public boolean mouseDragged(MouseButtonEvent event,double ox,double oy){ScreenText t=current();if(dragging&&t!=null&&event.button()==0){t.x=Math.max(0,(int)(event.x()-dx));t.y=Math.max(0,(int)(event.y()-dy));return true;}return super.mouseDragged(event,ox,oy);}
-        @Override public boolean mouseReleased(MouseButtonEvent event){if(dragging&&event.button()==0){dragging=false;save();return true;}return super.mouseReleased(event);}
-        @Override public void extractRenderState(GuiGraphicsExtractor graphics,int mx,int my,float delta){
+        @Override public boolean mouseDragged(MouseButtonEvent event,double ox,double oy) {
+            ScreenText t=current();
+            if(dragging&&t!=null&&event.button()==0){t.x=Math.max(0,(int)(event.x()-dx));t.y=Math.max(0,(int)(event.y()-dy));return true;}
+            return super.mouseDragged(event,ox,oy);
+        }
+        @Override public boolean mouseReleased(MouseButtonEvent event) {
+            if(dragging&&event.button()==0){dragging=false;save();return true;}
+            return super.mouseReleased(event);
+        }
+        @Override public void extractRenderState(GuiGraphicsExtractor graphics,int mx,int my,float delta) {
             graphics.fill(0,0,width,height,0xB0000000);
-            String heading="Text on Screen — click text to select and drag";
-            graphics.text(font,heading,width/2-font.width(heading)/2,22,0xFFFFFFFF,true);
-            String help="Select a text, then type to edit it. Backspace deletes.";
-            graphics.text(font,help,width/2-font.width(help)/2,40,0xFFCCCCCC,true);
-            if(data.screenTexts!=null)for(ScreenText t:data.screenTexts)if(t.visible)graphics.text(font,t.text,t.x,t.y,t.color,true);
-            ScreenText t=current();if(t!=null){String info="Selected: "+t.text+" | "+t.size+"px | "+t.font;graphics.text(font,info,width/2-font.width(info)/2,height-112,0xFFFFD54F,true);}
+            graphics.fill(6,48,132,height-8,0x990B111A);
+            graphics.fill(140,48,width-8,height-8,0x990B111A);
+            graphics.text(font,"TEXT ELEMENTS",14,34,0xFFFFD45A,true);
+            graphics.text(font,"Select an item on the left. Hidden items stay in this list.",148,34,0xFFFFFFFF,true);
+            if(data.screenTexts!=null) for(ScreenText t:data.screenTexts) if(t!=null&&t.visible&&t.text!=null&&!t.text.isEmpty()) {
+                float scale=Math.max(8,Math.min(96,t.size))/9.0f;
+                graphics.pose().pushMatrix();
+                graphics.pose().translate(t.x,t.y);
+                graphics.pose().scale(scale,scale);
+                graphics.text(font,t.text,0,0,t.color,t.shadow);
+                graphics.pose().popMatrix();
+            }
+            ScreenText t=current();
+            if(t!=null) {
+                String info="Selected: "+(t.text==null?"":t.text)+" | Size: "+t.size;
+                graphics.text(font,info,148,62,0xFFFFD45A,true);
+            } else graphics.text(font,"Click + Add Text to create your first item.",148,62,0xFFCCCCCC,true);
             super.extractRenderState(graphics,mx,my,delta);
         }
         @Override public void onClose(){save();Minecraft.getInstance().gui.setScreen(parent);}

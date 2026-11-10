@@ -52,6 +52,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         Map<String, String> displayNames = new HashMap<>();
         String lastName;
         boolean showHud = true;
+        int textColor = 0xFFFFC85A;
         int hudX = -1;
         int hudY = 8;
         float hudScale = 1.0f;
@@ -164,28 +165,211 @@ public class StreamerCounterClient implements ClientModInitializer {
         Minecraft mc = Minecraft.getInstance();
         int width = mc.getWindow().getGuiScaledWidth();
         int height = mc.getWindow().getGuiScaledHeight();
-        int x = data.hudX < 0 ? width - hudWidth() - 8 : data.hudX;
+        int x = visibleHudX(width);
         drawHud(graphics, x, visibleHudY(height));
     }
 
     private static void drawHud(GuiGraphicsExtractor graphics, int x, int y) {
         Minecraft mc = Minecraft.getInstance();
         List<String> names = hudNames();
-        int scale = Math.max(1, Math.round(data.hudScale));
         int width = hudWidth();
         int height = hudHeight();
         graphics.fill(x, y, x + width, y + height, 0x990B111A);
         int accent = data.iceTheme ? 0xFF69D8FF : 0xFFE8B64D;
-        int countColor = data.iceTheme ? 0xFF8DE5FF : 0xFFFFC85A;
         graphics.fill(x, y, x + width, y + 2, accent);
-        graphics.text(mc.font, "STREAMERS VIP", x + 6, y + 6, accent, false);
+        drawFlowText(graphics, mc.font, "STREAMERS VIP", x + 6, y + 6, data.textColor, false);
         int rowY = y + 20;
         for (String key : names) {
             String name = displayName(key);
             String count = String.valueOf(data.counts.getOrDefault(key, 0));
-            graphics.text(mc.font, name, x + 6, rowY, 0xFFE8EDF5, false);
-            graphics.text(mc.font, count, x + width - 7 - mc.font.width(count), rowY, countColor, false);
+            drawFlowText(graphics, mc.font, name, x + 6, rowY, data.textColor, false);
+            drawFlowText(graphics, mc.font, count, x + width - 7 - mc.font.width(count),
+                    rowY, data.textColor, false);
             rowY += 11;
+        }
+    }
+
+
+    private static final String[] HUD_COLOR_NAMES = {"Gold", "Ice", "Red", "Green", "Purple", "White"};
+    private static final int[] HUD_COLORS = {
+            0xFFFFC85A, 0xFF69D8FF, 0xFFFF6B6B,
+            0xFF78E08F, 0xFFB98CFF, 0xFFFFFFFF
+    };
+
+    private static String hudColorName() {
+        for (int i = 0; i < HUD_COLORS.length; i++) {
+            if (HUD_COLORS[i] == data.textColor) return HUD_COLOR_NAMES[i];
+        }
+        return "Custom";
+    }
+
+    private static int blendColor(int from, int to, float amount) {
+        float t = Math.max(0.0f, Math.min(1.0f, amount));
+        int a = Math.round(((from >>> 24) & 0xFF) * (1.0f - t) + ((to >>> 24) & 0xFF) * t);
+        int r = Math.round(((from >>> 16) & 0xFF) * (1.0f - t) + ((to >>> 16) & 0xFF) * t);
+        int g = Math.round(((from >>> 8) & 0xFF) * (1.0f - t) + ((to >>> 8) & 0xFF) * t);
+        int b = Math.round((from & 0xFF) * (1.0f - t) + (to & 0xFF) * t);
+        return (a << 24) | (r << 16) | (g << 8) | b;
+    }
+
+    // A soft highlight travels across the glyphs while preserving the selected base color.
+    private static void drawFlowText(GuiGraphicsExtractor graphics, net.minecraft.client.gui.Font font,
+                                     String text, int x, int y, int baseColor, boolean shadow) {
+        int cursorX = x;
+        int glyphIndex = 0;
+        double phase = (System.currentTimeMillis() % 2400L) / 2400.0 * Math.PI * 2.0;
+        for (int offset = 0; offset < text.length();) {
+            int codePoint = text.codePointAt(offset);
+            String glyph = new String(Character.toChars(codePoint));
+            float wave = (float) (0.5 + 0.5 * Math.sin(glyphIndex * 0.72 - phase));
+            int color = blendColor(baseColor, 0xFFFFFFFF, 0.12f + wave * 0.48f);
+            graphics.text(font, glyph, cursorX, y, color, shadow);
+            cursorX += font.width(glyph);
+            offset += Character.charCount(codePoint);
+            glyphIndex++;
+        }
+    }
+
+    private static int visibleHudX(int screenWidth) {
+        int requestedX = data.hudX < 0 ? screenWidth - hudWidth() - 8 : data.hudX;
+        return Math.max(0, Math.min(requestedX, Math.max(0, screenWidth - hudWidth())));
+    }
+
+    private static class HudColorScreen extends Screen {
+        private final Screen parent;
+
+        HudColorScreen(Screen parent) {
+            super(Component.literal("HUD Text Color"));
+            this.parent = parent;
+        }
+
+        @Override
+        protected void init() {
+            int center = width / 2;
+            int firstX = center - 112;
+            int firstY = height / 2 - 38;
+            for (int i = 0; i < HUD_COLORS.length; i++) {
+                final int colorIndex = i;
+                int column = i % 2;
+                int row = i / 2;
+                String marker = data.textColor == HUD_COLORS[i] ? "✓ " : "";
+                addRenderableWidget(Button.builder(
+                        Component.literal(marker + HUD_COLOR_NAMES[i]),
+                        button -> {
+                            data.textColor = HUD_COLORS[colorIndex];
+                            save();
+                            Minecraft.getInstance().gui.setScreen(parent);
+                        }).bounds(firstX + column * 118, firstY + row * 28, 108, 20).build());
+            }
+            addRenderableWidget(Button.builder(Component.literal("Back"), button ->
+                    Minecraft.getInstance().gui.setScreen(parent))
+                    .bounds(center - 50, firstY + 3 * 28 + 4, 100, 20).build());
+        }
+
+        @Override
+        public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
+            graphics.fill(0, 0, width, height, 0xC0000000);
+            String heading = "Choose HUD text color";
+            graphics.text(font, heading, width / 2 - font.width(heading) / 2, height / 2 - 76, 0xFFFFFFFF, true);
+            String preview = "Streamer Counter";
+            drawFlowText(graphics, font, preview, width / 2 - font.width(preview) / 2,
+                    height / 2 - 57, data.textColor, true);
+            super.extractRenderState(graphics, mouseX, mouseY, delta);
+        }
+    }
+
+    private static class HudEditScreen extends Screen {
+        private final Screen parent;
+        private boolean draggingHud;
+        private double dragOffsetX;
+        private double dragOffsetY;
+
+        HudEditScreen(Screen parent) {
+            super(Component.literal("Edit HUD"));
+            this.parent = parent;
+        }
+
+        @Override
+        protected void init() {
+            int center = width / 2;
+            addRenderableWidget(Button.builder(Component.literal("Text Color: " + hudColorName()), b ->
+                    Minecraft.getInstance().gui.setScreen(new HudColorScreen(this)))
+                    .bounds(center - 90, height - 86, 180, 20).build());
+            addRenderableWidget(Button.builder(Component.literal("Smaller"), b -> {
+                data.hudScale = Math.max(0.6f, data.hudScale - 0.1f);
+                save();
+            }).bounds(center - 112, height - 58, 68, 20).build());
+            addRenderableWidget(Button.builder(Component.literal("Larger"), b -> {
+                data.hudScale = Math.min(2.0f, data.hudScale + 0.1f);
+                save();
+            }).bounds(center - 38, height - 58, 68, 20).build());
+            addRenderableWidget(Button.builder(Component.literal("Reset Position"), b -> {
+                data.hudX = -1;
+                data.hudY = 8;
+                save();
+            }).bounds(center + 36, height - 58, 112, 20).build());
+            addRenderableWidget(Button.builder(Component.literal("Done"), b -> onClose())
+                    .bounds(center - 45, height - 30, 90, 20).build());
+        }
+
+        @Override
+        public boolean mouseClicked(double mouseX, double mouseY, int button) {
+            if (button == 0) {
+                int hudX = visibleHudX(width);
+                int hudY = visibleHudY(height);
+                if (mouseX >= hudX && mouseX <= hudX + hudWidth()
+                        && mouseY >= hudY && mouseY <= hudY + hudHeight()) {
+                    draggingHud = true;
+                    dragOffsetX = mouseX - hudX;
+                    dragOffsetY = mouseY - hudY;
+                    return true;
+                }
+            }
+            return super.mouseClicked(mouseX, mouseY, button);
+        }
+
+        @Override
+        public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+            if (draggingHud && button == 0) {
+                data.hudX = Math.max(0, Math.min((int) Math.round(mouseX - dragOffsetX),
+                        Math.max(0, width - hudWidth())));
+                data.hudY = Math.max(0, Math.min((int) Math.round(mouseY - dragOffsetY),
+                        Math.max(0, height - hudHeight())));
+                return true;
+            }
+            return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        }
+
+        @Override
+        public boolean mouseReleased(double mouseX, double mouseY, int button) {
+            if (draggingHud && button == 0) {
+                draggingHud = false;
+                save();
+                return true;
+            }
+            return super.mouseReleased(mouseX, mouseY, button);
+        }
+
+        @Override
+        public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
+            graphics.fill(0, 0, width, height, 0xB0000000);
+            String heading = "HUD Preview";
+            graphics.text(font, heading, width / 2 - font.width(heading) / 2, 28, 0xFFFFFFFF, true);
+            String instruction = "Drag the HUD preview to move it.";
+            graphics.text(font, instruction, width / 2 - font.width(instruction) / 2, 46, 0xFFCCCCCC, true);
+            int x = visibleHudX(width);
+            drawHud(graphics, x, visibleHudY(height));
+            String size = "Size: " + Math.round(data.hudScale * 100) + "%";
+            drawFlowText(graphics, font, size, width / 2 - font.width(size) / 2,
+                    height - 110, data.textColor, true);
+            super.extractRenderState(graphics, mouseX, mouseY, delta);
+        }
+
+        @Override
+        public void onClose() {
+            draggingHud = false;
+            save();
+            Minecraft.getInstance().gui.setScreen(parent);
         }
     }
 
@@ -247,7 +431,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             graphics.text(font, "HUD Preview", width / 2 - font.width("HUD Preview") / 2, 28, 0xFFFFFFFF, true);
             graphics.text(font, "Use the controls below to resize or reset the HUD.",
                     width / 2 - 115, 46, 0xFFCCCCCC, true);
-            int x = data.hudX < 0 ? width - hudWidth() - 8 : data.hudX;
+            int x = visibleHudX(width);
             drawHud(graphics, x, visibleHudY(height));
             graphics.text(font, "Size: " + Math.round(data.hudScale * 100) + "%",
                     width / 2 - 35, height - 78, 0xFFFFC247, true);

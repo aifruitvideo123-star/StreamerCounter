@@ -429,6 +429,9 @@ public class StreamerCounterClient implements ClientModInitializer {
             int left = center - buttonWidth / 2;
             int bottom = height - 126;
             int firstRowY = 88;
+            addRenderableWidget(Button.builder(Component.literal("Menu Text Color: " + hudColorName()), b ->
+                    Minecraft.getInstance().setScreen(new HudColorScreen(this)))
+                    .bounds(center - 90, 58, 180, 20).build());
             int maxRows = Math.max(1, (bottom - firstRowY - 34) / ROW_HEIGHT);
             List<String> names = streamerNames();
             int pageCount = Math.max(1, (names.size() + maxRows - 1) / maxRows);
@@ -523,9 +526,11 @@ public class StreamerCounterClient implements ClientModInitializer {
             graphics.fill(left, top, right, bottom, 0xFF18202C);
             graphics.fill(left + 2, top + 2, right - 2, top + 5, 0xFF6C9BCB);
             String heading = "Streamer Counter VIP";
-            graphics.text(font, heading, width / 2 - font.width(heading) / 2, top + 16, 0xFFFFFFFF, true);
+            drawFlowText(graphics, font, heading, width / 2 - font.width(heading) / 2,
+                    top + 16, data.textColor, true);
             String subtitle = "Enable or disable streamers individually";
-            graphics.text(font, subtitle, width / 2 - font.width(subtitle) / 2, top + 40, data.iceTheme ? 0xFF69D8FF : 0xFFFFD54F, true);
+            drawFlowText(graphics, font, subtitle, width / 2 - font.width(subtitle) / 2,
+                    top + 40, data.textColor, true);
             if (streamerNames().isEmpty()) {
                 String line1 = "No streamers detected yet.";
                 String line2 = "Streamers will appear here after /tpahere <name>.";
@@ -534,7 +539,8 @@ public class StreamerCounterClient implements ClientModInitializer {
             }
             super.extractRenderState(graphics, mouseX, mouseY, delta);
             String credit = "VIP Edition | Made by AlpBey3503";
-            graphics.text(font, credit, width / 2 - font.width(credit) / 2, height - 14, 0xFFE8B64D, true);
+            drawFlowText(graphics, font, credit, width / 2 - font.width(credit) / 2,
+                    height - 14, data.textColor, true);
         }
 
         @Override

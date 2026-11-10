@@ -33,7 +33,7 @@ import java.util.Map;
 
 public class StreamerCounterClient implements ClientModInitializer {
     private static final Path FILE =
-            FabricLoader.getInstance().getConfigDir().resolve("streamer-counter.json");
+            FabricLoader.getInstance().getConfigDir().resolve("streamer-counter-vip.json");
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
     private static final long TIMEOUT_MS = 60_000;
@@ -57,6 +57,8 @@ public class StreamerCounterClient implements ClientModInitializer {
         int hudX = -1;
         int hudY = 8;
         float hudScale = 1.0f;
+        int textColor = 0xFFFFC85A;
+        boolean iceTheme = false;
     }
 
     @Override
@@ -64,9 +66,9 @@ public class StreamerCounterClient implements ClientModInitializer {
         load();
 
         KeyBinding.Category category = KeyBinding.Category.create(
-                Identifier.of("streamercounter", "general"));
+                Identifier.of("streamercounter_vip", "general"));
         openMenuKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-                "key.streamercounter.open_menu",
+                "key.streamercounter_vip.open_menu",
                 InputUtil.Type.KEYSYM,
                 GLFW.GLFW_KEY_K,
                 category
@@ -138,6 +140,8 @@ public class StreamerCounterClient implements ClientModInitializer {
             data.counts.merge(key, 1, Integer::sum);
             data.displayNames.put(key, name);
             data.lastName = name;
+            MinecraftClient mc = MinecraftClient.getInstance();
+            if (mc.player != null) mc.player.sendMessage(Text.literal("VIP: " + name + " joined your TPAHERE!"), true);
         }
         pending = null;
         save();
@@ -179,35 +183,76 @@ public class StreamerCounterClient implements ClientModInitializer {
         drawHud(ctx, x, visibleHudY(height), data.hudScale);
     }
 
-    // Compact, translucent rectangular panel with every enabled streamer that has been counted.
+    private static final String[] HUD_COLOR_NAMES = {"Gold", "Ice", "Red", "Green", "Purple", "White"};
+    private static final int[] HUD_COLORS = {0xFFFFC85A, 0xFF69D8FF, 0xFFFF6B6B, 0xFF78E08F, 0xFFB98CFF, 0xFFFFFFFF};
+
+    private static String hudColorName() {
+        for (int i = 0; i < HUD_COLORS.length; i++) if (HUD_COLORS[i] == data.textColor) return HUD_COLOR_NAMES[i];
+        return "Custom";
+    }
+    private static int blendColor(int from, int to, float amount) {
+        float t = Math.max(0.0f, Math.min(1.0f, amount));
+        int a = Math.round(((from >>> 24) & 255) * (1-t) + ((to >>> 24) & 255) * t);
+        int r = Math.round(((from >>> 16) & 255) * (1-t) + ((to >>> 16) & 255) * t);
+        int g = Math.round(((from >>> 8) & 255) * (1-t) + ((to >>> 8) & 255) * t);
+        int bl = Math.round((from & 255) * (1-t) + (to & 255) * t);
+        return (a << 24) | (r << 16) | (g << 8) | bl;
+    }
+    private static void drawFlowText(DrawContext ctx, TextRenderer font, String text, int x, int y, int base, boolean shadow) {
+        int cursor = x, index = 0;
+        double phase = (System.currentTimeMillis() % 2400L) / 2400.0 * Math.PI * 2.0;
+        for (int offset = 0; offset < text.length();) {
+            int cp = text.codePointAt(offset);
+            String glyph = new String(Character.toChars(cp));
+            float wave = (float)(0.5 + 0.5 * Math.sin(index * 0.72 - phase));
+            ctx.drawText(font, glyph, cursor, y, blendColor(base, 0xFFFFFFFF, 0.12f + wave * 0.48f), shadow);
+            cursor += font.getWidth(glyph);
+            offset += Character.charCount(cp);
+            index++;
+        }
+    }
     private static void drawHud(DrawContext ctx, int x, int y, float scale) {
         TextRenderer tr = MinecraftClient.getInstance().textRenderer;
         java.util.List<String> names = hudStreamerNames();
-        int width = 132;
-        int height = 18 + Math.max(1, names.size()) * 11 + 5;
-
+        int width = 132, height = 18 + Math.max(1, names.size()) * 11 + 5;
         ctx.getMatrices().pushMatrix();
         ctx.getMatrices().translate(x, y);
         ctx.getMatrices().scale(scale, scale);
-
-        // Semi-transparent charcoal background, square corners, subtle accent line.
         ctx.fill(0, 0, width, height, 0x990B111A);
-        ctx.fill(0, 0, width, 2, 0xB8E8B64D);
-        ctx.drawText(tr, "STREAMERS", 6, 6, 0xFFE8B64D, false);
-
-        if (names.isEmpty()) {
-            ctx.drawText(tr, "No TPs yet", 6, 21, 0xFFCCCCCC, false);
-        } else {
-            int rowY = 20;
-            for (String key : names) {
-                String name = tr.trimToWidth(displayName(key), 83);
-                String count = String.valueOf(data.counts.getOrDefault(key, 0));
-                ctx.drawText(tr, name, 6, rowY, 0xFFE8EDF5, false);
-                ctx.drawText(tr, count, width - 7 - tr.getWidth(count), rowY, 0xFFFFC85A, false);
-                rowY += 11;
-            }
+        ctx.fill(0, 0, width, 2, data.iceTheme ? 0xFF69D8FF : 0xFFE8B64D);
+        drawFlowText(ctx, tr, "STREAMERS VIP", 6, 6, data.textColor, false);
+        int rowY = 20;
+        for (String key : names) {
+            String name = tr.trimToWidth(displayName(key), 83);
+            String count = String.valueOf(data.counts.getOrDefault(key, 0));
+            drawFlowText(ctx, tr, name, 6, rowY, data.textColor, false);
+            drawFlowText(ctx, tr, count, width - 7 - tr.getWidth(count), rowY, data.textColor, false);
+            rowY += 11;
         }
         ctx.getMatrices().popMatrix();
+    }
+    private static class HudColorScreen extends Screen {
+        private final Screen parent;
+        HudColorScreen(Screen parent) { super(Text.literal("HUD Text Color")); this.parent = parent; }
+        @Override protected void init() {
+            int center = width / 2, firstX = center - 112, firstY = height / 2 - 38;
+            for (int i = 0; i < HUD_COLORS.length; i++) {
+                final int index = i;
+                String marker = data.textColor == HUD_COLORS[i] ? "✓ " : "";
+                addDrawableChild(ButtonWidget.builder(Text.literal(marker + HUD_COLOR_NAMES[i]), button -> {
+                    data.textColor = HUD_COLORS[index]; save(); MinecraftClient.getInstance().setScreen(parent);
+                }).dimensions(firstX + (i % 2) * 118, firstY + (i / 2) * 28, 108, 20).build());
+            }
+            addDrawableChild(ButtonWidget.builder(Text.literal("Back"), button -> MinecraftClient.getInstance().setScreen(parent))
+                    .dimensions(center - 50, firstY + 88, 100, 20).build());
+        }
+        @Override public void render(DrawContext ctx, int mx, int my, float delta) {
+            ctx.fill(0, 0, width, height, 0xC0000000);
+            ctx.drawCenteredTextWithShadow(textRenderer, "Choose HUD text color", width / 2, height / 2 - 76, 0xFFFFFFFF);
+            String preview = "Streamer Counter VIP";
+            drawFlowText(ctx, textRenderer, preview, width / 2 - textRenderer.getWidth(preview) / 2, height / 2 - 57, data.textColor, true);
+            super.render(ctx, mx, my, delta);
+        }
     }
 
     private static void load() {
@@ -248,6 +293,9 @@ public class StreamerCounterClient implements ClientModInitializer {
         @Override
         protected void init() {
             int center = this.width / 2;
+            addDrawableChild(ButtonWidget.builder(Text.literal("Text Color: " + hudColorName()), button ->
+                    MinecraftClient.getInstance().setScreen(new HudColorScreen(this)))
+                    .dimensions(center - 90, this.height - 82, 180, 20).build());
             addDrawableChild(ButtonWidget.builder(Text.literal("−"), button -> {
                 data.hudScale = Math.max(0.6f, data.hudScale - 0.1f);
                 save();
@@ -344,151 +392,80 @@ public class StreamerCounterClient implements ClientModInitializer {
         private final Screen parent;
         private int page = 0;
         private static final int ROW_HEIGHT = 24;
-
-        protected CounterMenuScreen(Screen parent) {
-            super(Text.literal("Streamer Counter"));
-            this.parent = parent;
-        }
-
+        protected CounterMenuScreen(Screen parent) { super(Text.literal("Streamer Counter VIP")); this.parent = parent; }
         private java.util.List<String> streamerNames() {
             java.util.Set<String> names = new java.util.TreeSet<>();
-            names.addAll(data.counts.keySet());
-            names.addAll(data.streamerEnabled.keySet());
+            names.addAll(data.counts.keySet()); names.addAll(data.streamerEnabled.keySet());
             if (pending != null) names.add(pending.toLowerCase(Locale.ROOT));
             return new java.util.ArrayList<>(names);
         }
-
-        @Override
-        protected void init() {
-            int center = this.width / 2;
-            int buttonWidth = Math.min(300, this.width - 40);
-            int left = center - buttonWidth / 2;
-            int top = 12;
-            int bottom = this.height - 126;
-            int firstRowY = top + 76;
+        @Override protected void init() {
+            int center = width / 2, buttonWidth = Math.min(300, width - 40), left = center - buttonWidth / 2;
+            int bottom = height - 126, firstRowY = 88;
             int maxRows = Math.max(1, (bottom - firstRowY - 34) / ROW_HEIGHT);
-
             java.util.List<String> names = streamerNames();
-            int pageCount = Math.max(1, (names.size() + maxRows - 1) / maxRows);
-            page = Math.max(0, Math.min(page, pageCount - 1));
-            int from = page * maxRows;
-            int to = Math.min(names.size(), from + maxRows);
-
+            int pages = Math.max(1, (names.size() + maxRows - 1) / maxRows);
+            page = Math.max(0, Math.min(page, pages - 1));
+            int from = page * maxRows, to = Math.min(names.size(), from + maxRows);
             for (int i = from; i < to; i++) {
-                String name = names.get(i);
-                int count = data.counts.getOrDefault(name, 0);
-                int rowY = firstRowY + (i - from) * ROW_HEIGHT;
-                int actionWidth = 54;
-                int gap = 4;
+                String name = names.get(i); int count = data.counts.getOrDefault(name, 0);
+                int rowY = firstRowY + (i - from) * ROW_HEIGHT, actionWidth = 54, gap = 4;
                 int toggleWidth = buttonWidth - actionWidth * 2 - gap * 2;
                 addDrawableChild(ButtonWidget.builder(streamerButtonText(name, count), button -> {
-                    boolean enabled = !data.streamerEnabled.getOrDefault(name, true);
-                    data.streamerEnabled.put(name, enabled);
-                    save();
+                    data.streamerEnabled.put(name, !data.streamerEnabled.getOrDefault(name, true)); save();
                     button.setMessage(streamerButtonText(name, data.counts.getOrDefault(name, 0)));
                 }).dimensions(left, rowY, toggleWidth, 20).build());
                 addDrawableChild(ButtonWidget.builder(Text.literal("Reset"), button -> {
-                    data.counts.put(name, 0);
-                    save();
-                    clearAndInit();
+                    data.counts.put(name, 0); save(); clearAndInit();
                 }).dimensions(left + toggleWidth + gap, rowY, actionWidth, 20).build());
                 addDrawableChild(ButtonWidget.builder(Text.literal("Delete"), button -> {
-                    data.counts.remove(name);
-                    data.streamerEnabled.remove(name);
-                    data.displayNames.remove(name);
-                    if (data.lastName != null && data.lastName.equalsIgnoreCase(name)) {
-                        data.lastName = null;
-                    }
-                    if (pending != null && pending.equalsIgnoreCase(name)) {
-                        pending = null;
-                    }
-                    save();
-                    clearAndInit();
+                    data.counts.remove(name); data.streamerEnabled.remove(name); data.displayNames.remove(name);
+                    if (data.lastName != null && data.lastName.equalsIgnoreCase(name)) data.lastName = null;
+                    if (pending != null && pending.equalsIgnoreCase(name)) pending = null;
+                    save(); clearAndInit();
                 }).dimensions(left + toggleWidth + gap + actionWidth + gap, rowY, actionWidth, 20).build());
             }
-
-            if (pageCount > 1) {
-                int navWidth = 90;
-                ButtonWidget previous = addDrawableChild(ButtonWidget.builder(Text.literal("Previous"), button -> {
-                    page--;
-                    clearAndInit();
-                }).dimensions(center - navWidth - 5, bottom - 28, navWidth, 20).build());
-                previous.active = page > 0;
-
-                ButtonWidget next = addDrawableChild(ButtonWidget.builder(Text.literal("Next"), button -> {
-                    page++;
-                    clearAndInit();
-                }).dimensions(center + 5, bottom - 28, navWidth, 20).build());
-                next.active = page < pageCount - 1;
+            if (pages > 1) {
+                ButtonWidget prev = addDrawableChild(ButtonWidget.builder(Text.literal("Previous"), b -> { page--; clearAndInit(); })
+                        .dimensions(center - 95, bottom - 28, 90, 20).build()); prev.active = page > 0;
+                ButtonWidget next = addDrawableChild(ButtonWidget.builder(Text.literal("Next"), b -> { page++; clearAndInit(); })
+                        .dimensions(center + 5, bottom - 28, 90, 20).build()); next.active = page < pages - 1;
             }
-
-            int halfWidth = (buttonWidth - 6) / 2;
-            addDrawableChild(ButtonWidget.builder(hudButtonText(), button -> {
-                data.showHud = !data.showHud;
-                save();
-                button.setMessage(hudButtonText());
-            }).dimensions(left, this.height - 98, halfWidth, 20).build());
-
-            addDrawableChild(ButtonWidget.builder(Text.literal("Edit HUD"), button ->
-                    MinecraftClient.getInstance().setScreen(new HudEditScreen(this)))
-                    .dimensions(left + halfWidth + 6, this.height - 98, halfWidth, 20).build());
-
-            addDrawableChild(ButtonWidget.builder(Text.literal("Reset All Counters"), button -> {
-                data.counts.clear();
-                data.lastName = null;
-                pending = null;
-                save();
-                clearAndInit();
-            }).dimensions(left, this.height - 70, buttonWidth, 20).build());
-
-            addDrawableChild(ButtonWidget.builder(Text.literal("Close"), button -> close())
-                    .dimensions(left, this.height - 42, buttonWidth, 20).build());
+            int half = (buttonWidth - 6) / 2;
+            addDrawableChild(ButtonWidget.builder(hudButtonText(), b -> { data.showHud = !data.showHud; save(); b.setMessage(hudButtonText()); })
+                    .dimensions(left, height - 98, half, 20).build());
+            addDrawableChild(ButtonWidget.builder(Text.literal("Edit HUD"), b -> MinecraftClient.getInstance().setScreen(new HudEditScreen(this)))
+                    .dimensions(left + half + 6, height - 98, half, 20).build());
+            addDrawableChild(ButtonWidget.builder(themeButtonText(), b -> { data.iceTheme = !data.iceTheme; save(); b.setMessage(themeButtonText()); })
+                    .dimensions(left, height - 70, half, 20).build());
+            addDrawableChild(ButtonWidget.builder(Text.literal("Reset All"), b -> { data.counts.clear(); data.lastName = null; pending = null; save(); clearAndInit(); })
+                    .dimensions(left + half + 6, height - 70, half, 20).build());
+            addDrawableChild(ButtonWidget.builder(Text.literal("Close"), b -> close()).dimensions(left, height - 42, buttonWidth, 20).build());
         }
-
         private Text streamerButtonText(String name, int count) {
-            boolean enabled = data.streamerEnabled.getOrDefault(name, true);
-            return Text.literal(name + "  |  " + (enabled ? "ON" : "OFF") + "  |  " + count + " TPs");
+            return Text.literal(name + "  |  " + (data.streamerEnabled.getOrDefault(name, true) ? "ON" : "OFF") + "  |  " + count + " TPs");
         }
-
-        private Text hudButtonText() {
-            return Text.literal("HUD: " + (data.showHud ? "ON" : "OFF"));
-        }
-
-        @Override
-        public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
-            // Draw a plain dim overlay instead of Lunar Client's blur-backed background.
-            // This avoids the 'Can only blur once per frame' conflict in Lunar Client.
-            ctx.fill(0, 0, this.width, this.height, 0x90000000);
-
-            int panelWidth = Math.min(360, this.width - 20);
-            int left = (this.width - panelWidth) / 2;
-            int top = 12;
-            int right = left + panelWidth;
-            int bottom = this.height - 126;
-
-            ctx.fill(left - 3, top - 3, right + 3, bottom + 3, 0xFFFFD54F);
-            ctx.fill(left, top, right, bottom, 0xFF18202C);
-            ctx.fill(left + 2, top + 2, right - 2, top + 5, 0xFF6C9BCB);
-
-            ctx.drawCenteredTextWithShadow(textRenderer, title, this.width / 2, top + 16, 0xFFFFFFFF);
-            ctx.drawCenteredTextWithShadow(textRenderer,
-                    "Enable or disable streamers individually", this.width / 2, top + 40, 0xFFFFD54F);
-
+        private Text hudButtonText() { return Text.literal("HUD: " + (data.showHud ? "ON" : "OFF")); }
+        private Text themeButtonText() { return Text.literal("VIP Theme: " + (data.iceTheme ? "ICE" : "GOLD")); }
+        private int accent() { return data.iceTheme ? 0xFF69D8FF : 0xFFFFD54F; }
+        private int menuText() { return data.iceTheme ? 0xFF9BE8FF : 0xFFFFD878; }
+        private int panel() { return data.iceTheme ? 0xFF101F2B : 0xFF241D12; }
+        @Override public void render(DrawContext ctx, int mx, int my, float delta) {
+            ctx.fill(0, 0, width, height, 0x90000000);
+            int pw = Math.min(360, width - 20), left = (width - pw) / 2, top = 12, right = left + pw, bottom = height - 126;
+            ctx.fill(left - 3, top - 3, right + 3, bottom + 3, accent());
+            ctx.fill(left, top, right, bottom, panel()); ctx.fill(left + 2, top + 2, right - 2, top + 5, accent());
+            String heading = "Streamer Counter VIP", subtitle = "Enable or disable streamers individually";
+            drawFlowText(ctx, textRenderer, heading, width / 2 - textRenderer.getWidth(heading) / 2, top + 16, menuText(), true);
+            drawFlowText(ctx, textRenderer, subtitle, width / 2 - textRenderer.getWidth(subtitle) / 2, top + 40, menuText(), true);
             if (streamerNames().isEmpty()) {
-                ctx.drawCenteredTextWithShadow(textRenderer,
-                        "No streamers detected yet.", this.width / 2, top + 78, 0xFFFFFFFF);
-                ctx.drawCenteredTextWithShadow(textRenderer,
-                        "Streamers will appear here after /tpahere <name>.", this.width / 2, top + 96, 0xFFCCCCCC);
+                ctx.drawCenteredTextWithShadow(textRenderer, "No streamers detected yet.", width / 2, top + 78, menuText());
+                ctx.drawCenteredTextWithShadow(textRenderer, "Streamers will appear here after /tpahere <name>.", width / 2, top + 96, menuText());
             }
-
-            super.render(ctx, mouseX, mouseY, delta);
-            ctx.drawCenteredTextWithShadow(textRenderer, "Made by AlpBey3503",
-                    this.width / 2, this.height - 14, 0xFFE8B64D);
+            super.render(ctx, mx, my, delta);
+            String credit = "VIP Edition | Made by AlpBey3503";
+            drawFlowText(ctx, textRenderer, credit, width / 2 - textRenderer.getWidth(credit) / 2, height - 14, menuText(), true);
         }
-
-        @Override
-        public void close() {
-            MinecraftClient.getInstance().setScreen(parent);
-        }
+        @Override public void close() { MinecraftClient.getInstance().setScreen(parent); }
     }
 }

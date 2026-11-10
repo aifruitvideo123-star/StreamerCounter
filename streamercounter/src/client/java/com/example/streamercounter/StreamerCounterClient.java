@@ -493,30 +493,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         @Override public boolean mouseReleased(MouseButtonEvent event) {
             if(dragging&&event.button()==0){dragging=false;save();return true;}
             return super.mouseReleased(event);
-            @Override public void extractRenderState(GuiGraphicsExtractor graphics,int mx,int my,float delta) {
-            graphics.fill(0,0,width,height,0xB0000000);
-            graphics.fill(6,48,132,height-8,0x990B111A);
-            graphics.fill(140,48,width-8,height-8,0x990B111A);
-            graphics.text(font,"TEXT ELEMENTS",14,34,0xFFFFD45A,true);
-            graphics.text(font,"Select an item on the left. Hidden items stay in this list.",148,34,0xFFFFFFFF,true);
-            if(data.screenTexts!=null) for(ScreenText t:data.screenTexts) if(t!=null&&t.visible&&t.text!=null&&!t.text.isEmpty()) {
-                float scale=Math.max(8,Math.min(96,t.size))/9.0f;
-                graphics.pose().pushMatrix();
-                graphics.pose().translate(t.x,t.y);
-                graphics.pose().scale(scale,scale);
-                graphics.text(font,t.text,0,0,t.color,t.shadow);
-                graphics.pose().popMatrix();
-            }
-            ScreenText t=current();
-            if(t!=null) {
-                String info="Selected: "+(t.text==null?"":t.text)+" | Size: "+t.size;
-                graphics.text(font,info,148,62,0xFFFFD45A,true);
-            } else graphics.text(font,"Click + Add Text to create your first item.",148,62,0xFFCCCCCC,true);
-            super.extractRenderState(graphics,mx,my,delta);
         }
-        @Override public void onClose(){save();Minecraft.getInstance().setScreen(parent);}
-    }
-
         @Override public void extractRenderState(GuiGraphicsExtractor graphics,int mx,int my,float delta) {
             int left=12, top=42, split=Math.max(150,(int)(width*0.34)), right=left+split+12;
             graphics.fill(0,0,width,height,0xB0000000);

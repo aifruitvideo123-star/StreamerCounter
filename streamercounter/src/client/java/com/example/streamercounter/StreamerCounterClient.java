@@ -464,9 +464,14 @@ public class StreamerCounterClient implements ClientModInitializer {
             addRenderableWidget(Button.builder(Component.literal("Size +"), b -> {
                 ScreenText t=current(); if(t!=null){t.size=Math.min(96,t.size+2);save();}
             }).bounds(x+74, 160, 68, 20).build());
-            addRenderableWidget(Button.builder(Component.literal("Color"), b -> {
-                ScreenText t=current(); if(t!=null){int[] colors={0xFFFFFFFF,0xFFFFD54F,0xFF69D8FF,0xFFFF6B6B,0xFF78E08F};int i=0;for(;i<colors.length;i++)if(colors[i]==t.color)break;t.color=colors[(i+1)%colors.length];save();}
-            }).bounds(x, 188, 68, 20).build());
+            addRenderableWidget(Button.builder(Component.literal("Font / Style"),b->{
+                ScreenText t=current(); if(t!=null){String[] styles={"default","bold","italic","bold_italic","flow"};int n=0;for(;n<styles.length;n++)if(styles[n].equals(t.font))break;t.font=styles[(n+1)%styles.length];t.bold=t.font.equals("bold")||t.font.equals("bold_italic");t.italic=t.font.equals("italic")||t.font.equals("bold_italic");save();clearWidgets();init();}
+            }).bounds(x, 188, 146, 20).build());
+            addRenderableWidget(Button.builder(Component.literal("Color"),b->{
+                ScreenText t=current();if(t!=null){int[] colors={0xFFFFFFFF,0xFFFFD54F,0xFF69D8FF,0xFFFF6B6B,0xFF78E08F};int n=0;for(;n<colors.length;n++)if(colors[n]==t.color)break;t.color=colors[(n+1)%colors.length];save();}
+            }).bounds(x, 216, 68, 20).build());
+            addRenderableWidget(Button.builder(Component.literal("Done"),b->onClose())
+                .bounds(x+74, 216, 68, 20).build());
             addRenderableWidget(Button.builder(Component.literal("Done"), b -> onClose())
                 .bounds(x+74, 188, 68, 20).build());
         }
@@ -509,8 +514,8 @@ public class StreamerCounterClient implements ClientModInitializer {
             graphics.text(font,"EDIT TEXT",right+16,top+14,0xFFFFFFFF,true);
             graphics.text(font,"Select a text on the left. Hidden texts stay in this list.",right+16,top+38,0xFFB8C7D9,true);
             graphics.text(font,"TEXT",right+16,top+67,0xFFFFD54F,true);
-            graphics.text(font,"STYLE / SIZE",right+16,top+105,0xFFFFD54F,true);
-            graphics.text(font,"COLOR",right+16,top+145,0xFFFFD54F,true);
+            graphics.text(font,"SIZE / FONT STYLE",right+16,top+105,0xFFFFD54F,true);
+            graphics.text(font,"COLOR",right+16,top+185,0xFFFFD54F,true);
             if(data.screenTexts!=null) for(ScreenText item:data.screenTexts) if(item!=null&&item.visible&&item.text!=null&&!item.text.isEmpty()) {
                 float scale=Math.max(8,Math.min(96,item.size))/9.0f;
                 graphics.pose().pushMatrix(); graphics.pose().translate(item.x,item.y); graphics.pose().scale(scale,scale);

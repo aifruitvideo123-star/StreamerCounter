@@ -430,8 +430,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         @Override public boolean mouseReleased(Click click) {
             if(dragging&&click.button()==0){dragging=false;save();return true;}
             return super.mouseReleased(click);
-        }
-        @Override public void render(DrawContext ctx,int mx,int my,float delta) {
+            @Override public void render(DrawContext ctx,int mx,int my,float delta) {
             ctx.fill(0,0,width,height,0xB0000000);
             ctx.fill(6,48,132,height-8,0x990B111A);
             ctx.fill(140,48,width-8,height-8,0x990B111A);
@@ -480,6 +479,8 @@ public class StreamerCounterClient implements ClientModInitializer {
             ctx.drawText(textRenderer,"Drag visible text to move it.",right+16,height-34,0xFF6C9BCB,true);
             super.render(ctx,mx,my,delta);
         }
+    }
+
     private static class CounterMenuScreen extends Screen {
         private final Screen parent;
         private int page = 0;

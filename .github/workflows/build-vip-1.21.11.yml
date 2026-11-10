@@ -48,3 +48,5 @@ jobs:
           name: StreamerCounter-VIP-1.21.11
           path: artifact/*.jar
           if-no-files-found: error
+
+# Trigger initial VIP 1.21.11 build

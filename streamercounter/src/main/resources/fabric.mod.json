@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "id": "streamercounter",
+  "id": "streamercounter_vip",
   "version": "${version}",
-  "name": "Streamer Counter",
-  "description": "Counts detected player teleports after /tpahere and displays the counter in the HUD.",
+  "name": "Streamer Counter VIP",
+  "description": "VIP edition with selectable HUD themes and arrival notifications after /tpahere.",
   "authors": [
     "aifruitvideo123-star"
   ],

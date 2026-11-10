@@ -53,3 +53,5 @@ jobs:
           name: StreamerCounter-VIP-26.2
           path: artifact/*.jar
           if-no-files-found: error
+
+# Rebuild after VIP 26.2 screen API fix

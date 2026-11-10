@@ -61,6 +61,14 @@ public class StreamerCounterClient implements ClientModInitializer {
         float hudScale = 1.0f;
         int textColor = 0xFFFFC85A;
         boolean iceTheme = false;
+        List<ScreenText> screenTexts = new ArrayList<>();
+    }
+
+    private static class ScreenText {
+        String text = "Your text";
+        int x = 80, y = 80, color = 0xFFFFFFFF, size = 16;
+        String font = "default";
+        boolean visible = true, bold = false, italic = false, shadow = true;
     }
 
     @Override
@@ -271,6 +279,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                     if (loaded.counts == null) loaded.counts = new HashMap<>();
                     if (loaded.streamerEnabled == null) loaded.streamerEnabled = new HashMap<>();
                     if (loaded.displayNames == null) loaded.displayNames = new HashMap<>();
+                    if (loaded.screenTexts == null) loaded.screenTexts = new ArrayList<>();
                     if (loaded.screenTexts == null) loaded.screenTexts = new ArrayList<>();
                     data = loaded;
                 }

@@ -267,8 +267,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             }
             addDrawableChild(ButtonWidget.builder(Text.literal("Back"), button -> MinecraftClient.getInstance().setScreen(parent))
                     .dimensions(center - 50, firstY + 88, 100, 20).build());
-        }
-        @Override public void render(DrawContext ctx, int mx, int my, float delta) {
+            @Override public void render(DrawContext ctx, int mx, int my, float delta) {
             ctx.fill(0, 0, width, height, 0xC0000000);
             ctx.drawCenteredTextWithShadow(textRenderer, "Choose HUD text color", width / 2, height / 2 - 76, 0xFFFFFFFF);
             String preview = "Streamer Counter VIP";
@@ -529,6 +528,8 @@ public class StreamerCounterClient implements ClientModInitializer {
             ctx.drawText(textRenderer,"Drag visible text to move it.",right+16,height-34,0xFF6C9BCB,true);
             super.render(ctx,mx,my,delta);
         }
+    }
+
     private static class CounterMenuScreen extends Screen {
         private final Screen parent;
         private int page = 0;

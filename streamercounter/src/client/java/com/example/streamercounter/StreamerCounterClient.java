@@ -525,7 +525,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             graphics.text(font,"TEXT",right+16,top+67,0xFFFFD54F,true);
             graphics.text(font,"SIZE",right+16,top+219,0xFFFFD54F,true);
             graphics.text(font,"FONT / STYLE",right+16,top+271,0xFFFFD54F,true);
-            ctx.drawText(textRenderer,"COLOR",right+16,top+303,0xFFFFD54F,true);
+            graphics.text(font,"COLOR",right+16,top+303,0xFFFFD54F,true);
             if(data.screenTexts!=null) for(ScreenText item:data.screenTexts) if(item!=null&&item.visible&&item.text!=null&&!item.text.isEmpty()) {
                 float scale=Math.max(8,Math.min(96,item.size))/9.0f;
                 graphics.pose().pushMatrix(); graphics.pose().translate(item.x,item.y); graphics.pose().scale(scale,scale);

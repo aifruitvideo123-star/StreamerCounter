@@ -491,7 +491,12 @@ public class StreamerCounterClient implements ClientModInitializer {
             }).bounds(x, 320, 68, 20).build());
             addRenderableWidget(Button.builder(Component.literal("Done"),b->onClose())
                 .bounds(x+74, 320, 68, 20).build());
+            
+            // Subtle transparency lets the menu background show through; the selected theme supplies the accent colors.
+            for (var child : children()) {
+                if (child instanceof net.minecraft.client.gui.components.AbstractWidget button) button.setAlpha(0.82f);
             }
+        }
         private ScreenText current(){return selected>=0&&selected<data.screenTexts.size()?data.screenTexts.get(selected):null;}
         @Override public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
             if(event.button()==0) {

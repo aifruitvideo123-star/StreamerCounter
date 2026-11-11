@@ -895,7 +895,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                     Minecraft mc=Minecraft.getInstance();
                     if(mc.player!=null&&!mc.player.getMainHandItem().isEmpty())
                         data.auctionItem=mc.player.getMainHandItem().getHoverName().getString();
-                    save();mc.gui.setScreen(new AuctionScreen(parent));
+                    save();mc.setScreen(new AuctionScreen(parent));
                 }).bounds(left,t+90,280,22).build());
 
                 int[] ds={30,60,120,300,600}; String[] labels={"30s","1m","2m","5m","10m"};

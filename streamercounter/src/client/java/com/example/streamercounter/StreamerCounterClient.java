@@ -42,6 +42,7 @@ public class StreamerCounterClient implements ClientModInitializer {
     private static final double NEAR_SQ = 8 * 8;
     private static final double JUMP_SQ = 20 * 20;
 
+    private static long timerFinishedAt = 0L;
     private static Data data = new Data();
     private static KeyMapping openMenuKey;
     private static String pending;
@@ -285,7 +286,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             drawFlowText(graphics,mc.font,"WON FOR $"+formatAuctionMoney(data.auctionHighestBid),bannerCx-100,bannerCy+14,0xFFFF8126,true);
         }
         }
-        if(data.timerActive && System.currentTimeMillis()>=data.timerEndTime){data.timerActive=false;data.timerFinished=true;save();}
+        if(data.timerActive && System.currentTimeMillis()>=data.timerEndTime){data.timerActive=false;data.timerFinished=true;timerFinishedAt=System.currentTimeMillis();save();}
         if(data.timerActive || data.timerFinished){
             long remain=data.timerActive?Math.max(0,(data.timerEndTime-System.currentTimeMillis()+999)/1000):0;
             int timerCx=data.timerHudX<0?mc.getWindow().getGuiScaledWidth()/2:data.timerHudX, timerCy=data.timerHudY<0?mc.getWindow().getGuiScaledHeight()/3:data.timerHudY; float timerScale=Math.max(0.6f,Math.min(1.8f,data.timerHudScale)); int timerRadius=(int)(62*timerScale);
@@ -296,6 +297,14 @@ public class StreamerCounterClient implements ClientModInitializer {
             graphics.text(mc.font,Component.literal(time),timerCx-mc.font.width(time)/2,timerCy-5,0xFFFFFFFF);
             String status=data.timerFinished?"TIME UP":"TIMER";
             graphics.text(mc.font,Component.literal(status),timerCx-mc.font.width(status)/2,timerCy+13,data.timerFinished?0xFFFF6B6B:0xFFFFC04A);
+            if(timerFinishedAt>0 && System.currentTimeMillis()-timerFinishedAt<5200){
+                long elapsed=System.currentTimeMillis()-timerFinishedAt;float pulse=(float)(1.0+0.035*Math.sin(elapsed/110.0));int bw=(int)(300*pulse),bh=76;
+                int bx=mc.getWindow().getGuiScaledWidth()/2,by=mc.getWindow().getGuiScaledHeight()/2-38;
+                graphics.fill(bx-bw/2-2,by-2,bx+bw/2+2,by+bh+2,0xFFFF8126);graphics.fill(bx-bw/2,by,bx+bw/2,by+bh,0xF20D0B09);
+                graphics.fill(bx-bw/2,by,bx+bw/2,by+3,0xFFFF8126);
+                drawFlowText(graphics,mc.font,"⏱ TIMER FINISHED",bx-mc.font.width("⏱ TIMER FINISHED")/2,by+19,0xFFFFC04A,true);
+                String sub="Your countdown is complete";graphics.text(mc.font,Component.literal(sub),bx-mc.font.width(sub)/2,by+43,0xFFFFFFFF,true);
+            }
         }
     }
 
@@ -926,16 +935,24 @@ public class StreamerCounterClient implements ClientModInitializer {
         private EditBox secondsField;
         TimerScreen(Screen parent){super(Component.literal("VIP Timer"));this.parent=parent;}
         @Override protected void init(){
-            int cx=width/2, top=height/2-125;
-            secondsField=new EditBox(font,cx-70,top+48,180,26,Component.literal("Seconds"));
+            int cx=width/2, top=height/2-132;
+            secondsField=new EditBox(font,cx-90,top+52,180,26,Component.literal("Seconds"));
             secondsField.setValue(String.valueOf(data.timerDurationSeconds));addRenderableWidget(secondsField);
             int[] vals={10,30,60,120,300,600}; String[] labels={"10 sec","30 sec","1 min","2 min","5 min","10 min"};
-            for(int i=0;i<vals.length;i++){final int v=vals[i];addRenderableWidget(Button.builder(Component.literal(labels[i]),b->{data.timerDurationSeconds=v;secondsField.setValue(String.valueOf(v));save();}).bounds(cx-150+(i%3)*102,top+88+(i/3)*30,96,24).build());}
-            addRenderableWidget(Button.builder(Component.literal("Start timer"),b->{try{data.timerDurationSeconds=Math.max(1,Math.min(86400,Integer.parseInt(secondsField.getValue().trim())));}catch(Exception ignored){data.timerDurationSeconds=60;}data.timerEndTime=System.currentTimeMillis()+data.timerDurationSeconds*1000L;data.timerActive=true;data.timerFinished=false;save();Minecraft.getInstance().setScreen(parent);}).bounds(cx-150,top+166,145,28).build());
-            addRenderableWidget(Button.builder(Component.literal(data.timerActive?"Stop timer":"Reset"),b->{data.timerActive=false;data.timerFinished=false;data.timerEndTime=0;save();Minecraft.getInstance().setScreen(new TimerScreen(parent));}).bounds(cx+5,top+132,145,24).build());
-            addRenderableWidget(Button.builder(Component.literal("Back to Tools"),b->Minecraft.getInstance().setScreen(parent)).bounds(cx-75,top+202,150,24).build());
+            for(int i=0;i<vals.length;i++){final int v=vals[i];addRenderableWidget(Button.builder(Component.literal(labels[i]),b->{data.timerDurationSeconds=v;secondsField.setValue(String.valueOf(v));save();}).bounds(cx-180+(i%3)*120,top+91+(i/3)*31,110,25).build());}
+            addRenderableWidget(Button.builder(Component.literal(data.timerActive?"Stop timer":"Reset"),b->{data.timerActive=false;data.timerFinished=false;timerFinishedAt=0;data.timerEndTime=0;save();Minecraft.getInstance().setScreen(new TimerScreen(parent));}).bounds(cx-70,top+158,140,25).build());
+            addRenderableWidget(Button.builder(Component.literal("Start timer"),b->{try{data.timerDurationSeconds=Math.max(1,Math.min(86400,Integer.parseInt(secondsField.getValue().trim())));}catch(Exception ignored){data.timerDurationSeconds=60;}data.timerEndTime=System.currentTimeMillis()+data.timerDurationSeconds*1000L;data.timerActive=true;data.timerFinished=false;timerFinishedAt=0;save();Minecraft.getInstance().setScreen(parent);}).bounds(cx-160,top+194,150,28).build());
+            addRenderableWidget(Button.builder(Component.literal("Back to Tools"),b->Minecraft.getInstance().setScreen(parent)).bounds(cx+10,top+194,150,28).build());
         }
-        @Override public void extractRenderState(GuiGraphicsExtractor g,int mouseX,int mouseY,float delta){g.fill(0,0,width,height,0x88000000);int cx=width/2, top=height/2-125;g.fill(width/2-190,height/2-143,width/2+190,height/2+113,0xE8120F0B);g.fill(width/2-190,height/2-143,width/2+190,height/2-139,0xFFFF8126);super.extractRenderState(g,mouseX,mouseY,delta);g.text(font,Component.literal("TIMER  •  "+(data.timerActive?"RUNNING":data.timerFinished?"FINISHED":"READY")),width/2-font.width("TIMER  •  READY")/2,height/2-94,0xFFFFC04A);g.text(font,Component.literal("Choose a preset or enter seconds"),width/2-font.width("Choose a preset or enter seconds")/2,height/2-54,0xFFFFFFFF);}
+        @Override public void extractRenderState(GuiGraphicsExtractor g,int mouseX,int mouseY,float delta){
+            g.fill(0,0,width,height,0x99000000);int cx=width/2,top=height/2-132;
+            g.fill(cx-205,top-18,cx+205,top+239,0xF20D0B09);g.fill(cx-205,top-18,cx+205,top-14,0xFFFF8126);
+            String state="TIMER  •  "+(data.timerActive?"RUNNING":data.timerFinished?"FINISHED":"READY");
+            g.text(font,state,cx-font.width(state)/2,top+7,0xFFFFC04A,true);
+            String help="Choose a preset or enter a duration in seconds";
+            g.text(font,help,cx-font.width(help)/2,top+34,0xFFDDC9B3,true);
+            super.extractRenderState(g,mouseX,mouseY,delta);
+        }
     }
 
     private static class AuctionScreen extends Screen {

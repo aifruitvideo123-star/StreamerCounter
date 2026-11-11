@@ -824,7 +824,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             }).bounds(cx-100,height/2+48,200,24).build());
             addRenderableWidget(Button.builder(Component.literal("Duration: "+data.auctionDurationSeconds+"s"),b->{data.auctionDurationSeconds=data.auctionDurationSeconds==60?120:data.auctionDurationSeconds==120?180:60;save();Minecraft.getInstance().gui.setScreen(new AuctionScreen(parent));}).bounds(cx-100,height/2+78,200,22).build());
             addRenderableWidget(Button.builder(Component.literal("Reset bids"),b->{data.auctionHighestBid=0;data.auctionHighestPlayer="No bids yet";save();Minecraft.getInstance().gui.setScreen(new AuctionScreen(parent));}).bounds(cx-100,height/2+106,200,22).build());
-            addRenderableWidget(Button.builder(Component.literal("Back to Tools"),b->Minecraft.getInstance().gui.setScreen(parent).bounds(cx-100,height/2+136,200,22).build());
+            addRenderableWidget(Button.builder(Component.literal("Back to Tools"),b->Minecraft.getInstance().gui.setScreen(parent)).bounds(cx-100,height/2+136,200,22).build());
         }
         @Override public void extractRenderState(GuiGraphicsExtractor g,int mx,int my,float delta){
             int cx=width/2,y=height/2-74,accent=data.iceTheme?0xFF69D8FF:0xFFE8B64D;

@@ -586,7 +586,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         
             // Apply translucency to the actual top-level VIP menu controls.
             for (var child : children()) {
-                if (child instanceof net.minecraft.client.gui.widget.ClickableWidget button) button.setAlpha(0.72f);
+                if (child instanceof net.minecraft.client.gui.widget.ClickableWidget button) button.setAlpha(0.0f);
             }
         }
         private Text streamerButtonText(String name,int count){return Text.literal(name+"   •   "+(data.streamerEnabled.getOrDefault(name,true)?"ON":"OFF")+"   •   "+count+" TPs");}
@@ -608,7 +608,23 @@ public class StreamerCounterClient implements ClientModInitializer {
             else if(activeTab==3)ctx.drawText(textRenderer,"Create, position and style your on-screen text.",x+250,bodyTop+6,textColor(),true);
             else if(activeTab==4)ctx.drawText(textRenderer,"Choose the VIP accent theme.",x+220,bodyTop+6,textColor(),true);
             else if(activeTab==5)ctx.drawText(textRenderer,"Careful: resetting removes the saved counter totals.",x+220,bodyTop+6,0xFFFF9B82,true);
-            super.render(ctx,mx,my,delta);String credit="VIP EDITION  •  MADE BY ALPBEY3503";
+            super.render(ctx,mx,my,delta);
+            int buttonIndex=0;
+            for (var child : children()) {
+                if (child instanceof net.minecraft.client.gui.widget.ClickableWidget button && button.visible) {
+                    int bx=button.getX(), by=button.getY(), bw=button.getWidth(), bh=button.getHeight();
+                    boolean hovered=mx>=bx&&mx<bx+bw&&my>=by&&my<by+bh;
+                    boolean selected=buttonIndex<6&&buttonIndex==activeTab;
+                    int bg=selected?0xAA59432D:(hovered?0x99513D2A:0x66120E0A);
+                    ctx.fill(bx,by,bx+bw,by+bh,bg);
+                    if(selected)ctx.fill(bx,by,bx+bw,by+2,accent());
+                    String label=button.getMessage().getString();
+                    int color=selected?0xFFFFE4B5:textColor();
+                    ctx.drawCenteredTextWithShadow(textRenderer,label,bx+bw/2,by+(bh-textRenderer.fontHeight)/2,color);
+                    buttonIndex++;
+                }
+            }
+            String credit="VIP EDITION  •  MADE BY ALPBEY3503";
             ctx.drawText(textRenderer,credit,left+22,bottom-18,textColor(),true);
         }
         @Override public void close(){MinecraftClient.getInstance().setScreen(parent);}

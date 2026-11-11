@@ -312,8 +312,6 @@ public class StreamerCounterClient implements ClientModInitializer {
         }
     }
 
-}
-
     private static final String[] HUD_COLOR_NAMES = {"Gold", "Ice", "Red", "Green", "Purple", "White"};
     private static final int[] HUD_COLORS = {0xFFFFC85A, 0xFF69D8FF, 0xFFFF6B6B, 0xFF78E08F, 0xFFB98CFF, 0xFFFFFFFF};
 

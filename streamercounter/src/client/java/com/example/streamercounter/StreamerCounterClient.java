@@ -36,7 +36,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 public class StreamerCounterClient implements ClientModInitializer {
-    private static final Path FILE = FabricLoader.getInstance().getConfigDir().resolve("streamer-counter-vip.json");
+    private static final Path FILE = FabricLoader.getInstance().getConfigDir().resolve("streamer-counter-media.json");
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final long TIMEOUT_MS = 60_000;
     private static final double NEAR_SQ = 8 * 8;
@@ -678,7 +678,7 @@ public class StreamerCounterClient implements ClientModInitializer {
 
         CounterMenuScreen(Screen parent, int page) { this(parent,page,0); }
         CounterMenuScreen(Screen parent, int page, int activeTab) {
-            super(Component.literal("Streamer Counter VIP"));
+            super(Component.literal("StreamerCounter MEDIA"));
             this.parent=parent; this.page=page; this.activeTab=activeTab;
         }
         private List<String> streamerNames() {
@@ -692,9 +692,9 @@ public class StreamerCounterClient implements ClientModInitializer {
         private static final String[] VIP_THEMES={"GOLD","ICE","CHRISTMAS","HALLOWEEN","NETHER","EMERALD","PURPLE","OCEAN"};
         private String currentTheme(){return data.iceTheme&&"GOLD".equals(data.vipTheme)?"ICE":(data.vipTheme==null?"GOLD":data.vipTheme);}
         private Component themeButtonText(){return Component.literal("Theme: "+currentTheme()+"  →");}
-        private int accent(){return switch(currentTheme()){case "ICE","OCEAN"->0xFF69D8FF;case "CHRISTMAS"->0xFF55D878;case "HALLOWEEN"->0xFFFF8738;case "NETHER"->0xFFFF5555;case "EMERALD"->0xFF45D69A;case "PURPLE"->0xFFB58CFF;default->0xFFFFD54F;};}
-        private int textColor(){return switch(currentTheme()){case "ICE","OCEAN"->0xFF9BE8FF;case "CHRISTMAS"->0xFFFFD8D8;case "HALLOWEEN"->0xFFFFC18A;case "NETHER"->0xFFFFA0A0;case "EMERALD"->0xFF9BFFD1;case "PURPLE"->0xFFDCCBFF;default->0xFFFFD878;};}
-        private int panelColor(){return switch(currentTheme()){case "CHRISTMAS"->0xB817241B;case "HALLOWEEN"->0xB8201712;case "ICE","OCEAN"->0xB8111D29;case "NETHER"->0xB8201118;case "EMERALD"->0xB812211D;case "PURPLE"->0xB81C1728;default->0xB8141A24;};}
+        private int accent(){return 0xFFE34B55;}
+        private int textColor(){return 0xFFFFF0F0;}
+        private int panelColor(){return 0xB81A1012;}
         private void drawSeasonDecor(GuiGraphicsExtractor g) {
             int decoX=(width+Math.min(920,width-32))/2-110;
             String theme=currentTheme();
@@ -905,7 +905,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                     buttonIndex++;
                 }
             }
-            String credit="VIP EDITION  •  MADE BY ALPBEY3503";
+            String credit="MEDIA EDITION  •  MADE BY ALPBEY3503";
             drawFlowText(g,font,credit,left+22,bottom-18,textColor(),true);
         }
         @Override public void onClose(){Minecraft.getInstance().gui.setScreen(parent);}

@@ -588,32 +588,33 @@ public class StreamerCounterClient implements ClientModInitializer {
         private int textColor(){return switch(currentTheme()){case "ICE","OCEAN"->0xFF9BE8FF;case "CHRISTMAS"->0xFFFFD8D8;case "HALLOWEEN"->0xFFFFC18A;case "NETHER"->0xFFFFA0A0;case "EMERALD"->0xFF9BFFD1;case "PURPLE"->0xFFDCCBFF;default->0xFFFFD878;};}
         private int panelColor(){return switch(currentTheme()){case "CHRISTMAS"->0xB817241B;case "HALLOWEEN"->0xB8201712;case "ICE","OCEAN"->0xB8111D29;case "NETHER"->0xB8201118;case "EMERALD"->0xB812211D;case "PURPLE"->0xB81C1728;default->0xB8141A24;};}
         private void drawSeasonDecor(GuiGraphicsExtractor g) {
+            int decoX=(width+Math.min(920,decoX+78))/2-110;
             if(currentTheme().equals("CHRISTMAS")){
                 // Pixel-art candy cane and festive baubles in the menu header.
-                g.fill(width-94,42,width-88,72,0xFFFFF1D6);
-                g.fill(width-88,42,width-76,48,0xFFFFF1D6);
-                g.fill(width-94,50,width-88,56,0xFFD93636);
-                g.fill(width-88,60,width-82,66,0xFFD93636);
-                g.fill(width-88,48,width-82,54,0xFFD93636);
-                g.fill(width-62,48,width-52,58,0xFFD93636);
-                g.fill(width-60,50,width-54,56,0xFFFFD7D7);
-                g.fill(width-43,53,width-33,63,0xFFFFD45F);
-                g.fill(width-41,55,width-35,61,0xFFFFF0B0);
-                g.fill(width-30,64,width-20,74,0xFF55D878);
+                g.fill(decoX+16,42,decoX+22,72,0xFFFFF1D6);
+                g.fill(decoX+22,42,decoX+34,48,0xFFFFF1D6);
+                g.fill(decoX+16,50,decoX+22,56,0xFFD93636);
+                g.fill(decoX+22,60,decoX+28,66,0xFFD93636);
+                g.fill(decoX+22,48,decoX+28,54,0xFFD93636);
+                g.fill(decoX+48,48,decoX+58,58,0xFFD93636);
+                g.fill(decoX+50,50,decoX+56,56,0xFFFFD7D7);
+                g.fill(decoX+67,53,decoX+77,63,0xFFFFD45F);
+                g.fill(decoX+69,55,decoX+75,61,0xFFFFF0B0);
+                g.fill(decoX+80,64,decoX+90,74,0xFF55D878);
             } else if(currentTheme().equals("HALLOWEEN")){
                 // Small pixel pumpkin with a stem, eyes and a carved smile.
-                g.fill(width-88,43,width-78,51,0xFF65B84F);
-                g.fill(width-96,50,width-70,72,0xFFFF8738);
-                g.fill(width-92,47,width-74,75,0xFFFF8738);
-                g.fill(width-90,55,width-86,61,0xFF28170F);
-                g.fill(width-80,55,width-76,61,0xFF28170F);
-                g.fill(width-87,65,width-79,68,0xFF28170F);
-                g.fill(width-65,50,width-55,60,0xFFFFB347);
-                g.fill(width-63,52,width-57,58,0xFFFFD18A);
+                g.fill(decoX+22,43,decoX+32,51,0xFF65B84F);
+                g.fill(decoX+14,50,decoX+40,72,0xFFFF8738);
+                g.fill(decoX+18,47,decoX+36,75,0xFFFF8738);
+                g.fill(decoX+20,55,decoX+24,61,0xFF28170F);
+                g.fill(decoX+30,55,decoX+34,61,0xFF28170F);
+                g.fill(decoX+23,65,decoX+31,68,0xFF28170F);
+                g.fill(decoX+45,50,decoX+55,60,0xFFFFB347);
+                g.fill(decoX+47,52,decoX+53,58,0xFFFFD18A);
             } else if(currentTheme().equals("ICE")||currentTheme().equals("OCEAN")){
-                g.fill(width-91,48,width-89,72,0xFFBCEBFF);
-                g.fill(width-100,58,width-80,60,0xFFBCEBFF);
-                g.fill(width-96,51,width-84,67,0xFFBCEBFF);
+                g.fill(decoX+19,48,decoX+21,72,0xFFBCEBFF);
+                g.fill(decoX+10,58,decoX+30,60,0xFFBCEBFF);
+                g.fill(decoX+14,51,decoX+26,67,0xFFBCEBFF);
             }
         }
         private int pageCount(int rows){return Math.max(1,(streamerNames().size()+rows-1)/rows);}

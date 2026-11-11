@@ -862,7 +862,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                 addRenderableWidget(Button.builder(Component.literal("Move and resize HUDs"),b->Minecraft.getInstance().gui.setScreen(new LayoutEditScreen(this))).bounds(contentX,bodyTop+154,230,26).build());
                             }
         
-            } else if(activeTab==6){
+            else if(activeTab==6){
                 addRenderableWidget(Button.builder(Component.literal("✦ OWNER EFFECTS: "+(data.ownerGlow?"ON":"OFF")),b->{data.ownerGlow=!data.ownerGlow;save();b.setMessage(Component.literal("✦ OWNER EFFECTS: "+(data.ownerGlow?"ON":"OFF")));}).bounds(contentX,bodyTop,230,24).build());
                 addRenderableWidget(Button.builder(Component.literal("Particles: "+(data.ownerParticles?"ON":"OFF")),b->{data.ownerParticles=!data.ownerParticles;save();b.setMessage(Component.literal("Particles: "+(data.ownerParticles?"ON":"OFF")));}).bounds(contentX,bodyTop+32,230,24).build());
                 addRenderableWidget(Button.builder(Component.literal("Smooth animations: "+(data.ownerAnimations?"ON":"OFF")),b->{data.ownerAnimations=!data.ownerAnimations;save();b.setMessage(Component.literal("Smooth animations: "+(data.ownerAnimations?"ON":"OFF")));}).bounds(contentX,bodyTop+64,230,24).build());

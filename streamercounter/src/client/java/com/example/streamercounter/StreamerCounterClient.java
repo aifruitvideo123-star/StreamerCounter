@@ -830,18 +830,18 @@ public class StreamerCounterClient implements ClientModInitializer {
                 addRenderableWidget(Button.builder(Component.literal("Reset HUD Position"),b->{data.hudX=-1;data.hudY=8;save();}).bounds(contentX,bodyTop+60,180,22).build());
                 addRenderableWidget(Button.builder(Component.literal("Reset All Counters"),b->{data.counts.clear();data.lastName=null;pending=null;save();Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,0,5));}).bounds(contentX,bodyTop+90,180,22).build());
                 addRenderableWidget(Button.builder(Component.literal("Close Menu"),b->onClose()).bounds(contentX,bodyTop+120,180,22).build());
-                addRenderableWidget(Button.builder(Component.literal("Auction ←"),b->{data.auctionHudX=Math.max(140,(data.auctionHudX<0?width/2:data.auctionHudX)-20);save();}).bounds(x,bodyTop+154,78,20).build());
-                addRenderableWidget(Button.builder(Component.literal("Auction →"),b->{data.auctionHudX=(data.auctionHudX<0?width/2:data.auctionHudX)+20;save();}).bounds(x+82,bodyTop+154,78,20).build());
-                addRenderableWidget(Button.builder(Component.literal("Auction ↑"),b->{data.auctionHudY=Math.max(20,data.auctionHudY-20);save();}).bounds(x,bodyTop+178,78,20).build());
-                addRenderableWidget(Button.builder(Component.literal("Auction ↓"),b->{data.auctionHudY+=20;save();}).bounds(x+82,bodyTop+178,78,20).build());
-                addRenderableWidget(Button.builder(Component.literal("Auction size −"),b->{data.auctionHudScale=Math.max(0.6f,data.auctionHudScale-0.1f);save();}).bounds(x,bodyTop+202,92,20).build());
-                addRenderableWidget(Button.builder(Component.literal("Auction size +"),b->{data.auctionHudScale=Math.min(1.8f,data.auctionHudScale+0.1f);save();}).bounds(x+96,bodyTop+202,92,20).build());
-                addRenderableWidget(Button.builder(Component.literal("Timer ←"),b->{data.timerHudX=Math.max(70,(data.timerHudX<0?width/2:data.timerHudX)-20);save();}).bounds(x+210,bodyTop+154,78,20).build());
-                addRenderableWidget(Button.builder(Component.literal("Timer →"),b->{data.timerHudX=(data.timerHudX<0?width/2:data.timerHudX)+20;save();}).bounds(x+292,bodyTop+154,78,20).build());
-                addRenderableWidget(Button.builder(Component.literal("Timer ↑"),b->{data.timerHudY=Math.max(70,(data.timerHudY<0?height/3:data.timerHudY)-20);save();}).bounds(x+210,bodyTop+178,78,20).build());
-                addRenderableWidget(Button.builder(Component.literal("Timer ↓"),b->{data.timerHudY=(data.timerHudY<0?height/3:data.timerHudY)+20;save();}).bounds(x+292,bodyTop+178,78,20).build());
-                addRenderableWidget(Button.builder(Component.literal("Timer size −"),b->{data.timerHudScale=Math.max(0.6f,data.timerHudScale-0.1f);save();}).bounds(x+210,bodyTop+202,92,20).build());
-                addRenderableWidget(Button.builder(Component.literal("Timer size +"),b->{data.timerHudScale=Math.min(1.8f,data.timerHudScale+0.1f);save();}).bounds(x+306,bodyTop+202,92,20).build());
+                addRenderableWidget(Button.builder(Component.literal("Auction ←"),b->{data.auctionHudX=Math.max(140,(data.auctionHudX<0?width/2:data.auctionHudX)-20);save();}).bounds(contentX,bodyTop+154,78,20).build());
+                addRenderableWidget(Button.builder(Component.literal("Auction →"),b->{data.auctionHudX=(data.auctionHudX<0?width/2:data.auctionHudX)+20;save();}).bounds(contentX+82,bodyTop+154,78,20).build());
+                addRenderableWidget(Button.builder(Component.literal("Auction ↑"),b->{data.auctionHudY=Math.max(20,data.auctionHudY-20);save();}).bounds(contentX,bodyTop+178,78,20).build());
+                addRenderableWidget(Button.builder(Component.literal("Auction ↓"),b->{data.auctionHudY+=20;save();}).bounds(contentX+82,bodyTop+178,78,20).build());
+                addRenderableWidget(Button.builder(Component.literal("Auction size −"),b->{data.auctionHudScale=Math.max(0.6f,data.auctionHudScale-0.1f);save();}).bounds(contentX,bodyTop+202,92,20).build());
+                addRenderableWidget(Button.builder(Component.literal("Auction size +"),b->{data.auctionHudScale=Math.min(1.8f,data.auctionHudScale+0.1f);save();}).bounds(contentX+96,bodyTop+202,92,20).build());
+                addRenderableWidget(Button.builder(Component.literal("Timer ←"),b->{data.timerHudX=Math.max(70,(data.timerHudX<0?width/2:data.timerHudX)-20);save();}).bounds(contentX+210,bodyTop+154,78,20).build());
+                addRenderableWidget(Button.builder(Component.literal("Timer →"),b->{data.timerHudX=(data.timerHudX<0?width/2:data.timerHudX)+20;save();}).bounds(contentX+292,bodyTop+154,78,20).build());
+                addRenderableWidget(Button.builder(Component.literal("Timer ↑"),b->{data.timerHudY=Math.max(70,(data.timerHudY<0?height/3:data.timerHudY)-20);save();}).bounds(contentX+210,bodyTop+178,78,20).build());
+                addRenderableWidget(Button.builder(Component.literal("Timer ↓"),b->{data.timerHudY=(data.timerHudY<0?height/3:data.timerHudY)+20;save();}).bounds(contentX+292,bodyTop+178,78,20).build());
+                addRenderableWidget(Button.builder(Component.literal("Timer size −"),b->{data.timerHudScale=Math.max(0.6f,data.timerHudScale-0.1f);save();}).bounds(contentX+210,bodyTop+202,92,20).build());
+                addRenderableWidget(Button.builder(Component.literal("Timer size +"),b->{data.timerHudScale=Math.min(1.8f,data.timerHudScale+0.1f);save();}).bounds(contentX+306,bodyTop+202,92,20).build());
             }
         
             // Apply translucency to the actual top-level VIP menu controls.
@@ -925,7 +925,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             addRenderableWidget(Button.builder(Component.literal(data.timerActive?"Stop timer":"Reset"),b->{data.timerActive=false;data.timerFinished=false;data.timerEndTime=0;save();Minecraft.getInstance().gui.setScreen(new TimerScreen(parent));}).bounds(cx+5,top+132,145,24).build());
             addRenderableWidget(Button.builder(Component.literal("Back to Tools"),b->Minecraft.getInstance().gui.setScreen(parent)).bounds(cx-75,top+202,150,24).build());
         }
-        @Override public void extractRenderState(GuiGraphicsExtractor g,int mouseX,int mouseY,float delta){g.fill(0,0,width,height,0x88000000);g.fill(width/2-190,height/2-143,width/2+190,height/2+113,0xE8120F0B);g.fill(width/2-190,height/2-143,width/2+190,height/2-139,0xFFFF8126);super.extractRenderState(g,mouseX,mouseY,delta);g.text(font,Component.literal("TIMER  •  "+(data.timerActive?"RUNNING":data.timerFinished?"FINISHED":"READY")),width/2-font.width("TIMER  •  READY")/2,height/2-94,0xFFFFC04A);g.text(font,Component.literal("Choose a preset or enter seconds"),width/2-font.width("Choose a preset or enter seconds")/2,height/2-54,0xFFFFFFFF);}
+        @Override public void extractRenderState(GuiGraphicsExtractor g,int mouseX,int mouseY,float delta){g.fill(0,0,width,height,0x88000000);int cx=width/2, top=height/2-125;g.fill(width/2-190,height/2-143,width/2+190,height/2+113,0xE8120F0B);g.fill(width/2-190,height/2-143,width/2+190,height/2-139,0xFFFF8126);super.extractRenderState(g,mouseX,mouseY,delta);g.text(font,Component.literal("TIMER  •  "+(data.timerActive?"RUNNING":data.timerFinished?"FINISHED":"READY")),width/2-font.width("TIMER  •  READY")/2,height/2-94,0xFFFFC04A);g.text(font,Component.literal("Choose a preset or enter seconds"),width/2-font.width("Choose a preset or enter seconds")/2,height/2-54,0xFFFFFFFF);}
     }
 
     private static class AuctionScreen extends Screen {

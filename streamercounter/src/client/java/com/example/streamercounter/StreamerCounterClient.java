@@ -81,6 +81,8 @@ public class StreamerCounterClient implements ClientModInitializer {
         long auctionSoldUntil = 0L;
         int auctionMinBid = 0;
         boolean auctionShowWorld = true;
+        int auctionHudX=-1, auctionHudY=28, timerHudX=-1, timerHudY=-1;
+        float auctionHudScale=1.0f, timerHudScale=1.0f;
         int timerDurationSeconds = 60;
         long timerEndTime = 0L;
         boolean timerActive = false;
@@ -269,9 +271,11 @@ public class StreamerCounterClient implements ClientModInitializer {
     
         if (data.auctionSold && System.currentTimeMillis() > data.auctionSoldUntil) { data.auctionSold=false; data.auctionWinner=""; data.auctionHighestBid=0; data.auctionHighestPlayer="No bids yet"; save(); }
         if (data.auctionShowWorld && (data.auctionActive || (data.auctionSold && System.currentTimeMillis() <= data.auctionSoldUntil))) {
-            int cx = ctx.getScaledWindowWidth()/2, y = 28;
+            int hudW=ctx.getScaledWindowWidth(), hudH=ctx.getScaledWindowHeight();
+            float auctionScale=Math.max(0.6f,Math.min(1.8f,data.auctionHudScale)); int aw=(int)(132*auctionScale), ah=(int)((data.auctionSold?104:76)*auctionScale);
+            int cx=data.auctionHudX<0?hudW/2:data.auctionHudX, y=data.auctionHudY;
             long left = data.auctionActive ? Math.max(0,(data.auctionEndTime-System.currentTimeMillis()+999)/1000) : 0;
-            ctx.fill(cx-132,y,cx+132,y+(data.auctionSold?104:76),0xCC120C08); ctx.fill(cx-132,y,cx+132,y+2,0xFFFF8126);
+            ctx.fill(cx-aw,y,cx+aw,y+ah,0xCC120C08); ctx.fill(cx-aw,y,cx+aw,y+2,0xFFFF8126);
             if (data.auctionActive && MinecraftClient.getInstance().player != null) {
                 var player = MinecraftClient.getInstance().player;
                 for (int slot=0; slot<player.getInventory().size(); slot++) {
@@ -302,10 +306,10 @@ public class StreamerCounterClient implements ClientModInitializer {
         if(data.timerActive && System.currentTimeMillis()>=data.timerEndTime){data.timerActive=false;data.timerFinished=true;save();}
         if(data.timerActive || data.timerFinished){
             long remain=data.timerActive?Math.max(0,(data.timerEndTime-System.currentTimeMillis()+999)/1000):0;
-            int timerCx=ctx.getScaledWindowWidth()/2, timerCy=ctx.getScaledWindowHeight()/3;
+            int timerCx=data.timerHudX<0?ctx.getScaledWindowWidth()/2:data.timerHudX, timerCy=data.timerHudY<0?ctx.getScaledWindowHeight()/3:data.timerHudY; float timerScale=Math.max(0.6f,Math.min(1.8f,data.timerHudScale)); int timerRadius=(int)(62*timerScale);
             int total=Math.max(1,data.timerDurationSeconds); double progress=data.timerActive?Math.max(0,Math.min(1,(double)remain/total)):0;
-            ctx.fill(timerCx-62,timerCy-62,timerCx+62,timerCy+62,0xCC10131B);
-            for(int i=0;i<60;i++){double a=-Math.PI/2+i*Math.PI*2/60;int px=timerCx+(int)(53*Math.cos(a)),py=timerCy+(int)(53*Math.sin(a));int col=(i<Math.round(progress*60))?0xFFFFC04A:0xFF48505D;ctx.fill(px-2,py-2,px+3,py+3,col);}
+            ctx.fill(timerCx-timerRadius,timerCy-timerRadius,timerCx+timerRadius,timerCy+timerRadius,0xCC10131B);
+            for(int i=0;i<60;i++){double a=-Math.PI/2+i*Math.PI*2/60;int px=timerCx+(int)(timerRadius*0.85*Math.cos(a)),py=timerCy+(int)(timerRadius*0.85*Math.sin(a));int col=(i<Math.round(progress*60))?0xFFFFC04A:0xFF48505D;ctx.fill(px-2,py-2,px+3,py+3,col);}
             String time=String.format(Locale.ROOT,"%02d:%02d",remain/60,remain%60);
             ctx.drawCenteredTextWithShadow(MinecraftClient.getInstance().textRenderer,Text.literal(time),timerCx,timerCy-5,0xFFFFFFFF);
             ctx.drawCenteredTextWithShadow(MinecraftClient.getInstance().textRenderer,Text.literal(data.timerFinished?"TIME UP":"TIMER"),timerCx,timerCy+13,data.timerFinished?0xFFFF6B6B:0xFFFFC04A);
@@ -778,6 +782,18 @@ public class StreamerCounterClient implements ClientModInitializer {
                 addDrawableChild(ButtonWidget.builder(Text.literal("Reset HUD Position"),b->{data.hudX=-1;data.hudY=8;save();}).dimensions(x,bodyTop+60,180,22).build());
                 addDrawableChild(ButtonWidget.builder(Text.literal("Reset All Counters"),b->{data.counts.clear();data.lastName=null;pending=null;save();clearAndInit();}).dimensions(x,bodyTop+90,180,22).build());
                 addDrawableChild(ButtonWidget.builder(Text.literal("Close Menu"),b->close()).dimensions(x,bodyTop+120,180,22).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("Auction ←"),b->{data.auctionHudX=Math.max(140,(data.auctionHudX<0?width/2:data.auctionHudX)-20);save();}).dimensions(x,bodyTop+154,78,20).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("Auction →"),b->{data.auctionHudX=(data.auctionHudX<0?width/2:data.auctionHudX)+20;save();}).dimensions(x+82,bodyTop+154,78,20).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("Auction ↑"),b->{data.auctionHudY=Math.max(20,data.auctionHudY-20);save();}).dimensions(x,bodyTop+178,78,20).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("Auction ↓"),b->{data.auctionHudY+=20;save();}).dimensions(x+82,bodyTop+178,78,20).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("Auction size −"),b->{data.auctionHudScale=Math.max(0.6f,data.auctionHudScale-0.1f);save();}).dimensions(x,bodyTop+202,92,20).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("Auction size +"),b->{data.auctionHudScale=Math.min(1.8f,data.auctionHudScale+0.1f);save();}).dimensions(x+96,bodyTop+202,92,20).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("Timer ←"),b->{data.timerHudX=Math.max(70,(data.timerHudX<0?width/2:data.timerHudX)-20);save();}).dimensions(x+210,bodyTop+154,78,20).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("Timer →"),b->{data.timerHudX=(data.timerHudX<0?width/2:data.timerHudX)+20;save();}).dimensions(x+292,bodyTop+154,78,20).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("Timer ↑"),b->{data.timerHudY=Math.max(70,(data.timerHudY<0?height/3:data.timerHudY)-20);save();}).dimensions(x+210,bodyTop+178,78,20).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("Timer ↓"),b->{data.timerHudY=(data.timerHudY<0?height/3:data.timerHudY)+20;save();}).dimensions(x+292,bodyTop+178,78,20).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("Timer size −"),b->{data.timerHudScale=Math.max(0.6f,data.timerHudScale-0.1f);save();}).dimensions(x+210,bodyTop+202,92,20).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("Timer size +"),b->{data.timerHudScale=Math.min(1.8f,data.timerHudScale+0.1f);save();}).dimensions(x+306,bodyTop+202,92,20).build());
             }
         
             // Apply translucency to the actual top-level VIP menu controls.
@@ -835,17 +851,17 @@ public class StreamerCounterClient implements ClientModInitializer {
         private TextFieldWidget secondsField;
         TimerScreen(Screen parent){super(Text.literal("VIP Timer"));this.parent=parent;}
         @Override protected void init(){
-            int cx=width/2, top=height/2-105;
-            secondsField=new TextFieldWidget(textRenderer,cx-70,top+38,140,22,Text.literal("Seconds"));
+            int cx=width/2, top=height/2-125;
+            secondsField=new TextFieldWidget(textRenderer,cx-70,top+48,180,26,Text.literal("Seconds"));
             secondsField.setText(String.valueOf(data.timerDurationSeconds));
             addDrawableChild(secondsField);
             int[] vals={10,30,60,120,300,600}; String[] labels={"10 sec","30 sec","1 min","2 min","5 min","10 min"};
-            for(int i=0;i<vals.length;i++){final int v=vals[i];addDrawableChild(ButtonWidget.builder(Text.literal(labels[i]),b->{data.timerDurationSeconds=v;secondsField.setText(String.valueOf(v));save();}).dimensions(cx-150+(i%3)*102,top+70+(i/3)*26,96,22).build());}
-            addDrawableChild(ButtonWidget.builder(Text.literal("Start timer"),b->{try{data.timerDurationSeconds=Math.max(1,Math.min(86400,Integer.parseInt(secondsField.getText().trim())));}catch(Exception ignored){data.timerDurationSeconds=60;}data.timerEndTime=System.currentTimeMillis()+data.timerDurationSeconds*1000L;data.timerActive=true;data.timerFinished=false;save();MinecraftClient.getInstance().setScreen(parent);}).dimensions(cx-150,top+132,145,24).build());
+            for(int i=0;i<vals.length;i++){final int v=vals[i];addDrawableChild(ButtonWidget.builder(Text.literal(labels[i]),b->{data.timerDurationSeconds=v;secondsField.setText(String.valueOf(v));save();}).dimensions(cx-150+(i%3)*102,top+88+(i/3)*30,96,24).build());}
+            addDrawableChild(ButtonWidget.builder(Text.literal("Start timer"),b->{try{data.timerDurationSeconds=Math.max(1,Math.min(86400,Integer.parseInt(secondsField.getText().trim())));}catch(Exception ignored){data.timerDurationSeconds=60;}data.timerEndTime=System.currentTimeMillis()+data.timerDurationSeconds*1000L;data.timerActive=true;data.timerFinished=false;save();MinecraftClient.getInstance().setScreen(parent);}).dimensions(cx-150,top+166,145,28).build());
             addDrawableChild(ButtonWidget.builder(Text.literal(data.timerActive?"Stop timer":"Reset"),b->{data.timerActive=false;data.timerFinished=false;data.timerEndTime=0;save();MinecraftClient.getInstance().setScreen(new TimerScreen(parent));}).dimensions(cx+5,top+132,145,24).build());
-            addDrawableChild(ButtonWidget.builder(Text.literal("Back to Tools"),b->MinecraftClient.getInstance().setScreen(parent)).dimensions(cx-75,top+166,150,22).build());
+            addDrawableChild(ButtonWidget.builder(Text.literal("Back to Tools"),b->MinecraftClient.getInstance().setScreen(parent)).dimensions(cx-75,top+202,150,24).build());
         }
-        @Override public void render(DrawContext ctx,int mouseX,int mouseY,float delta){super.render(ctx,mouseX,mouseY,delta);String state=data.timerActive?"RUNNING":data.timerFinished?"FINISHED":"READY";ctx.drawCenteredTextWithShadow(textRenderer,Text.literal("TIMER  •  "+state),width/2,height/2-94,0xFFFFC04A);ctx.drawCenteredTextWithShadow(textRenderer,Text.literal("Choose a preset or enter seconds"),width/2,height/2-54,0xFFFFFFFF);}
+        @Override public void render(DrawContext ctx,int mouseX,int mouseY,float delta){ctx.fill(0,0,width,height,0x88000000);ctx.fill(cx-190,top-18,cx+190,top+238,0xE8120F0B);ctx.fill(cx-190,top-18,cx+190,top-14,0xFFFF8126);super.render(ctx,mouseX,mouseY,delta);String state=data.timerActive?"RUNNING":data.timerFinished?"FINISHED":"READY";ctx.drawCenteredTextWithShadow(textRenderer,Text.literal("TIMER  •  "+state),width/2,height/2-94,0xFFFFC04A);ctx.drawCenteredTextWithShadow(textRenderer,Text.literal("Choose a preset or enter seconds"),width/2,height/2-54,0xFFFFFFFF);}
     }
 
     private static class AuctionScreen extends Screen {

@@ -637,9 +637,9 @@ public class StreamerCounterClient implements ClientModInitializer {
         private Text streamerButtonText(String name,int count){return Text.literal(name+"   •   "+(data.streamerEnabled.getOrDefault(name,true)?"ON":"OFF")+"   •   "+count+" TPs");}
         @Override public void render(DrawContext ctx,int mx,int my,float delta){
             int panelW=Math.min(920,width-32),left=(width-panelW)/2,top=24,right=left+panelW,bottom=height-24;
-            drawSeasonDecor(ctx);
             ctx.fill(0,0,width,height,0x50000000);ctx.fill(left-1,top-1,right+1,bottom+1,0xAA000000);
-            ctx.fill(left,top,right,bottom,panelColor());ctx.fill(left+1,top+1,right-1,top+3,accent());
+            ctx.fill(left,top,right,bottom,panelColor());
+            drawSeasonDecor(ctx);ctx.fill(left+1,top+1,right-1,top+3,accent());
             ctx.fill(left+1,top+58,right-1,top+59,0x665F7188);
             drawFlowText(ctx,textRenderer,"STREAMERCOUNTER VIP",left+22,top+22,0xFFFFFFFF,true);
             drawFlowText(ctx,textRenderer,"CONTROL CENTER",left+22,top+39,textColor(),true);

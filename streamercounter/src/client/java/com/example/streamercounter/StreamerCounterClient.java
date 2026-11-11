@@ -102,6 +102,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         String text = "Your text";
         int x = 80, y = 80, color = 0xFFFFFFFF, size = 16;
         String font = "default";
+        String effect = "flow";
         boolean visible = true, bold = false, italic = false, shadow = true;
     }
 
@@ -237,17 +238,16 @@ public class StreamerCounterClient implements ClientModInitializer {
                 graphics.pose().translate(entry.x, entry.y);
                 graphics.pose().scale(scale, scale);
                 
-                if ("flow".equals(entry.font)) {
-                    int[] flow = {0xFFFF5C8A,0xFFFFB347,0xFFFFFF66,0xFF75E08A,0xFF62D9FF,0xFFB58CFF};
-                    int px=0;
-                    for(int ci=0;ci<entry.text.length();ci++){
-                        String ch=String.valueOf(entry.text.charAt(ci));
-                        graphics.text(mc.font,ch,px,0,flow[ci%flow.length],entry.shadow);
-                        px+=mc.font.width(ch);
-                    }
+                if ("flow".equals(entry.effect)) {
+                    drawFlowText(graphics, mc.font, entry.text, 0, 0, 0xFFE34B55, entry.shadow);
+                } else if ("pulse".equals(entry.effect)) {
+                    int pulse = (int)(128 + 127 * Math.sin(System.currentTimeMillis() / 180.0));
+                    int color = (pulse > 185) ? 0xFFFFFFFF : 0xFFE34B55;
+                    Component styled = Component.literal(entry.text).withStyle(st -> st.withBold(entry.bold).withItalic(entry.italic));
+                    graphics.text(mc.font, styled, 0, 0, color, entry.shadow);
                 } else {
-                    Component styled=Component.literal(entry.text).withStyle(st->st.withBold(entry.bold).withItalic(entry.italic));
-                    graphics.text(mc.font,styled,0,0,entry.color,entry.shadow);
+                    Component styled = Component.literal(entry.text).withStyle(st -> st.withBold(entry.bold).withItalic(entry.italic));
+                    graphics.text(mc.font, styled, 0, 0, 0xFFFFFFFF, entry.shadow);
                 }
                 graphics.pose().popMatrix();
             }
@@ -366,7 +366,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             int codePoint = text.codePointAt(offset);
             String glyph = new String(Character.toChars(codePoint));
             float wave = (float) (0.5 + 0.5 * Math.sin(glyphIndex * 0.72 - phase));
-            int color = blendColor(baseColor, 0xFFFFFFFF, 0.12f + wave * 0.48f);
+            int color = blendColor(0xFFE34B55, 0xFFFFFFFF, 0.10f + wave * 0.78f);
             graphics.text(font, glyph, cursorX, y, color, shadow);
             cursorX += font.width(glyph);
             offset += Character.charCount(codePoint);
@@ -595,8 +595,11 @@ public class StreamerCounterClient implements ClientModInitializer {
                 ScreenText t=current(); if(t!=null){t.size=Math.min(96,t.size+2);save();}
             }).bounds(x+74, 236, 68, 20).build());
             addRenderableWidget(Button.builder(Component.literal("Font / Style"),b->{
-                ScreenText t=current(); if(t!=null){String[] styles={"default","bold","italic","bold_italic","flow"};int n=0;for(;n<styles.length;n++)if(styles[n].equals(t.font))break;t.font=styles[(n+1)%styles.length];t.bold=t.font.equals("bold")||t.font.equals("bold_italic");t.italic=t.font.equals("italic")||t.font.equals("bold_italic");save();clearWidgets();init();}
+                ScreenText t=current(); if(t!=null){String[] styles={"default","bold","italic","bold_italic"};int n=0;for(;n<styles.length;n++)if(styles[n].equals(t.font))break;t.font=styles[(n+1)%styles.length];t.bold=t.font.equals("bold")||t.font.equals("bold_italic");t.italic=t.font.equals("italic")||t.font.equals("bold_italic");save();clearWidgets();init();}
             }).bounds(x, 288, 146, 20).build());
+            addRenderableWidget(Button.builder(Component.literal("Effect: " + (current()==null ? "Flow" : current().effect)),b->{
+                ScreenText t=current(); if(t!=null){String[] effects={"flow","pulse","static"};int n=0;for(;n<effects.length;n++)if(effects[n].equals(t.effect))break;t.effect=effects[(n+1)%effects.length];save();clearWidgets();init();}
+            }).bounds(x, 352, 146, 20).build());
             addRenderableWidget(Button.builder(Component.literal("Color"),b->{
                 ScreenText t=current();if(t!=null){int[] colors={0xFFFFFFFF,0xFFFFD54F,0xFF69D8FF,0xFFFF6B6B,0xFF78E08F};int n=0;for(;n<colors.length;n++)if(colors[n]==t.color)break;t.color=colors[(n+1)%colors.length];save();}
             }).bounds(x, 320, 68, 20).build());
@@ -654,10 +657,16 @@ public class StreamerCounterClient implements ClientModInitializer {
                 float scale=Math.max(8,Math.min(96,item.size))/9.0f;
                 graphics.pose().pushMatrix(); graphics.pose().translate(item.x,item.y); graphics.pose().scale(scale,scale);
                 
-                if("flow".equals(item.font)){
-                    int[] flow={0xFFFF5C8A,0xFFFFB347,0xFFFFFF66,0xFF75E08A,0xFF62D9FF,0xFFB58CFF};int px=0;
-                    for(int ci=0;ci<item.text.length();ci++){String ch=String.valueOf(item.text.charAt(ci));graphics.text(font,ch,px,0,flow[ci%flow.length],item.shadow);px+=font.width(ch);}
-                }else{Component styled=Component.literal(item.text).withStyle(st->st.withBold(item.bold).withItalic(item.italic));graphics.text(font,styled,0,0,item.color,item.shadow);} graphics.pose().popMatrix();
+                if("flow".equals(item.effect)){
+                    drawFlowText(graphics,font,item.text,0,0,0xFFE34B55,item.shadow);
+                }else if("pulse".equals(item.effect)){
+                    int pulse=(int)(128+127*Math.sin(System.currentTimeMillis()/180.0));
+                    Component styled=Component.literal(item.text).withStyle(st->st.withBold(item.bold).withItalic(item.italic));
+                    graphics.text(font,styled,0,0,pulse>185?0xFFFFFFFF:0xFFE34B55,item.shadow);
+                }else{
+                    Component styled=Component.literal(item.text).withStyle(st->st.withBold(item.bold).withItalic(item.italic));
+                    graphics.text(font,styled,0,0,0xFFFFFFFF,item.shadow);
+                }graphics.pose().popMatrix();
             }
             ScreenText chosen=current();
             if(chosen!=null) graphics.text(font,"Selected: "+(chosen.text==null?"":chosen.text)+"   |   Size: "+chosen.size,right+16,top+365,0xFFB8C7D9,true);

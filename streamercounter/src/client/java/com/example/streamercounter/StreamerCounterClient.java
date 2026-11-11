@@ -587,7 +587,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         private int textColor(){return switch(currentTheme()){case "ICE","OCEAN"->0xFF9BE8FF;case "CHRISTMAS"->0xFFFFD8D8;case "HALLOWEEN"->0xFFFFC18A;case "NETHER"->0xFFFFA0A0;case "EMERALD"->0xFF9BFFD1;case "PURPLE"->0xFFDCCBFF;default->0xFFFFD878;};}
         private int panelColor(){return switch(currentTheme()){case "CHRISTMAS"->0xB817241B;case "HALLOWEEN"->0xB8201712;case "ICE","OCEAN"->0xB8111D29;case "NETHER"->0xB8201118;case "EMERALD"->0xB812211D;case "PURPLE"->0xB81C1728;default->0xB8141A24;};}
         private void drawSeasonDecor(GuiGraphicsExtractor g) {
-            int decoX=(width+Math.min(920,decoX+78))/2-110;
+            int decoX=(width+Math.min(920,width-32))/2-110;
             if(currentTheme().equals("CHRISTMAS")){
                 // Pixel-art candy cane and festive baubles in the menu header.
                 g.fill(decoX+16,42,decoX+22,72,0xFFFFF1D6);

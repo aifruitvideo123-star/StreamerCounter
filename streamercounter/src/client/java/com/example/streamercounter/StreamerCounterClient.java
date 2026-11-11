@@ -280,6 +280,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             drawFlowText(graphics,mc.font,data.auctionWinner,bannerCx-100,bannerCy-7,0xFFFFFFFF,true);
             drawFlowText(graphics,mc.font,"WON FOR $"+formatAuctionMoney(data.auctionHighestBid),bannerCx-100,bannerCy+14,0xFFFF8126,true);
         }
+        }
         if(data.timerActive && System.currentTimeMillis()>=data.timerEndTime){data.timerActive=false;data.timerFinished=true;save();}
         if(data.timerActive || data.timerFinished){
             long remain=data.timerActive?Math.max(0,(data.timerEndTime-System.currentTimeMillis()+999)/1000):0;
@@ -812,9 +813,9 @@ public class StreamerCounterClient implements ClientModInitializer {
                 for(int i=0;i<tools.length;i++){final int tool=i;
                     addRenderableWidget(Button.builder(Component.literal("›  "+tools[i]),b->{
                         if(tool==0)Minecraft.getInstance().gui.setScreen(new AuctionScreen(this));
+                        else if(tool==1)Minecraft.getInstance().gui.setScreen(new TimerScreen(this));
                         else if(tool==2)Minecraft.getInstance().gui.setScreen(new TextOnScreenScreen(this));
-                        else if(tool==6)openTab(2);
-                        else Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,0,3));
+                        else if(tool==3)openTab(2);
                     }).bounds(contentX,bodyTop+i*42,230,28).build());
                 }
             } else if(activeTab==4){

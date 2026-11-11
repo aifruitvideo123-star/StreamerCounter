@@ -553,164 +553,126 @@ public class StreamerCounterClient implements ClientModInitializer {
         }
     }
 
+
     private static class CounterMenuScreen extends Screen {
         private final Screen parent;
         private final int page;
-        private static final int ROW_HEIGHT = 24;
+        private final int activeTab;
+        private static final int ROW_HEIGHT = 26;
+        private static final String[] TABS = {"Overview","Streamers","HUD","Text","Themes","Settings"};
 
-        CounterMenuScreen(Screen parent, int page) {
-            super(Component.literal("Streamer Counter"));
-            this.parent = parent;
-            this.page = page;
+        CounterMenuScreen(Screen parent, int page) { this(parent,page,0); }
+        CounterMenuScreen(Screen parent, int page, int activeTab) {
+            super(Component.literal("Streamer Counter VIP"));
+            this.parent=parent; this.page=page; this.activeTab=activeTab;
         }
-
         private List<String> streamerNames() {
-            Set<String> names = new TreeSet<>();
-            names.addAll(data.counts.keySet());
-            names.addAll(data.streamerEnabled.keySet());
-            if (pending != null) names.add(pending.toLowerCase(Locale.ROOT));
+            Set<String> names=new TreeSet<>();
+            names.addAll(data.counts.keySet()); names.addAll(data.streamerEnabled.keySet());
+            if(pending!=null) names.add(pending.toLowerCase(Locale.ROOT));
             return new ArrayList<>(names);
         }
-
-        private void reopen(int newPage) {
-            Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent, newPage));
-        }
-
-        @Override
-        protected void init() {
-            int center = width / 2;
-            int buttonWidth = Math.min(300, width - 40);
-            int left = center - buttonWidth / 2;
-            int bottom = height - 126;
-            int firstRowY = 88;
-            int maxRows = Math.max(1, (bottom - firstRowY - 34) / ROW_HEIGHT);
-            List<String> names = streamerNames();
-            int pageCount = Math.max(1, (names.size() + maxRows - 1) / maxRows);
-            int currentPage = Math.max(0, Math.min(page, pageCount - 1));
-            int from = currentPage * maxRows;
-            int to = Math.min(names.size(), from + maxRows);
-
-            for (int i = from; i < to; i++) {
-                String name = names.get(i);
-                int count = data.counts.getOrDefault(name, 0);
-                int rowY = firstRowY + (i - from) * ROW_HEIGHT;
-                int actionWidth = 54;
-                int gap = 4;
-                int toggleWidth = buttonWidth - actionWidth * 2 - gap * 2;
-                addRenderableWidget(Button.builder(streamerButtonText(name, count), button -> {
-                    data.streamerEnabled.put(name, !data.streamerEnabled.getOrDefault(name, true));
-                    save();
-                    reopen(currentPage);
-                }).bounds(left, rowY, toggleWidth, 20).build());
-                addRenderableWidget(Button.builder(Component.literal("Reset"), button -> {
-                    data.counts.put(name, 0);
-                    save();
-                    reopen(currentPage);
-                }).bounds(left + toggleWidth + gap, rowY, actionWidth, 20).build());
-                addRenderableWidget(Button.builder(Component.literal("Delete"), button -> {
-                    data.counts.remove(name);
-                    data.streamerEnabled.remove(name);
-                    data.displayNames.remove(name);
-                    if (data.lastName != null && data.lastName.equalsIgnoreCase(name)) data.lastName = null;
-                    if (pending != null && pending.equalsIgnoreCase(name)) pending = null;
-                    save();
-                    reopen(currentPage);
-                }).bounds(left + toggleWidth + gap + actionWidth + gap, rowY, actionWidth, 20).build());
+        private void openTab(int tab) { Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,0,tab)); }
+        private Component hudButtonText(){return Component.literal("HUD: "+(data.showHud?"ON":"OFF"));}
+        private Component themeButtonText(){return Component.literal("VIP Theme: "+(data.iceTheme?"ICE":"GOLD"));}
+        private int accent(){return data.iceTheme?0xFF69D8FF:0xFFFFD54F;}
+        private int textColor(){return data.iceTheme?0xFF9BE8FF:0xFFFFD878;}
+        private int pageCount(int rows){return Math.max(1,(streamerNames().size()+rows-1)/rows);}
+        @Override protected void init() {
+            int panelW=Math.min(920,width-32), left=(width-panelW)/2, top=24;
+            int tabStart=left+218, tabW=Math.min(94,(panelW-238)/6), gap=5;
+            for(int t=0;t<TABS.length;t++){
+                final int tab=t;
+                String label=(t==activeTab?"• ":"")+TABS[t];
+                addRenderableWidget(Button.builder(Component.literal(label),b->openTab(tab))
+                    .bounds(tabStart+t*(tabW+gap),top+16,tabW,22).build());
             }
-
-            if (pageCount > 1) {
-                Button previous = addRenderableWidget(Button.builder(Component.literal("Previous"),
-                        b -> reopen(currentPage - 1)).bounds(center - 95, bottom - 28, 90, 20).build());
-                previous.active = currentPage > 0;
-                Button next = addRenderableWidget(Button.builder(Component.literal("Next"),
-                        b -> reopen(currentPage + 1)).bounds(center + 5, bottom - 28, 90, 20).build());
-                next.active = currentPage < pageCount - 1;
+            addRenderableWidget(Button.builder(Component.literal("×"),b->onClose())
+                .bounds(left+panelW-42,top+16,26,22).build());
+            int bodyTop=top+96, bodyBottom=height-74, contentX=left+26, contentW=panelW-52;
+            if(activeTab==1){
+                int maxRows=Math.max(1,(bodyBottom-bodyTop-34)/ROW_HEIGHT);
+                int pages=pageCount(maxRows), current=Math.max(0,Math.min(page,pages-1));
+                List<String> names=streamerNames();
+                int from=current*maxRows,to=Math.min(names.size(),from+maxRows);
+                for(int n=from;n<to;n++){
+                    String name=names.get(n); int count=data.counts.getOrDefault(name,0);
+                    int y=bodyTop+(n-from)*ROW_HEIGHT, actionW=58, gap2=6, toggleW=contentW-actionW*2-gap2*2;
+                    addRenderableWidget(Button.builder(streamerButtonText(name,count),b->{
+                        data.streamerEnabled.put(name,!data.streamerEnabled.getOrDefault(name,true));save();Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,current,1));
+                    }).bounds(contentX,y,toggleW,21).build());
+                    addRenderableWidget(Button.builder(Component.literal("Reset"),b->{data.counts.put(name,0);save();Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,current,1));})
+                        .bounds(contentX+toggleW+gap2,y,actionW,21).build());
+                    addRenderableWidget(Button.builder(Component.literal("Delete"),b->{
+                        data.counts.remove(name);data.streamerEnabled.remove(name);data.displayNames.remove(name);
+                        if(data.lastName!=null&&data.lastName.equalsIgnoreCase(name))data.lastName=null;
+                        if(pending!=null&&pending.equalsIgnoreCase(name))pending=null;save();Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,current,1));
+                    }).bounds(contentX+toggleW+gap2+actionW+gap2,y,actionW,21).build());
+                }
+                if(pages>1){
+                    Button prev=addRenderableWidget(Button.builder(Component.literal("‹ Previous"),b->Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,current-1,1))).bounds(width/2-104,bodyBottom-28,98,22).build());
+                    prev.active=current>0;
+                    Button next=addRenderableWidget(Button.builder(Component.literal("Next ›"),b->Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,current+1,1))).bounds(width/2+6,bodyBottom-28,98,22).build());
+                    next.active=current<pages-1;
+                }
+            } else if(activeTab==2){
+                addRenderableWidget(Button.builder(hudButtonText(),b->{data.showHud=!data.showHud;save();b.setMessage(hudButtonText());})
+                    .bounds(contentX,bodyTop,190,24).build());
+                addRenderableWidget(Button.builder(Component.literal("Edit HUD"),b->Minecraft.getInstance().gui.setScreen(new HudEditScreen(this)))
+                    .bounds(contentX,bodyTop+38,190,24).build());
+            } else if(activeTab==3){
+                addRenderableWidget(Button.builder(Component.literal("Open Text on Screen editor"),b->Minecraft.getInstance().gui.setScreen(new TextOnScreenScreen(this)))
+                    .bounds(contentX,bodyTop,230,24).build());
+            } else if(activeTab==4){
+                addRenderableWidget(Button.builder(themeButtonText(),b->{data.iceTheme=!data.iceTheme;save();Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,0,4));})
+                    .bounds(contentX,bodyTop,210,24).build());
+            } else if(activeTab==5){
+                addRenderableWidget(Button.builder(Component.literal("Reset All Counters"),b->{data.counts.clear();data.lastName=null;pending=null;save();Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,0,5));})
+                    .bounds(contentX,bodyTop,190,24).build());
+                addRenderableWidget(Button.builder(Component.literal("Close Menu"),b->onClose())
+                    .bounds(contentX,bodyTop+38,190,24).build());
             }
-
-            int halfWidth = (buttonWidth - 12) / 3;
-            addRenderableWidget(Button.builder(hudButtonText(), button -> {
-                data.showHud = !data.showHud;
-                save();
-                button.setMessage(hudButtonText());
-            }).bounds(left, height - 98, halfWidth, 20).build());
-            addRenderableWidget(Button.builder(Component.literal("Edit HUD"), button ->
-                    Minecraft.getInstance().gui.setScreen(new HudEditScreen(this)))
-                    .bounds(left + halfWidth + 6, height - 98, halfWidth, 20).build());
-            addRenderableWidget(Button.builder(Component.literal("Text on Screen"), b -> Minecraft.getInstance().gui.setScreen(new TextOnScreenScreen(this)))
-                    .bounds(left + 2 * (halfWidth + 6), height - 98, halfWidth, 20).build());
-            addRenderableWidget(Button.builder(themeButtonText(), button -> {
-                data.iceTheme = !data.iceTheme;
-                save();
-                button.setMessage(themeButtonText());
-            }).bounds(left, height - 70, halfWidth, 20).build());
-            addRenderableWidget(Button.builder(Component.literal("Reset All"), button -> {
-                data.counts.clear();
-                data.lastName = null;
-                pending = null;
-                save();
-                reopen(0);
-            }).bounds(left + halfWidth + 6, height - 70, halfWidth, 20).build());
-            addRenderableWidget(Button.builder(Component.literal("Close"), button -> onClose())
-                    .bounds(left, height - 42, buttonWidth, 20).build());
         }
-
-        private Component streamerButtonText(String name, int count) {
-            boolean enabled = data.streamerEnabled.getOrDefault(name, true);
-            return Component.literal(name + "  |  " + (enabled ? "ON" : "OFF") + "  |  " + count + " TPs");
+        private Component streamerButtonText(String name,int count){
+            return Component.literal(name+"   •   "+(data.streamerEnabled.getOrDefault(name,true)?"ON":"OFF")+"   •   "+count+" TPs");
         }
-
-        private int menuAccentColor() {
-            return data.iceTheme ? 0xFF69D8FF : 0xFFFFD54F;
-        }
-
-        private int menuTextColor() {
-            return data.iceTheme ? 0xFF9BE8FF : 0xFFFFD878;
-        }
-
-        private int menuPanelColor() {
-            return data.iceTheme ? 0xFF101F2B : 0xFF241D12;
-        }
-
-        private Component themeButtonText() {
-            return Component.literal("VIP Theme: " + (data.iceTheme ? "ICE" : "GOLD"));
-        }
-
-        private Component hudButtonText() {
-            return Component.literal("HUD: " + (data.showHud ? "ON" : "OFF"));
-        }
-
-        @Override
-        public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
-            graphics.fill(0, 0, width, height, 0x90000000);
-            int panelWidth = Math.min(360, width - 20);
-            int left = (width - panelWidth) / 2;
-            int top = 12;
-            int right = left + panelWidth;
-            int bottom = height - 126;
-            graphics.fill(left - 3, top - 3, right + 3, bottom + 3, menuAccentColor());
-            graphics.fill(left, top, right, bottom, menuPanelColor());
-            graphics.fill(left + 2, top + 2, right - 2, top + 5, menuAccentColor());
-            String heading = "Streamer Counter VIP";
-            drawFlowText(graphics, font, heading, width / 2 - font.width(heading) / 2,
-                    top + 16, menuTextColor(), true);
-            String subtitle = "Enable or disable streamers individually";
-            drawFlowText(graphics, font, subtitle, width / 2 - font.width(subtitle) / 2,
-                    top + 40, menuTextColor(), true);
-            if (streamerNames().isEmpty()) {
-                String line1 = "No streamers detected yet.";
-                String line2 = "Streamers will appear here after /tpahere <name>.";
-                graphics.text(font, line1, width / 2 - font.width(line1) / 2, top + 78, menuTextColor(), true);
-                graphics.text(font, line2, width / 2 - font.width(line2) / 2, top + 96, menuTextColor(), true);
+        @Override public void extractRenderState(GuiGraphicsExtractor g,int mx,int my,float delta){
+            int panelW=Math.min(920,width-32),left=(width-panelW)/2,top=24,right=left+panelW,bottom=height-24;
+            g.fill(0,0,width,height,0x50000000);
+            g.fill(left-1,top-1,right+1,bottom+1,0xAA000000);
+            g.fill(left,top,right,bottom,0xB8141A24);
+            g.fill(left+1,top+1,right-1,top+3,accent());
+            g.fill(left+1,top+58,right-1,top+59,0x665F7188);
+            String title="STREAMERCOUNTER VIP";
+            g.text(font,title,left+22,top+22,0xFFFFFFFF,true);
+            g.text(font,"CONTROL CENTER",left+22,top+39,textColor(),true);
+            int bodyTop=top+96, bodyBottom=height-74, x=left+26;
+            String heading=TABS[activeTab].toUpperCase(Locale.ROOT);
+            g.text(font,heading,x,top+76,accent(),true);
+            g.fill(x,bodyTop-12,right-26,bodyBottom+8,0x55232E3D);
+            if(activeTab==0){
+                int total=0;for(Integer value:data.counts.values())if(value!=null)total+=value;
+                String[] lines={"Your live overview","Tracked streamers: "+streamerNames().size(),"Total TP counter: "+total,
+                    "Last detected: "+(data.lastName==null?"—":data.lastName),"HUD: "+(data.showHud?"Enabled":"Disabled"),
+                    "Use the tabs above to manage streamers, HUD, text and theme."};
+                for(int j=0;j<lines.length;j++)g.text(font,lines[j],x+18,bodyTop+18+j*24,j==0?0xFFFFFFFF:textColor(),true);
+            }else if(activeTab==1&&streamerNames().isEmpty()){
+                g.text(font,"No streamers detected yet.",x+18,bodyTop+18,0xFFFFFFFF,true);
+                g.text(font,"Streamers appear here after /tpahere <name>.",x+18,bodyTop+42,textColor(),true);
+            }else if(activeTab==2){
+                g.text(font,"Toggle the HUD or open its editor.",x+220,bodyTop+6,textColor(),true);
+            }else if(activeTab==3){
+                g.text(font,"Create, position and style your on-screen text.",x+250,bodyTop+6,textColor(),true);
+            }else if(activeTab==4){
+                g.text(font,"Choose the VIP accent theme.",x+220,bodyTop+6,textColor(),true);
+            }else if(activeTab==5){
+                g.text(font,"Careful: resetting removes the saved counter totals.",x+220,bodyTop+6,0xFFFF9B82,true);
             }
-            super.extractRenderState(graphics, mouseX, mouseY, delta);
-            String credit = "VIP Edition | Made by AlpBey3503";
-            drawFlowText(graphics, font, credit, width / 2 - font.width(credit) / 2,
-                    height - 14, menuTextColor(), true);
+            super.extractRenderState(g,mx,my,delta);
+            String credit="VIP EDITION  •  MADE BY ALPBEY3503";
+            g.text(font,credit,left+22,bottom-18,textColor(),true);
         }
-
-        @Override
-        public void onClose() {
-            Minecraft.getInstance().gui.setScreen(parent);
-        }
+        @Override public void onClose(){Minecraft.getInstance().gui.setScreen(parent);}
     }
+
 }

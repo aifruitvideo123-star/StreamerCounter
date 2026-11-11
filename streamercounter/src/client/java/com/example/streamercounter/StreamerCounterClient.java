@@ -637,6 +637,11 @@ public class StreamerCounterClient implements ClientModInitializer {
                 addRenderableWidget(Button.builder(Component.literal("Close Menu"),b->onClose())
                     .bounds(contentX,bodyTop+38,190,24).build());
             }
+        
+            // Apply translucency to the actual top-level VIP menu controls.
+            for (var child : children()) {
+                if (child instanceof net.minecraft.client.gui.components.AbstractWidget button) button.setAlpha(0.72f);
+            }
         }
         private Component streamerButtonText(String name,int count){
             return Component.literal(name+"   •   "+(data.streamerEnabled.getOrDefault(name,true)?"ON":"OFF")+"   •   "+count+" TPs");

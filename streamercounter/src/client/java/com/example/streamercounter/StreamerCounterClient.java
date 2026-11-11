@@ -62,6 +62,8 @@ public class StreamerCounterClient implements ClientModInitializer {
         float hudScale = 1.0f;
         int textColor = 0xFFFFC85A;
         boolean iceTheme = false;
+        String vipTheme = "GOLD";
+        int selectedTextSection = 0;
         List<ScreenText> screenTexts = new ArrayList<>();
     }
 
@@ -477,7 +479,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             addDrawableChild(ButtonWidget.builder(Text.literal("Color"),b->{
                 ScreenText t=current();if(t!=null){int[] colors={0xFFFFFFFF,0xFFFFD54F,0xFF69D8FF,0xFFFF6B6B,0xFF78E08F};int n=0;for(;n<colors.length;n++)if(colors[n]==t.color)break;t.color=colors[(n+1)%colors.length];save();}
             }).dimensions(x,320,68,20).build());
-            addDrawableChild(ButtonWidget.builder(Text.literal("Done"),b->close())
+            addDrawableChild(ButtonWidget.builder(Text.literal("Back to Menu"),b->close())
                 .dimensions(x+74,320,68,20).build());
             }
         private ScreenText current(){return selected>=0&&selected<data.screenTexts.size()?data.screenTexts.get(selected):null;}
@@ -550,9 +552,11 @@ public class StreamerCounterClient implements ClientModInitializer {
         }
         private void openTab(int tab){activeTab=tab;page=0;clearAndInit();}
         private Text hudButtonText(){return Text.literal("HUD: "+(data.showHud?"ON":"OFF"));}
-        private Text themeButtonText(){return Text.literal("VIP Theme: "+(data.iceTheme?"ICE":"GOLD"));}
-        private int accent(){return data.iceTheme?0xFF69D8FF:0xFFFFD54F;}
-        private int textColor(){return data.iceTheme?0xFF9BE8FF:0xFFFFD878;}
+        private static final String[] VIP_THEMES={"GOLD","ICE","CHRISTMAS","HALLOWEEN","NETHER","EMERALD","PURPLE","OCEAN"};
+        private String currentTheme(){return data.vipTheme==null?(data.iceTheme?"ICE":"GOLD"):data.vipTheme;}
+        private Text themeButtonText(){return Text.literal("Theme: "+currentTheme()+"  →");}
+        private int accent(){return switch(currentTheme()){case "ICE","OCEAN"->0xFF69D8FF;case "CHRISTMAS"->0xFF55D878;case "HALLOWEEN"->0xFFFF8738;case "NETHER"->0xFFFF5555;case "EMERALD"->0xFF45D69A;case "PURPLE"->0xFFB58CFF;default->0xFFFFD54F;};}
+        private int textColor(){return switch(currentTheme()){case "ICE","OCEAN"->0xFF9BE8FF;case "CHRISTMAS"->0xFFFFD8D8;case "HALLOWEEN"->0xFFFFC18A;case "NETHER"->0xFFFFA0A0;case "EMERALD"->0xFF9BFFD1;case "PURPLE"->0xFFDCCBFF;default->0xFFFFD878;};}
         @Override protected void init(){
             int panelW=Math.min(920,width-32),left=(width-panelW)/2,top=24;
             int tabStart=left+218,tabW=Math.min(94,(panelW-238)/6),gap=5;
@@ -576,12 +580,19 @@ public class StreamerCounterClient implements ClientModInitializer {
                 addDrawableChild(ButtonWidget.builder(hudButtonText(),b->{data.showHud=!data.showHud;save();b.setMessage(hudButtonText());}).dimensions(x,bodyTop,190,24).build());
                 addDrawableChild(ButtonWidget.builder(Text.literal("Edit HUD"),b->MinecraftClient.getInstance().setScreen(new HudEditScreen(this))).dimensions(x,bodyTop+38,190,24).build());
             }else if(activeTab==3){
-                addDrawableChild(ButtonWidget.builder(Text.literal("Open Text on Screen editor"),b->MinecraftClient.getInstance().setScreen(new TextOnScreenScreen(this))).dimensions(x,bodyTop,230,24).build());
+                String[] sections={"Auctions","Text on Screen","Timer","Sessions"};
+                for(int i=0;i<sections.length;i++){final int section=i;String label=(data.selectedTextSection==i?"• ":"")+sections[i];
+                    addDrawableChild(ButtonWidget.builder(Text.literal(label),b->{data.selectedTextSection=section;save();clearAndInit();}).dimensions(x,bodyTop+i*34,190,24).build());}
+                addDrawableChild(ButtonWidget.builder(Text.literal("Open Text Editor"),b->MinecraftClient.getInstance().setScreen(new TextOnScreenScreen(this))).dimensions(x+210,bodyTop+34,190,24).build());
             }else if(activeTab==4){
-                addDrawableChild(ButtonWidget.builder(themeButtonText(),b->{data.iceTheme=!data.iceTheme;save();clearAndInit();}).dimensions(x,bodyTop,210,24).build());
+                addDrawableChild(ButtonWidget.builder(themeButtonText(),b->{String[] themes=VIP_THEMES;int n=0;for(;n<themes.length;n++)if(themes[n].equals(currentTheme()))break;data.vipTheme=themes[(n+1)%themes.length];data.iceTheme=data.vipTheme.equals("ICE");save();clearAndInit();}).dimensions(x,bodyTop,250,24).build());
             }else if(activeTab==5){
-                addDrawableChild(ButtonWidget.builder(Text.literal("Reset All Counters"),b->{data.counts.clear();data.lastName=null;pending=null;save();clearAndInit();}).dimensions(x,bodyTop,190,24).build());
-                addDrawableChild(ButtonWidget.builder(Text.literal("Close Menu"),b->close()).dimensions(x,bodyTop+38,190,24).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("HUD: "+(data.showHud?"ON":"OFF")),b->{data.showHud=!data.showHud;save();clearAndInit();}).dimensions(x,bodyTop,180,22).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("HUD Size −"),b->{data.hudScale=Math.max(0.5f,data.hudScale-0.1f);save();}).dimensions(x,bodyTop+30,88,22).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("HUD Size +"),b->{data.hudScale=Math.min(2.0f,data.hudScale+0.1f);save();}).dimensions(x+94,bodyTop+30,88,22).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("Reset HUD Position"),b->{data.hudX=-1;data.hudY=8;save();}).dimensions(x,bodyTop+60,180,22).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("Reset All Counters"),b->{data.counts.clear();data.lastName=null;pending=null;save();clearAndInit();}).dimensions(x,bodyTop+90,180,22).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("Close Menu"),b->close()).dimensions(x,bodyTop+120,180,22).build());
             }
         
             // Apply translucency to the actual top-level VIP menu controls.
@@ -605,9 +616,9 @@ public class StreamerCounterClient implements ClientModInitializer {
                 for(int j=0;j<lines.length;j++)ctx.drawText(textRenderer,lines[j],x+18,bodyTop+18+j*24,j==0?0xFFFFFFFF:textColor(),true);
             }else if(activeTab==1&&streamerNames().isEmpty()){ctx.drawText(textRenderer,"No streamers detected yet.",x+18,bodyTop+18,0xFFFFFFFF,true);ctx.drawText(textRenderer,"Streamers appear here after /tpahere <name>.",x+18,bodyTop+42,textColor(),true);
             }else if(activeTab==2)ctx.drawText(textRenderer,"Toggle the HUD or open its editor.",x+220,bodyTop+6,textColor(),true);
-            else if(activeTab==3)ctx.drawText(textRenderer,"Create, position and style your on-screen text.",x+250,bodyTop+6,textColor(),true);
-            else if(activeTab==4)ctx.drawText(textRenderer,"Choose the VIP accent theme.",x+220,bodyTop+6,textColor(),true);
-            else if(activeTab==5)ctx.drawText(textRenderer,"Careful: resetting removes the saved counter totals.",x+220,bodyTop+6,0xFFFF9B82,true);
+            else if(activeTab==3){String[] descriptions={"Auctions tools will be configured here later.","Create, position and style your on-screen text.","A customizable stream timer will be added here.","Session tracking tools will be configured here."};ctx.drawText(textRenderer,descriptions[Math.max(0,Math.min(3,data.selectedTextSection))],x+220,bodyTop+8,textColor(),true);}
+            else if(activeTab==4)ctx.drawText(textRenderer,"Choose from 8 VIP themes: Gold, Ice, Christmas, Halloween, Nether, Emerald, Purple and Ocean.",x+220,bodyTop+6,textColor(),true);
+            else if(activeTab==5)ctx.drawText(textRenderer,"Adjust HUD visibility and size, reset its position, or manage counter data.",x+220,bodyTop+6,textColor(),true);
             super.render(ctx,mx,my,delta);
             int buttonIndex=0;
             for (var child : children()) {

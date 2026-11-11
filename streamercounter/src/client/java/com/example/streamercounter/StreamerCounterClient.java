@@ -335,13 +335,18 @@ public class StreamerCounterClient implements ClientModInitializer {
         int height = hudHeight();
         graphics.fill(x, y, x + width, y + height, withOpacity(0x0B111A,data.ownerHudOpacity));
         int accent = data.iceTheme ? 0xFF69D8FF : 0xFFE8B64D;
-        graphics.fill(x, y, x + width, y + 2, accent);
-        drawFlowText(graphics, mc.font, "STREAMERS VIP", x + 6, y + 6, data.textColor, false);
+        graphics.fill(x, y, x + width, y + 2, 0xFFFFFFFF);
+        graphics.fill(x, y+2, x+width, y+3, 0x88777777);
+        drawFlowText(graphics, mc.font, "STREAMERS OWNER", x + 6, y + 6, data.textColor, false);
         int rowY = y + 20;
         for (String key : names) {
             String name = displayName(key);
+            String ownerName = mc.player == null ? "" : mc.player.getName().getString();
+            boolean isOwner = name.equalsIgnoreCase(ownerName);
+            if(isOwner){graphics.fill(x+3,rowY-2,x+width-3,rowY+10,0x553FFFFFF);graphics.fill(x+3,rowY-2,x+width-3,rowY-1,0xFFEEEEEE);}
             String count = String.valueOf(data.counts.getOrDefault(key, 0));
-            drawFlowText(graphics, mc.font, name, x + 6, rowY, data.textColor, false);
+            if(isOwner){drawFlowText(graphics,mc.font,"✦",x+6,rowY,0xFFFFFFFF,true);drawFlowText(graphics,mc.font,name,x+18,rowY,0xFFFFFFFF,true);}
+            else drawFlowText(graphics, mc.font, name, x + 6, rowY, data.textColor, false);
             drawFlowText(graphics, mc.font, count, x + width - 7 - mc.font.width(count),
                     rowY, data.textColor, false);
             rowY += 11;
@@ -381,7 +386,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             int codePoint = text.codePointAt(offset);
             String glyph = new String(Character.toChars(codePoint));
             float wave = (float) (0.5 + 0.5 * Math.sin(glyphIndex * 0.72 - phase));
-            int color = blendColor(baseColor, 0xFFFFFFFF, 0.12f + wave * 0.48f);
+            int color = blendColor(0xFF777777, 0xFFFFFFFF, 0.08f + wave * 0.82f);
             graphics.text(font, glyph, cursorX, y, color, shadow);
             cursorX += font.width(glyph);
             offset += Character.charCount(codePoint);
@@ -693,7 +698,7 @@ public class StreamerCounterClient implements ClientModInitializer {
 
         CounterMenuScreen(Screen parent, int page) { this(parent,page,0); }
         CounterMenuScreen(Screen parent, int page, int activeTab) {
-            super(Component.literal("Streamer Counter VIP"));
+            super(Component.literal("StreamerCounter OWNER"));
             this.parent=parent; this.page=page; this.activeTab=activeTab;
         }
         private List<String> streamerNames() {
@@ -707,9 +712,9 @@ public class StreamerCounterClient implements ClientModInitializer {
         private static final String[] VIP_THEMES={"GOLD","ICE","CHRISTMAS","HALLOWEEN","NETHER","EMERALD","PURPLE","OCEAN"};
         private String currentTheme(){return data.iceTheme&&"GOLD".equals(data.vipTheme)?"ICE":(data.vipTheme==null?"GOLD":data.vipTheme);}
         private Component themeButtonText(){return Component.literal("Theme: "+currentTheme()+"  →");}
-        private int accent(){return switch(currentTheme()){case "ICE","OCEAN"->0xFF69D8FF;case "CHRISTMAS"->0xFF55D878;case "HALLOWEEN"->0xFFFF8738;case "NETHER"->0xFFFF5555;case "EMERALD"->0xFF45D69A;case "PURPLE"->0xFFB58CFF;default->0xFFFFD54F;};}
-        private int textColor(){return switch(currentTheme()){case "ICE","OCEAN"->0xFF9BE8FF;case "CHRISTMAS"->0xFFFFD8D8;case "HALLOWEEN"->0xFFFFC18A;case "NETHER"->0xFFFFA0A0;case "EMERALD"->0xFF9BFFD1;case "PURPLE"->0xFFDCCBFF;default->0xFFFFD878;};}
-        private int panelColor(){return switch(currentTheme()){case "CHRISTMAS"->0xB817241B;case "HALLOWEEN"->0xB8201712;case "ICE","OCEAN"->0xB8111D29;case "NETHER"->0xB8201118;case "EMERALD"->0xB812211D;case "PURPLE"->0xB81C1728;default->0xB8141A24;};}
+        private int accent(){if(true)return 0xFFEAEAEA; return switch(currentTheme()){case "ICE","OCEAN"->0xFF69D8FF;case "CHRISTMAS"->0xFF55D878;case "HALLOWEEN"->0xFFFF8738;case "NETHER"->0xFFFF5555;case "EMERALD"->0xFF45D69A;case "PURPLE"->0xFFB58CFF;default->0xFFFFD54F;};}
+        private int textColor(){if(true)return 0xFFF4F4F4; return switch(currentTheme()){case "ICE","OCEAN"->0xFF9BE8FF;case "CHRISTMAS"->0xFFFFD8D8;case "HALLOWEEN"->0xFFFFC18A;case "NETHER"->0xFFFFA0A0;case "EMERALD"->0xFF9BFFD1;case "PURPLE"->0xFFDCCBFF;default->0xFFFFD878;};}
+        private int panelColor(){if(true)return 0xD0090909; return switch(currentTheme()){case "CHRISTMAS"->0xB817241B;case "HALLOWEEN"->0xB8201712;case "ICE","OCEAN"->0xB8111D29;case "NETHER"->0xB8201118;case "EMERALD"->0xB812211D;case "PURPLE"->0xB81C1728;default->0xB8141A24;};}
         private void drawSeasonDecor(GuiGraphicsExtractor g) {
             int decoX=(width+Math.min(920,width-32))/2-110;
             String theme=currentTheme();
@@ -872,6 +877,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                 addRenderableWidget(Button.builder(Component.literal("HUD opacity +"),b->{data.ownerHudOpacity=Math.min(1f,data.ownerHudOpacity+0.08f);save();}).bounds(contentX+378,bodyTop+32,110,24).build());
                 addRenderableWidget(Button.builder(Component.literal("Animation speed −"),b->{data.ownerAnimationSpeed=Math.max(0.5f,data.ownerAnimationSpeed-0.1f);save();}).bounds(contentX+260,bodyTop+64,110,24).build());
                 addRenderableWidget(Button.builder(Component.literal("Animation speed +"),b->{data.ownerAnimationSpeed=Math.min(2.5f,data.ownerAnimationSpeed+0.1f);save();}).bounds(contentX+378,bodyTop+64,110,24).build());
+                addRenderableWidget(Button.builder(Component.literal("OWNER: "+(data.ownerGlow?"GLOW ON":"GLOW OFF")),b->{data.ownerGlow=!data.ownerGlow;save();b.setMessage(Component.literal("OWNER: "+(data.ownerGlow?"GLOW ON":"GLOW OFF")));}).bounds(contentX,bodyTop+130,230,24).build());
                 addRenderableWidget(Button.builder(Component.literal("Reset owner effects"),b->{data.ownerGlow=true;data.ownerParticles=true;data.ownerAnimations=true;data.ownerAuctionStats=true;data.ownerTimerPulse=true;data.ownerHudOpacity=0.88f;data.ownerAnimationSpeed=1f;data.ownerTimerStyle=0;save();Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,0,6));}).bounds(contentX+260,bodyTop+96,230,24).build());
                 addRenderableWidget(Button.builder(Component.literal("Move / resize HUDs"),b->Minecraft.getInstance().gui.setScreen(new LayoutEditScreen(this))).bounds(contentX,bodyTop+146,230,26).build());
             }
@@ -894,7 +900,8 @@ public class StreamerCounterClient implements ClientModInitializer {
             g.fill(left+1,top+58,right-1,top+59,0x665F7188);
             String title="STREAMERCOUNTER OWNER";
             drawFlowText(g,font,title,left+22,top+22,0xFFFFFFFF,true);
-            drawFlowText(g,font,"✦ EXCLUSIVE CONTROL CENTER  •  26.2",left+22,top+39,textColor(),true);
+            drawFlowText(g,font,"✦ OWNER CONTROL CENTER  •  26.2",left+22,top+39,textColor(),true);
+            drawFlowText(g,font,"BLACK / WHITE  •  LIVE EFFECTS",left+panelW-210,top+39,0xFFFFFFFF,true);
             int bodyTop=top+96, bodyBottom=height-74, x=left+26;
             String heading=TABS[activeTab].toUpperCase(Locale.ROOT);
             drawFlowText(g,font,heading,x,top+76,accent(),true);
@@ -914,7 +921,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                 String[] statuses={"Idle","Idle","Edit your on-screen text","Coming soon","Coming soon","Off",data.showHud?"1 plate on":"Off"};
                 for(int i=0;i<statuses.length;i++)drawFlowText(g,font,statuses[i],x+260,bodyTop+10+i*42,textColor(),true);
             }else if(activeTab==4){
-                drawFlowText(g,font,"Choose from 8 VIP themes: Gold, Ice, Christmas, Halloween, Nether, Emerald, Purple and Ocean.",x+220,bodyTop+6,textColor(),true);
+                drawFlowText(g,font,"OWNER MODE  •  MONOCHROME FLOW",x+220,bodyTop+6,textColor(),true);
             }else if(activeTab==5){
                 drawFlowText(g,font,"Adjust HUD visibility and size, reset its position, or manage counter data.",x+220,bodyTop+6,textColor(),true);
             }
@@ -934,7 +941,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                     buttonIndex++;
                 }
             }
-            String credit="VIP EDITION  •  MADE BY ALPBEY3503";
+            String credit="OWNER EDITION  •  MADE BY ALPBEY3503";
             drawFlowText(g,font,credit,left+22,bottom-18,textColor(),true);
         }
         @Override public void onClose(){Minecraft.getInstance().gui.setScreen(parent);}
@@ -967,7 +974,7 @@ public class StreamerCounterClient implements ClientModInitializer {
     private static class TimerScreen extends Screen {
         private final Screen parent;
         private EditBox secondsField;
-        TimerScreen(Screen parent){super(Component.literal("VIP Timer"));this.parent=parent;}
+        TimerScreen(Screen parent){super(Component.literal("OWNER TIMER"));this.parent=parent;}
         @Override protected void init(){
             int cx=width/2, top=height/2-132;
             secondsField=new EditBox(font,cx-90,top+52,180,26,Component.literal("Seconds"));
@@ -992,7 +999,7 @@ public class StreamerCounterClient implements ClientModInitializer {
     private static class AuctionScreen extends Screen {
         private final Screen parent;
         private EditBox minBid;
-        AuctionScreen(Screen parent){super(Component.literal("VIP Auction"));this.parent=parent;}
+        AuctionScreen(Screen parent){super(Component.literal("OWNER AUCTION"));this.parent=parent;}
 
         @Override protected void init(){
             int cx=width/2, t=height/2-170, left=cx-318;

@@ -83,6 +83,11 @@ public class StreamerCounterClient implements ClientModInitializer {
         boolean auctionShowWorld = true;
     }
 
+    private static String formatAuctionDuration(int seconds) {
+        if (seconds >= 60 && seconds % 60 == 0) return (seconds / 60) + "m";
+        return seconds + "s";
+    }
+
     private static String formatAuctionMoney(double value) {
         double abs = Math.abs(value);
         if (abs >= 1_000_000_000_000d) return String.format(Locale.ROOT, "%.2fT", value / 1_000_000_000_000d).replaceAll("\\.?0+T$", "T");
@@ -263,7 +268,29 @@ public class StreamerCounterClient implements ClientModInitializer {
             int cx = ctx.getScaledWindowWidth()/2, y = 28;
             long left = data.auctionActive ? Math.max(0,(data.auctionEndTime-System.currentTimeMillis()+999)/1000) : 0;
             ctx.fill(cx-132,y,cx+132,y+(data.auctionSold?104:76),0xCC120C08); ctx.fill(cx-132,y,cx+132,y+2,0xFFFF8126);
-            drawFlowText(ctx,MinecraftClient.getInstance().textRenderer,data.auctionSold ? "SOLD" : data.auctionItem,cx-100,y+8,0xFFFFFFFF,true);
+            if (data.auctionActive && MinecraftClient.getInstance().player != null) {
+                var player = MinecraftClient.getInstance().player;
+                for (int slot=0; slot<player.getInventory().size(); slot++) {
+                    var stack=player.getInventory().getStack(slot);
+                    if (!stack.isEmpty() && stack.getName().getString().equals(data.auctionItem)) { ctx.drawItem(stack,cx-124,y+8); break; }
+                }
+            }
+            drawFlowText(ctx,MinecraftClient.getInstance().textRe        if (data.auctionActive && System.currentTimeMillis() >= data.auctionEndTime) {
+            data.auctionActive=false; data.auctionSold=true;
+            data.auctionWinner=data.auctionHighestBid>0?data.auctionHighestPlayer:"No bids";
+            data.auctionSoldUntil=System.currentTimeMillis()+10000L; save();
+        }
+        if (data.auctionSold && System.currentTimeMillis() <= data.auctionSoldUntil) {
+            long elapsed = System.currentTimeMillis() - (data.auctionSoldUntil - 10000L);
+            int pulse = (int)(Math.sin(elapsed / 150.0) * 5) + 5;
+            int cx = ctx.getScaledWindowWidth()/2, cy = ctx.getScaledWindowHeight()/2;
+            ctx.fill(cx-154-pulse,cy-42,cx+154+pulse,cy+43,0xDD120C08);
+            ctx.fill(cx-154-pulse,cy-42,cx+154+pulse,cy-39,0xFFFF8126);
+            drawFlowText(ctx,MinecraftClient.getInstance().textRenderer,"★ AUCTION WON ★",cx-92,cy-29,0xFFFFC04A,true);
+            drawFlowText(ctx,MinecraftClient.getInstance().textRenderer,data.auctionWinner,cx-100,cy-7,0xFFFFFFFF,true);
+            drawFlowText(ctx,MinecraftClient.getInstance().textRenderer,"WON FOR $"+formatAuctionMoney(data.auctionHighestBid),cx-100,cy+14,0xFFFF8126,true);
+        }
+nderer,data.auctionSold ? "SOLD" : data.auctionItem,cx-100,y+8,0xFFFFFFFF,true);
             drawFlowText(ctx,MinecraftClient.getInstance().textRenderer,data.auctionActive ? String.format(Locale.ROOT,"%02d:%02d",left/60,left%60) : data.auctionWinner,cx-100,y+27,0xFFFF8126,true);
             drawFlowText(ctx,MinecraftClient.getInstance().textRenderer,data.auctionHighestPlayer+"  $"+formatAuctionMoney(data.auctionHighestBid),cx-100,y+49,data.textColor,true);
         }
@@ -836,18 +863,12 @@ public class StreamerCounterClient implements ClientModInitializer {
             addDrawableChild(ButtonWidget.builder(Text.literal("Back to Tools"),b->MinecraftClient.getInstance().setScreen(parent)).dimensions(left,t+278,160,22).build());
         }
         private void extend(int seconds){data.auctionEndTime+=seconds*1000L;save();}
-        private void finish(){data.auctionActive=false;data.auctionSold=true;data.auctionWinner=data.auctionHighestBid>0?data.auctionHighestPlayer:"No bids";data.auctionSoldUntil=System.currentTimeMillis()+10000L;save();MinecraftClient.getInstance().setScreen(new AuctionScreen(parent));}
+        private void finish(){data.auctionActive=false;data.auctionSold=true;data.auctionWinner=data.auctionHighestBid>0?data.auctionHighestPlayer:"No bids";data.auctionSoldUntil=System.currentTimeMillis()+10000L;save();}
         @Override public void render(DrawContext g,int mx,int my,float delta){
             int cx=width/2,t=height/2-170,a=data.iceTheme?0xFF69D8FF:0xFFFF8126;
             g.fill(0,0,width,height,0x55000000);g.fill(cx-340,t,cx+340,t+340,0xEE160E0A);g.fill(cx-340,t,cx+340,t+2,a);g.fill(cx,t+42,cx+1,t+310,0x665B4635);
             drawFlowText(g,textRenderer,data.auctionSold?"AUCTION COMPLETE":data.auctionActive?"LIVE AUCTION":"NEW AUCTION",cx-318,t+18,0xFFFFFFFF,true);
-            if(data.auctionSold){long elapsed=System.currentTimeMillis();int pulse=(int)(Math.sin(elapsed/180.0)*5)+12;
-                g.fill(cx-310,t+82,cx+310,t+230,0x552A1608);g.fill(cx-310,t+82,cx-310+pulse,t+230,a);g.fill(cx+310-pulse,t+82,cx+310,t+230,a);
-                drawFlowText(g,textRenderer,"★  SOLD  ★",cx-65,t+104,a,true);drawFlowText(g,textRenderer,data.auctionWinner,cx-130,t+142,0xFFFFFFFF,true);
-                drawFlowText(g,textRenderer,"WINNING BID  $"+formatAuctionMoney(data.auctionHighestBid),cx-145,t+174,data.textColor,true);
-                drawFlowText(g,textRenderer,"This result closes in 10 seconds",cx-125,t+205,0xFFB9A28D,true);
-                for(int i=0;i<18;i++){int px=cx-280+(int)((i*47+elapsed/18)%560);int py=t+65+(int)((i*31+elapsed/12)%190);g.fill(px,py,px+4,py+4,(i%2==0)?a:0xFFFFD76A);}
-            }else{
+            else{
                 MinecraftClient client=MinecraftClient.getInstance();
                 if(client.player!=null){for(int slot=0;slot<client.player.getInventory().size();slot++){var stack=client.player.getInventory().getStack(slot);if(!stack.isEmpty()&&stack.getName().getString().equals(data.auctionItem)){g.drawItem(stack,cx-318,t+52);break;}}}
                 drawFlowText(g,textRenderer,"ITEM",cx-286,t+48,a,true);drawFlowText(g,textRenderer,data.auctionItem,cx-286,t+68,0xFFFFFFFF,true);
@@ -856,7 +877,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                     drawFlowText(g,textRenderer,"HIGHEST BID",cx-318,t+190,data.textColor,true);drawFlowText(g,textRenderer,data.auctionHighestPlayer+"  $"+formatAuctionMoney(data.auctionHighestBid),cx-318,t+210,0xFFFFFFFF,true);
                     drawFlowText(g,textRenderer,"BIDDERS / PAYMENTS",cx+22,t+48,a,true);int row=0;
                     for(var entry:data.auctionBids.entrySet()){if(row>=8)break;drawFlowText(g,textRenderer,entry.getKey()+"   $"+formatAuctionMoney(entry.getValue()),cx+22,t+78+row*25,data.textColor,true);row++;}
-                }else{drawFlowText(g,textRenderer,"DURATION",cx-318,t+124,data.textColor,true);drawFlowText(g,textRenderer,data.auctionDurationSeconds+" seconds",cx-318,t+168,0xFFFFFFFF,true);drawFlowText(g,textRenderer,"MINIMUM BID",cx-318,t+176,data.textColor,true);drawFlowText(g,textRenderer,"CHOOSE FROM YOUR INVENTORY",cx+22,t+48,a,true);drawFlowText(g,textRenderer,"Select an item on the right",cx+22,t+63,0xFFB9A28D,true);}
+                }else{drawFlowText(g,textRenderer,"DURATION",cx-318,t+124,data.textColor,true);drawFlowText(g,textRenderer,formatAuctionDuration(data.auctionDurationSeconds),cx-318,t+168,0xFFFFFFFF,true);drawFlowText(g,textRenderer,"MINIMUM BID",cx-318,t+176,data.textColor,true);drawFlowText(g,textRenderer,"CHOOSE FROM YOUR INVENTORY",cx+22,t+48,a,true);drawFlowText(g,textRenderer,"Select an item on the right",cx+22,t+63,0xFFB9A28D,true);}
             }
             super.render(g,mx,my,delta);
         }

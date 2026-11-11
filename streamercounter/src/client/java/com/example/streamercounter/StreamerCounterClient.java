@@ -849,7 +849,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         @Override protected void init(){
             int l=width/2-330,t=height/2-150;
             minBid=new EditBox(font,l+170,t+118,190,22,Component.literal("Minimum bid"));minBid.setValue(String.valueOf(data.auctionMinBid));addRenderableWidget(minBid);
-            addRenderableWidget(Button.builder(Component.literal("Use held item"),b->{Minecraft mc=Minecraft.getInstance();if(mc.player!=null&&!mc.player.getMainHandItem().isEmpty())data.auctionItem=mc.player.getMainHandItem().getHoverName().getString();save();mc.setScreen(new AuctionScreen(parent));}).bounds(l+18,t+62,150,22).build());
+            addRenderableWidget(Button.builder(Component.literal("Use held item"),b->{Minecraft mc=Minecraft.getInstance();if(mc.player!=null&&!mc.player.getMainHandItem().isEmpty())data.auctionItem=mc.player.getMainHandItem().getHoverName().getString();save();mc.gui.setScreen(new AuctionScreen(parent));}).bounds(l+18,t+62,150,22).build());
             int[] ds={30,60,120,300,600};String[] ls={"30s","1m","2m","5m","10m"};
             for(int i=0;i<ds.length;i++){final int v=ds[i];addRenderableWidget(Button.builder(Component.literal(ls[i]),b->{data.auctionDurationSeconds=v;save();Minecraft.getInstance().gui.setScreen(new AuctionScreen(parent));}).bounds(l+18+i*58,t+94,54,20).build());}
             if(data.auctionActive){

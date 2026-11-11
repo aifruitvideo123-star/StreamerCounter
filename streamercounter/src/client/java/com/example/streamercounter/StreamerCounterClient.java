@@ -36,7 +36,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 public class StreamerCounterClient implements ClientModInitializer {
-    private static final Path FILE = FabricLoader.getInstance().getConfigDir().resolve("streamer-counter-vip.json");
+    private static final Path FILE = FabricLoader.getInstance().getConfigDir().resolve("streamer-counter-owner-26.2.json");
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final long TIMEOUT_MS = 60_000;
     private static final double NEAR_SQ = 8 * 8;
@@ -82,6 +82,14 @@ public class StreamerCounterClient implements ClientModInitializer {
         long timerEndTime = 0L;
         boolean timerActive = false;
         boolean timerFinished = false;
+        boolean ownerGlow = true;
+        boolean ownerParticles = true;
+        boolean ownerAnimations = true;
+        boolean ownerAuctionStats = true;
+        boolean ownerTimerPulse = true;
+        float ownerHudOpacity = 0.88f;
+        float ownerAnimationSpeed = 1.0f;
+        int ownerTimerStyle = 0;
     }
 
     private static String formatAuctionDuration(int seconds) {
@@ -259,7 +267,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             float auctionScale=Math.max(0.6f,Math.min(1.8f,data.auctionHudScale)); int aw=(int)(132*auctionScale), ah=(int)((data.auctionSold?104:76)*auctionScale);
             int cx=data.auctionHudX<0?hudW/2:data.auctionHudX, y=data.auctionHudY;
             long left = data.auctionActive ? Math.max(0,(data.auctionEndTime-System.currentTimeMillis()+999)/1000) : 0;
-            graphics.fill(cx-aw,y,cx+aw,y+ah,0xCC120C08); graphics.fill(cx-aw,y,cx+aw,y+2,0xFFFF8126);
+            if(data.ownerGlow)graphics.fill(cx-aw-3,y-3,cx+aw+3,y+ah+3,0x88FF8126); graphics.fill(cx-aw,y,cx+aw,y+ah,withOpacity(0x120C08,data.ownerHudOpacity)); graphics.fill(cx-aw,y,cx+aw,y+2,0xFFFF8126);
             if (data.auctionActive && mc.player != null) {
                 for (int slot=0; slot<mc.player.getInventory().getContainerSize(); slot++) {
                     var stack=mc.player.getInventory().getItem(slot);
@@ -270,6 +278,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             drawFlowText(graphics,mc.font,data.auctionActive ? String.format(Locale.ROOT,"%02d:%02d",left/60,left%60) : data.auctionWinner,cx-100,y+27,0xFFFF8126,true);
             drawFlowText(graphics,mc.font,"DURATION "+formatAuctionDuration(data.auctionDurationSeconds),cx-100,y+39,0xFFFFC04A,true);
             drawFlowText(graphics,mc.font,data.auctionHighestPlayer+"  $"+formatAuctionMoney(data.auctionHighestBid),cx-100,y+49,data.textColor,true);
+            if(data.ownerAuctionStats)drawFlowText(graphics,mc.font,"BIDS "+data.auctionBids.size()+"  •  PLAYERS "+data.auctionBids.size(),cx-100,y+61,0xFFFFD36B,true);
             if (data.auctionActive && System.currentTimeMillis() >= data.auctionEndTime) {
             data.auctionActive=false; data.auctionSold=true;
             data.auctionWinner=data.auctionHighestBid>0?data.auctionHighestPlayer:"No bids";
@@ -296,16 +305,16 @@ public class StreamerCounterClient implements ClientModInitializer {
             long remain=data.timerActive?Math.max(0,(data.timerEndTime-System.currentTimeMillis()+999)/1000):0;
             int timerCx=data.timerHudX<0?mc.getWindow().getGuiScaledWidth()/2:data.timerHudX, timerCy=data.timerHudY<0?mc.getWindow().getGuiScaledHeight()/3:data.timerHudY; float timerScale=Math.max(0.6f,Math.min(1.8f,data.timerHudScale)); int timerRadius=(int)(62*timerScale);
             int total=Math.max(1,data.timerDurationSeconds); double progress=data.timerActive?Math.max(0,Math.min(1,(double)remain/total)):0;
-            graphics.fill(timerCx-timerRadius,timerCy-timerRadius,timerCx+timerRadius,timerCy+timerRadius,0xCC10131B);
-            for(int i=0;i<60;i++){double a=-Math.PI/2+i*Math.PI*2/60;int px=timerCx+(int)(timerRadius*0.85*Math.cos(a)),py=timerCy+(int)(timerRadius*0.85*Math.sin(a));int col=(i<Math.round(progress*60))?0xFFFFC04A:0xFF48505D;graphics.fill(px-2,py-2,px+3,py+3,col);}
+            if(data.ownerGlow)graphics.fill(timerCx-timerRadius-4,timerCy-timerRadius-4,timerCx+timerRadius+4,timerCy+timerRadius+4,0x6659CFFF); graphics.fill(timerCx-timerRadius,timerCy-timerRadius,timerCx+timerRadius,timerCy+timerRadius,withOpacity(0x10131B,data.ownerHudOpacity));
+            for(int i=0;i<60;i++){double a=-Math.PI/2+i*Math.PI*2/60; if(data.ownerTimerStyle==1)a+=Math.sin(System.currentTimeMillis()/350.0*data.ownerAnimationSpeed)*0.025;int px=timerCx+(int)(timerRadius*0.85*Math.cos(a)),py=timerCy+(int)(timerRadius*0.85*Math.sin(a));int col=(i<Math.round(progress*60))?(data.ownerTimerStyle==1?0xFF54E8FF:data.ownerTimerStyle==2?0xFFFFFFFF:0xFFFFC04A):(data.ownerTimerStyle==1?0xFF243B4A:0xFF48505D);graphics.fill(px-2,py-2,px+3,py+3,col);}
             String time=String.format(Locale.ROOT,"%02d:%02d",remain/60,remain%60);
             graphics.text(mc.font,Component.literal(time),timerCx-mc.font.width(time)/2,timerCy-5,0xFFFFFFFF);
             String status=data.timerFinished?"TIME UP":"TIMER";
             graphics.text(mc.font,Component.literal(status),timerCx-mc.font.width(status)/2,timerCy+13,data.timerFinished?0xFFFF6B6B:0xFFFFC04A);
             if(timerFinishedAt>0 && System.currentTimeMillis()-timerFinishedAt<5200){
-                long elapsed=System.currentTimeMillis()-timerFinishedAt;float pulse=(float)(1.0+0.035*Math.sin(elapsed/110.0));int bw=(int)(300*pulse),bh=76;
+                long elapsed=System.currentTimeMillis()-timerFinishedAt;float pulse=data.ownerAnimations?(float)(1.0+0.035*Math.sin(elapsed/110.0*data.ownerAnimationSpeed)):1.0f;int bw=(int)(300*pulse),bh=76;
                 int bx=mc.getWindow().getGuiScaledWidth()/2,by=mc.getWindow().getGuiScaledHeight()/2-38;
-                graphics.fill(bx-bw/2-2,by-2,bx+bw/2+2,by+bh+2,0xFFFF8126);graphics.fill(bx-bw/2,by,bx+bw/2,by+bh,0xF20D0B09);
+                if(data.ownerGlow)graphics.fill(bx-bw/2-5,by-5,bx+bw/2+5,by+bh+5,0x88FF8126);graphics.fill(bx-bw/2-2,by-2,bx+bw/2+2,by+bh+2,0xFFFF8126);graphics.fill(bx-bw/2,by,bx+bw/2,by+bh,0xF20D0B09);
                 graphics.fill(bx-bw/2,by,bx+bw/2,by+3,0xFFFF8126);
                 drawFlowText(graphics,mc.font,"⏱ TIMER FINISHED",bx-mc.font.width("⏱ TIMER FINISHED")/2,by+19,0xFFFFC04A,true);
                 String sub="Your countdown is complete";graphics.text(mc.font,Component.literal(sub),bx-mc.font.width(sub)/2,by+43,0xFFFFFFFF,true);
@@ -313,12 +322,14 @@ public class StreamerCounterClient implements ClientModInitializer {
         }
     }
 
+    private static int withOpacity(int rgb,float opacity){int a=Math.max(0,Math.min(255,Math.round(255f*Math.max(0.1f,Math.min(1f,opacity)))));return (a<<24)|(rgb&0x00FFFFFF);}
+
     private static void drawHud(GuiGraphicsExtractor graphics, int x, int y) {
         Minecraft mc = Minecraft.getInstance();
         List<String> names = hudNames();
         int width = hudWidth();
         int height = hudHeight();
-        graphics.fill(x, y, x + width, y + height, 0x990B111A);
+        graphics.fill(x, y, x + width, y + height, withOpacity(0x0B111A,data.ownerHudOpacity));
         int accent = data.iceTheme ? 0xFF69D8FF : 0xFFE8B64D;
         graphics.fill(x, y, x + width, y + 2, accent);
         drawFlowText(graphics, mc.font, "STREAMERS VIP", x + 6, y + 6, data.textColor, false);
@@ -674,7 +685,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         private final int page;
         private final int activeTab;
         private static final int ROW_HEIGHT = 26;
-        private static final String[] TABS = {"Overview","Streamers","HUD","Tools","Themes","Settings"};
+        private static final String[] TABS = {"Overview","Streamers","HUD","Tools","Themes","Settings","OWNER"};
 
         CounterMenuScreen(Screen parent, int page) { this(parent,page,0); }
         CounterMenuScreen(Screen parent, int page, int activeTab) {
@@ -784,7 +795,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         private int pageCount(int rows){return Math.max(1,(streamerNames().size()+rows-1)/rows);}
         @Override protected void init() {
             int panelW=Math.min(920,width-32), left=(width-panelW)/2, top=24;
-            int tabStart=left+218, tabW=Math.min(94,(panelW-238)/6), gap=5;
+            int tabStart=left+210, tabW=Math.min(82,(panelW-270)/7), gap=4;
             for(int t=0;t<TABS.length;t++){
                 final int tab=t;
                 String label=(t==activeTab?"• ":"")+TABS[t];
@@ -847,6 +858,18 @@ public class StreamerCounterClient implements ClientModInitializer {
                 addRenderableWidget(Button.builder(Component.literal("Move and resize HUDs"),b->Minecraft.getInstance().gui.setScreen(new LayoutEditScreen(this))).bounds(contentX,bodyTop+154,230,26).build());
                             }
         
+            } else if(activeTab==6){
+                addRenderableWidget(Button.builder(Component.literal("✦ OWNER EFFECTS: "+(data.ownerGlow?"ON":"OFF")),b->{data.ownerGlow=!data.ownerGlow;save();b.setMessage(Component.literal("✦ OWNER EFFECTS: "+(data.ownerGlow?"ON":"OFF")));}).bounds(contentX,bodyTop,230,24).build());
+                addRenderableWidget(Button.builder(Component.literal("Particles: "+(data.ownerParticles?"ON":"OFF")),b->{data.ownerParticles=!data.ownerParticles;save();b.setMessage(Component.literal("Particles: "+(data.ownerParticles?"ON":"OFF")));}).bounds(contentX,bodyTop+32,230,24).build());
+                addRenderableWidget(Button.builder(Component.literal("Smooth animations: "+(data.ownerAnimations?"ON":"OFF")),b->{data.ownerAnimations=!data.ownerAnimations;save();b.setMessage(Component.literal("Smooth animations: "+(data.ownerAnimations?"ON":"OFF")));}).bounds(contentX,bodyTop+64,230,24).build());
+                addRenderableWidget(Button.builder(Component.literal("Auction stats: "+(data.ownerAuctionStats?"ON":"OFF")),b->{data.ownerAuctionStats=!data.ownerAuctionStats;save();b.setMessage(Component.literal("Auction stats: "+(data.ownerAuctionStats?"ON":"OFF")));}).bounds(contentX,bodyTop+96,230,24).build());
+                addRenderableWidget(Button.builder(Component.literal("Timer style: "+new String[]{"ORBIT","NEON","MINIMAL"}[Math.floorMod(data.ownerTimerStyle,3)]),b->{data.ownerTimerStyle=(data.ownerTimerStyle+1)%3;save();b.setMessage(Component.literal("Timer style: "+new String[]{"ORBIT","NEON","MINIMAL"}[data.ownerTimerStyle]));}).bounds(contentX+260,bodyTop,230,24).build());
+                addRenderableWidget(Button.builder(Component.literal("HUD opacity −"),b->{data.ownerHudOpacity=Math.max(0.25f,data.ownerHudOpacity-0.08f);save();}).bounds(contentX+260,bodyTop+32,110,24).build());
+                addRenderableWidget(Button.builder(Component.literal("HUD opacity +"),b->{data.ownerHudOpacity=Math.min(1f,data.ownerHudOpacity+0.08f);save();}).bounds(contentX+378,bodyTop+32,110,24).build());
+                addRenderableWidget(Button.builder(Component.literal("Animation speed −"),b->{data.ownerAnimationSpeed=Math.max(0.5f,data.ownerAnimationSpeed-0.1f);save();}).bounds(contentX+260,bodyTop+64,110,24).build());
+                addRenderableWidget(Button.builder(Component.literal("Animation speed +"),b->{data.ownerAnimationSpeed=Math.min(2.5f,data.ownerAnimationSpeed+0.1f);save();}).bounds(contentX+378,bodyTop+64,110,24).build());
+                addRenderableWidget(Button.builder(Component.literal("Reset owner effects"),b->{data.ownerGlow=true;data.ownerParticles=true;data.ownerAnimations=true;data.ownerAuctionStats=true;data.ownerTimerPulse=true;data.ownerHudOpacity=0.88f;data.ownerAnimationSpeed=1f;data.ownerTimerStyle=0;save();Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,0,6));}).bounds(contentX+260,bodyTop+96,230,24).build());
+                addRenderableWidget(Button.builder(Component.literal("Move / resize HUDs"),b->Minecraft.getInstance().gui.setScreen(new LayoutEditScreen(this))).bounds(contentX,bodyTop+146,230,26).build());
             // Apply translucency to the actual top-level VIP menu controls.
             for (var child : children()) {
                 if (child instanceof net.minecraft.client.gui.components.AbstractWidget button) button.setAlpha(0.0f);
@@ -861,11 +884,12 @@ public class StreamerCounterClient implements ClientModInitializer {
             g.fill(left-1,top-1,right+1,bottom+1,0xAA000000);
             g.fill(left,top,right,bottom,panelColor());
             drawSeasonDecor(g);
+            if(data.ownerGlow){long tick=System.currentTimeMillis();int shimmer=(int)(Math.sin(tick/240.0*data.ownerAnimationSpeed)*24)+32;int glint=0xFF000000|((255)<<16)|((130+shimmer)<<8)|40;g.fill(left+2,top+3,left+panelW-2,top+5,glint);if(data.ownerParticles){for(int i=0;i<10;i++){int sx=left+24+(int)((tick/18+i*97)%(panelW-48));int sy=top+66+(i*17)%Math.max(1,height-140);g.fill(sx,sy,sx+2,sy+2,0x99FFD36B);}}}
             g.fill(left+1,top+1,right-1,top+3,accent());
             g.fill(left+1,top+58,right-1,top+59,0x665F7188);
-            String title="STREAMERCOUNTER VIP";
+            String title="STREAMERCOUNTER OWNER";
             drawFlowText(g,font,title,left+22,top+22,0xFFFFFFFF,true);
-            drawFlowText(g,font,"CONTROL CENTER",left+22,top+39,textColor(),true);
+            drawFlowText(g,font,"✦ EXCLUSIVE CONTROL CENTER  •  26.2",left+22,top+39,textColor(),true);
             int bodyTop=top+96, bodyBottom=height-74, x=left+26;
             String heading=TABS[activeTab].toUpperCase(Locale.ROOT);
             drawFlowText(g,font,heading,x,top+76,accent(),true);

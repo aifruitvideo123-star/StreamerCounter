@@ -117,9 +117,9 @@ public class StreamerCounterClient implements ClientModInitializer {
     public void onInitializeClient() {
         load();
         KeyMapping.Category category = KeyMapping.Category.register(
-                Identifier.fromNamespaceAndPath("streamercounter_vip", "general"));
+                Identifier.fromNamespaceAndPath("streamercounter_owner", "general"));
         openMenuKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-                "key.streamercounter_vip.open_menu", InputConstants.Type.KEYSYM,
+                "key.streamercounter_owner.open_menu", InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_K, category));
 
         ClientSendMessageEvents.COMMAND.register(command -> {

@@ -217,7 +217,19 @@ public class StreamerCounterClient implements ClientModInitializer {
             }
             ctx.getMatrices().popMatrix();
         }
-    }
+    
+        if (data.auctionActive && data.auctionHud) {
+            long remaining = Math.max(0L, data.auctionEndTime - System.currentTimeMillis());
+            String timer = remaining > 0 ? String.format(Locale.ROOT, "%02d:%02d", remaining/60000, (remaining/1000)%60) : "SOLD";
+            int sw=220, sh=58, sx=(ctx.getScaledWindowWidth()-sw)/2, sy=ctx.getScaledWindowHeight()-112;
+            ctx.fill(sx,sy,sx+sw,sy+sh,0xE5101118);
+            ctx.fill(sx,sy,sx+sw,sy+3,0xFFFF8428);
+            ctx.drawText(MinecraftClient.getInstance().textRenderer,Text.literal(timer),sx+10,sy+10,remaining>0?0xFFFF653B:0xFFFFD36A,true);
+            ctx.drawText(MinecraftClient.getInstance().textRenderer,Text.literal(data.auctionItem),sx+70,sy+10,0xFFFFFFFF,true);
+            ctx.drawText(MinecraftClient.getInstance().textRenderer,Text.literal("Starting bid: "+data.auctionBid+"  •  x"+data.auctionAmount),sx+10,sy+34,0xFFB8C7D9,true);
+        }
+
+}
 
     private static final String[] HUD_COLOR_NAMES = {"Gold", "Ice", "Red", "Green", "Purple", "White"};
     private static final int[] HUD_COLORS = {0xFFFFC85A, 0xFF69D8FF, 0xFFFF6B6B, 0xFF78E08F, 0xFFB98CFF, 0xFFFFFFFF};

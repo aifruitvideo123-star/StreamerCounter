@@ -782,19 +782,8 @@ public class StreamerCounterClient implements ClientModInitializer {
                 addDrawableChild(ButtonWidget.builder(Text.literal("Reset HUD Position"),b->{data.hudX=-1;data.hudY=8;save();}).dimensions(x,bodyTop+60,180,22).build());
                 addDrawableChild(ButtonWidget.builder(Text.literal("Reset All Counters"),b->{data.counts.clear();data.lastName=null;pending=null;save();clearAndInit();}).dimensions(x,bodyTop+90,180,22).build());
                 addDrawableChild(ButtonWidget.builder(Text.literal("Close Menu"),b->close()).dimensions(x,bodyTop+120,180,22).build());
-                addDrawableChild(ButtonWidget.builder(Text.literal("Auction ←"),b->{data.auctionHudX=Math.max(140,(data.auctionHudX<0?width/2:data.auctionHudX)-20);save();}).dimensions(x,bodyTop+154,78,20).build());
-                addDrawableChild(ButtonWidget.builder(Text.literal("Auction →"),b->{data.auctionHudX=(data.auctionHudX<0?width/2:data.auctionHudX)+20;save();}).dimensions(x+82,bodyTop+154,78,20).build());
-                addDrawableChild(ButtonWidget.builder(Text.literal("Auction ↑"),b->{data.auctionHudY=Math.max(20,data.auctionHudY-20);save();}).dimensions(x,bodyTop+178,78,20).build());
-                addDrawableChild(ButtonWidget.builder(Text.literal("Auction ↓"),b->{data.auctionHudY+=20;save();}).dimensions(x+82,bodyTop+178,78,20).build());
-                addDrawableChild(ButtonWidget.builder(Text.literal("Auction size −"),b->{data.auctionHudScale=Math.max(0.6f,data.auctionHudScale-0.1f);save();}).dimensions(x,bodyTop+202,92,20).build());
-                addDrawableChild(ButtonWidget.builder(Text.literal("Auction size +"),b->{data.auctionHudScale=Math.min(1.8f,data.auctionHudScale+0.1f);save();}).dimensions(x+96,bodyTop+202,92,20).build());
-                addDrawableChild(ButtonWidget.builder(Text.literal("Timer ←"),b->{data.timerHudX=Math.max(70,(data.timerHudX<0?width/2:data.timerHudX)-20);save();}).dimensions(x+210,bodyTop+154,78,20).build());
-                addDrawableChild(ButtonWidget.builder(Text.literal("Timer →"),b->{data.timerHudX=(data.timerHudX<0?width/2:data.timerHudX)+20;save();}).dimensions(x+292,bodyTop+154,78,20).build());
-                addDrawableChild(ButtonWidget.builder(Text.literal("Timer ↑"),b->{data.timerHudY=Math.max(70,(data.timerHudY<0?height/3:data.timerHudY)-20);save();}).dimensions(x+210,bodyTop+178,78,20).build());
-                addDrawableChild(ButtonWidget.builder(Text.literal("Timer ↓"),b->{data.timerHudY=(data.timerHudY<0?height/3:data.timerHudY)+20;save();}).dimensions(x+292,bodyTop+178,78,20).build());
-                addDrawableChild(ButtonWidget.builder(Text.literal("Timer size −"),b->{data.timerHudScale=Math.max(0.6f,data.timerHudScale-0.1f);save();}).dimensions(x+210,bodyTop+202,92,20).build());
-                addDrawableChild(ButtonWidget.builder(Text.literal("Timer size +"),b->{data.timerHudScale=Math.min(1.8f,data.timerHudScale+0.1f);save();}).dimensions(x+306,bodyTop+202,92,20).build());
-                addDrawableChild(ButtonWidget.builder(Text.literal("Auction ←"),b->{data.auctionHudX=Math.max(140,(data.auctionHudX<0?width/2:data.auctionHudX)-20);save();}).dimensions(x,bodyTop+154,78,20).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("Move and resize HUDs"),b->MinecraftClient.getInstance().setScreen(new LayoutEditScreen(this))).dimensions(x,bodyTop+154,230,26).build());
+                                addDrawableChild(ButtonWidget.builder(Text.literal("Auction ←"),b->{data.auctionHudX=Math.max(140,(data.auctionHudX<0?width/2:data.auctionHudX)-20);save();}).dimensions(x,bodyTop+154,78,20).build());
                 addDrawableChild(ButtonWidget.builder(Text.literal("Auction →"),b->{data.auctionHudX=(data.auctionHudX<0?width/2:data.auctionHudX)+20;save();}).dimensions(x+82,bodyTop+154,78,20).build());
                 addDrawableChild(ButtonWidget.builder(Text.literal("Auction ↑"),b->{data.auctionHudY=Math.max(20,data.auctionHudY-20);save();}).dimensions(x,bodyTop+178,78,20).build());
                 addDrawableChild(ButtonWidget.builder(Text.literal("Auction ↓"),b->{data.auctionHudY+=20;save();}).dimensions(x+82,bodyTop+178,78,20).build());
@@ -857,6 +846,28 @@ public class StreamerCounterClient implements ClientModInitializer {
 
 
 
+
+
+    private static class LayoutEditScreen extends Screen {
+        private final Screen parent;
+        private int selected=0; private boolean dragging=false; private double offX,offY;
+        LayoutEditScreen(Screen parent){super(Text.literal("Move and resize HUDs"));this.parent=parent;}
+        private int px(int i){return i==0?(data.hudX<0?width-hudWidth(data.hudScale)-8:data.hudX):i==1?(data.auctionHudX<0?width/2:data.auctionHudX):(data.timerHudX<0?width/2:data.timerHudX);}
+        private int py(int i){return i==0?visibleHudY(height):i==1?data.auctionHudY:(data.timerHudY<0?height/3:data.timerHudY);}
+        private int pw(int i){return i==0?hudWidth(data.hudScale):i==1?(int)(264*Math.max(.6f,Math.min(1.8f,data.auctionHudScale))):(int)(124*Math.max(.6f,Math.min(1.8f,data.timerHudScale)));}
+        private int ph(int i){return i==0?hudHeight(data.hudScale):i==1?(int)(data.auctionSold?104:76)*1:(int)(124*Math.max(.6f,Math.min(1.8f,data.timerHudScale));}
+        private void move(int i,int x,int y){if(i==0){data.hudX=x;data.hudY=y;}else if(i==1){data.auctionHudX=x;data.auctionHudY=y;}else{data.timerHudX=x;data.timerHudY=y;}}
+        private void scale(int i,float d){if(i==0)data.hudScale=Math.max(.5f,Math.min(2f,data.hudScale+d));else if(i==1)data.auctionHudScale=Math.max(.6f,Math.min(1.8f,data.auctionHudScale+d));else data.timerHudScale=Math.max(.6f,Math.min(1.8f,data.timerHudScale+d));}
+        @Override protected void init(){addDrawableChild(ButtonWidget.builder(Text.literal("Done"),b->MinecraftClient.getInstance().setScreen(parent)).dimensions(width/2-50,height-34,100,22).build());}
+        @Override public boolean mouseClicked(Click click,boolean doubled){if(click.button()==0){for(int i=2;i>=0;i--){int x=px(i),y=py(i),w=pw(i),h=ph(i);if(click.x()>=x&&click.x()<=x+w&&click.y()>=y&&click.y()<=y+h){selected=i;dragging=true;offX=click.x()-x;offY=click.y()-y;return true;}}}return super.mouseClicked(click,doubled);}
+        @Override public boolean mouseDragged(Click click,double dx,double dy){if(dragging&&click.button()==0){move(selected,Math.max(0,Math.min(width-pw(selected),(int)(click.x()-offX))),Math.max(0,Math.min(height-ph(selected),(int)(click.y()-offY))));return true;}return super.mouseDragged(click,dx,dy);}
+        @Override public boolean mouseReleased(Click click){if(dragging&&click.button()==0){dragging=false;save();return true;}return super.mouseReleased(click);}
+        @Override public boolean mouseScrolled(double x,double y,double amount){for(int i=2;i>=0;i--){if(x>=px(i)&&x<=px(i)+pw(i)&&y>=py(i)&&y<=py(i)+ph(i)){selected=i;scale(i,amount>0?.1f:-.1f);save();return true;}}return super.mouseScrolled(x,y,amount);}
+        @Override public void render(DrawContext g,int mx,int my,float delta){g.fill(0,0,width,height,0xB0000000);g.drawCenteredTextWithShadow(textRenderer,Text.literal("MOVE & RESIZE HUDS"),width/2,24,0xFFFFA044);g.drawCenteredTextWithShadow(textRenderer,Text.literal("Drag a panel to move it • Scroll to resize • ESC to finish"),width/2,42,0xFFFFFFFF);
+            for(int i=0;i<3;i++){int x=px(i),y=py(i),w=pw(i),h=ph(i),col=i==selected?0xFFFF8126:0xAA8A603E;g.fill(x-2,y-2,x+w+2,y+h+2,col);g.fill(x,y,x+w,y+h,0xDD120C08);g.fill(x,y,x+w,y+2,0xFFFF8126);String label=i==0?"STREAMER HUD":i==1?"AUCTION HUD":"TIMER HUD";g.drawCenteredTextWithShadow(textRenderer,Text.literal(label),x+w/2,y+8,0xFFFFFFFF);g.drawCenteredTextWithShadow(textRenderer,Text.literal(i==0?"Player counters":i==1?"Item • countdown • highest bid":"00:45"),x+w/2,y+25,0xFFFFC04A);}
+            g.drawCenteredTextWithShadow(textRenderer,Text.literal("Selected: "+(selected==0?"Streamer HUD":selected==1?"Auction HUD":"Timer HUD")+"  •  "+Math.round((selected==0?data.hudScale:selected==1?data.auctionHudScale:data.timerHudScale)*100)+"%"),width/2,height-54,0xFFFFC04A);super.render(g,mx,my,delta);}
+        @Override public void close(){save();MinecraftClient.getInstance().setScreen(parent);}
+    }
 
     private static class TimerScreen extends Screen {
         private final Screen parent;

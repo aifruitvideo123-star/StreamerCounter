@@ -82,11 +82,6 @@ public class StreamerCounterClient implements ClientModInitializer {
         return seconds + "s";
     }
 
-    private static String formatAuctionDuration(int seconds) {
-        if (seconds >= 60 && seconds % 60 == 0) return (seconds / 60) + "m";
-        return seconds + "s";
-    }
-
     private static String formatAuctionMoney(double value) {
         double abs = Math.abs(value);
         if (abs >= 1_000_000_000_000d) return String.format(Locale.ROOT, "%.2fT", value / 1_000_000_000_000d).replaceAll("\\.?0+T$", "T");
@@ -251,7 +246,6 @@ public class StreamerCounterClient implements ClientModInitializer {
             }
         }
     
-        if (data.auctionActive && System.currentTimeMillis() >= data.auctionEndTime) { data.auctionActive=false; data.auctionSold=true; data.auctionWinner=data.auctionHighestBid>0?data.auctionHighestPlayer:"No bids"; data.auctionSoldUntil=System.currentTimeMillis()+10000L; save(); }
         if (data.auctionSold && System.currentTimeMillis() > data.auctionSoldUntil) { data.auctionSold=false; data.auctionWinner=""; data.auctionHighestBid=0; data.auctionHighestPlayer="No bids yet"; save(); }
         if (data.auctionShowWorld && (data.auctionActive || (data.auctionSold && System.currentTimeMillis() <= data.auctionSoldUntil))) {
             int cx = mc.getWindow().getGuiScaledWidth()/2, y = 28;
@@ -265,37 +259,22 @@ public class StreamerCounterClient implements ClientModInitializer {
             }
             drawFlowText(graphics,mc.font,data.auctionSold ? "SOLD" : data.auctionItem,cx-100,y+8,0xFFFFFFFF,true);
             drawFlowText(graphics,mc.font,data.auctionActive ? String.format(Locale.ROOT,"%02d:%02d",left/60,left%60) : data.auctionWinner,cx-100,y+27,0xFFFF8126,true);
-            if (data.auctionActive && mc.player != null) {
-                for (int slot=0; slot<mc.player.getInventory().getContainerSize(); slot++) {
-                    var stack=mc.player.getInventory().getItem(slot);
-                    if (!stack.isEmpty() && stack.getHoverName().getString().equals(data.auctionItem)) { graphics.item(stack,cx-124,y+8); break; }
-                }
-            }
+            drawFlowText(graphics,mc.font,"DURATION "+formatAuctionDuration(data.auctionDurationSeconds),cx-100,y+39,0xFFFFC04A,true);
             drawFlowText(graphics,mc.font,data.auctionHighestPlayer+"  $"+formatAuctionMoney(data.auctionHighestBid),cx-100,y+49,data.textColor,true);
-        }
-        if (data.auctionSold && System.currentTimeMillis() <= data.auctionSoldUntil) {
-            long elapsed = System.currentTimeMillis() - (data.auctionSoldUntil - 10000L);
-            int pulse = (int)(Math.sin(elapsed / 150.0) * 5) + 5;
-            int cx = mc.getWindow().getGuiScaledWidth()/2, cy = mc.getWindow().getGuiScaledHeight()/2;
-            graphics.fill(cx-154-pulse,cy-42,cx+154+pulse,cy+43,0xDD120C08);
-            graphics.fill(cx-154-pulse,cy-42,cx+154+pulse,cy-39,0xFFFF8126);
-            drawFlowText(graphics,mc.font,"★ AUCTION WON ★",cx-92,cy-29,0xFFFFC04A,true);
-            drawFlowText(graphics,mc.font,data.auctionWinner,cx-100,cy-7,0xFFFFFFFF,true);
-            drawFlowText(graphics,mc.font,"WON FOR $"+formatAuctionMoney(data.auctionHighestBid),cx-100,cy+14,0xFFFF8126,true);
             if (data.auctionActive && System.currentTimeMillis() >= data.auctionEndTime) {
             data.auctionActive=false; data.auctionSold=true;
             data.auctionWinner=data.auctionHighestBid>0?data.auctionHighestPlayer:"No bids";
             data.auctionSoldUntil=System.currentTimeMillis()+10000L; save();
         }
         if (data.auctionSold && System.currentTimeMillis() <= data.auctionSoldUntil) {
-            long elapsed=10000L-(data.auctionSoldUntil-System.currentTimeMillis());
-            int pulse=(int)(Math.sin(elapsed/150.0)*5)+5;
-            int cx=mc.getWindow().getGuiScaledWidth()/2, cy=mc.getWindow().getGuiScaledHeight()/2;
-            graphics.fill(cx-154-pulse,cy-42,cx+154+pulse,cy+43,0xDD120C08);
-            graphics.fill(cx-154-pulse,cy-42,cx+154+pulse,cy-39,0xFFFF8126);
-            drawFlowText(graphics,mc.font,"★ AUCTION WON ★",cx-92,cy-29,0xFFFFC04A,true);
-            drawFlowText(graphics,mc.font,data.auctionWinner,cx-100,cy-7,0xFFFFFFFF,true);
-            drawFlowText(graphics,mc.font,"WON FOR $"+formatAuctionMoney(data.auctionHighestBid),cx-100,cy+14,0xFFFF8126,true);
+            long bannerElapsed=10000L-(data.auctionSoldUntil-System.currentTimeMillis());
+            int bannerPulse=(int)(Math.sin(bannerElapsed/150.0)*5)+5;
+            int bannerCx=mc.getWindow().getGuiScaledWidth()/2, bannerCy=mc.getWindow().getGuiScaledHeight()/2;
+            graphics.fill(bannerCx-154-bannerPulse,bannerCy-42,bannerCx+154+bannerPulse,bannerCy+43,0xDD120C08);
+            graphics.fill(bannerCx-154-bannerPulse,bannerCy-42,bannerCx+154+bannerPulse,bannerCy-39,0xFFFF8126);
+            drawFlowText(graphics,mc.font,"★ AUCTION WON ★",bannerCx-92,bannerCy-29,0xFFFFC04A,true);
+            drawFlowText(graphics,mc.font,data.auctionWinner,bannerCx-100,bannerCy-7,0xFFFFFFFF,true);
+            drawFlowText(graphics,mc.font,"WON FOR $"+formatAuctionMoney(data.auctionHighestBid),bannerCx-100,bannerCy+14,0xFFFF8126,true);
         }
     }
 
@@ -969,6 +948,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             data.auctionActive=false;data.auctionSold=true;
             data.auctionWinner=data.auctionHighestBid>0?data.auctionHighestPlayer:"No bids";
             data.auctionSoldUntil=System.currentTimeMillis()+10000L;save();
+            Minecraft.getInstance().setScreen(new AuctionScreen(parent));
         }
 
         @Override public void extractRenderState(GuiGraphicsExtractor g,int mx,int my,float delta){
@@ -979,8 +959,6 @@ public class StreamerCounterClient implements ClientModInitializer {
             g.fill(cx,t+42,cx+1,t+310,0x665B4635);
             drawFlowText(g,font,data.auctionSold?"AUCTION COMPLETE":data.auctionActive?"LIVE AUCTION":"NEW AUCTION",cx-318,t+18,0xFFFFFFFF,true);
             if(data.auctionSold){
-                // Winner animation is rendered by the in-game HUD.
-            
                 long elapsed=System.currentTimeMillis();
                 int pulse=(int)(Math.sin(elapsed/180.0)*5)+12;
                 g.fill(cx-310,t+82,cx+310,t+230,0x552A1608);

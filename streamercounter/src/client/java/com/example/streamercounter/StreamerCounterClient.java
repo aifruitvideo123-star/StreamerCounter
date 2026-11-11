@@ -670,7 +670,8 @@ public class StreamerCounterClient implements ClientModInitializer {
                 String[] tools={"Auction","Timer","Text on screen","Images","3D text","Rakeback","HUD"};
                 for(int i=0;i<tools.length;i++){final int tool=i;
                     addDrawableChild(ButtonWidget.builder(Text.literal("›  "+tools[i]),b->{
-                        if(tool==2)MinecraftClient.getInstance().setScreen(new TextOnScreenScreen(this));
+                        if(tool==0)MinecraftClient.getInstance().setScreen(new AuctionScreen(this));
+                        else if(tool==2)MinecraftClient.getInstance().setScreen(new TextOnScreenScreen(this));
                         else if(tool==6)openTab(2);
                         else {data.selectedTextSection=tool;save();clearAndInit();}
                     }).dimensions(x,bodyTop+i*42,230,28).build());

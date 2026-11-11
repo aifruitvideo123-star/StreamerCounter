@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "id": "streamercounter_vip",
+  "id": "streamercounter_owner",
   "version": "${version}",
-  "name": "Streamer Counter VIP",
-  "description": "VIP edition with selectable HUD themes and arrival notifications after /tpahere.",
+  "name": "StreamerCounter OWNER Edition",
+  "description": "Exclusive owner edition for Minecraft 26.2 with premium HUD effects, advanced controls, auction statistics and timer styles.",
   "authors": [
     "aifruitvideo123-star"
   ],

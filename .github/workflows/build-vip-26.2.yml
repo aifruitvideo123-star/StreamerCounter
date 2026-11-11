@@ -1,15 +1,15 @@
-name: Build Streamer Counter VIP (26.2)
+name: Build StreamerCounter OWNER Edition (26.2)
 
 on:
   push:
-    branches: [vip/26.2]
+    branches: [owner/26.2]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: streamer-counter-vip-26-2-${{ github.ref }}
+  group: streamer-counter-owner-26-2-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -50,7 +50,7 @@ jobs:
       - name: Upload mod JAR
         uses: actions/upload-artifact@v4
         with:
-          name: StreamerCounter-VIP-26.2
+          name: StreamerCounter-OWNER-26.2
           path: artifact/*.jar
           if-no-files-found: error
 

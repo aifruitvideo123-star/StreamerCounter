@@ -7,6 +7,7 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.message.v1.ClientSendMessageEvents;
+import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.fabricmc.loader.api.FabricLoader;
@@ -143,6 +144,21 @@ public class StreamerCounterClient implements ClientModInitializer {
             prevDistSq = distSq;
         });
 
+        ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
+            if (!data.auctionActive || overlay) return;
+            java.util.regex.Matcher payment = java.util.regex.Pattern.compile("(?i)^(.+?)\\s+paid you\\s+\\$?\\s*([0-9][0-9,]*(?:\\.[0-9]+)?)([kmb])?\\s*$").matcher(message.getString().trim());
+            if (!payment.matches()) return;
+            String bidder = payment.group(1).trim();
+            double amount;
+            try { amount = Double.parseDouble(payment.group(2).replace(",", "")); } catch (NumberFormatException ex) { return; }
+            String suffix = payment.group(3);
+            if (suffix != null) amount *= switch (suffix.toLowerCase(Locale.ROOT)) { case "k" -> 1000.0; case "m" -> 1000000.0; case "b" -> 1000000000.0; default -> 1.0; };
+            if (amount <= 0) return;
+            data.auctionBids.merge(bidder, amount, Double::sum);
+            double total = data.auctionBids.get(bidder);
+            if (total > data.auctionHighestBid) { data.auctionHighestBid = total; data.auctionHighestPlayer = bidder; }
+            save();
+        });
         HudElementRegistry.attachElementAfter(
                 VanillaHudElements.MISC_OVERLAYS,
                 Identifier.fromNamespaceAndPath("streamercounter_vip", "hud"),
@@ -216,7 +232,14 @@ public class StreamerCounterClient implements ClientModInitializer {
             }
         }
     
-        // Auction HUD preview is disabled until its screen and settings are implemented for this Minecraft version.
+        if (data.auctionShowWorld && (data.auctionActive || data.auctionSold)) {
+            int cx = mc.getWindow().getGuiScaledWidth()/2, y = 28;
+            long left = data.auctionActive ? Math.max(0,(data.auctionEndTime-System.currentTimeMillis()+999)/1000) : 0;
+            graphics.fill(cx-112,y,cx+112,y+76,0xCC120C08); graphics.fill(cx-112,y,cx+112,y+2,0xFFFF8126);
+            drawFlowText(graphics,mc.font,data.auctionSold ? "SOLD" : data.auctionItem,cx-100,y+8,0xFFFFFFFF,true);
+            drawFlowText(graphics,mc.font,data.auctionActive ? String.format(Locale.ROOT,"%02d:%02d",left/60,left%60) : data.auctionWinner,cx-100,y+27,0xFFFF8126,true);
+            drawFlowText(graphics,mc.font,data.auctionHighestPlayer+"  $"+String.format(Locale.ROOT,"%.2f",data.auctionHighestBid),cx-100,y+49,data.textColor,true);
+        }
 
 }
 

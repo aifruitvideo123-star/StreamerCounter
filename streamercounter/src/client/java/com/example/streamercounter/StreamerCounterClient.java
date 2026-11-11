@@ -583,6 +583,11 @@ public class StreamerCounterClient implements ClientModInitializer {
                 addDrawableChild(ButtonWidget.builder(Text.literal("Reset All Counters"),b->{data.counts.clear();data.lastName=null;pending=null;save();clearAndInit();}).dimensions(x,bodyTop,190,24).build());
                 addDrawableChild(ButtonWidget.builder(Text.literal("Close Menu"),b->close()).dimensions(x,bodyTop+38,190,24).build());
             }
+        
+            // Apply translucency to the actual top-level VIP menu controls.
+            for (var child : children()) {
+                if (child instanceof net.minecraft.client.gui.widget.ClickableWidget button) button.setAlpha(0.72f);
+            }
         }
         private Text streamerButtonText(String name,int count){return Text.literal(name+"   •   "+(data.streamerEnabled.getOrDefault(name,true)?"ON":"OFF")+"   •   "+count+" TPs");}
         @Override public void render(DrawContext ctx,int mx,int my,float delta){

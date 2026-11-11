@@ -218,16 +218,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             ctx.getMatrices().popMatrix();
         }
     
-        if (data.auctionActive && data.auctionHud) {
-            long remaining = Math.max(0L, data.auctionEndTime - System.currentTimeMillis());
-            String timer = remaining > 0 ? String.format(Locale.ROOT, "%02d:%02d", remaining/60000, (remaining/1000)%60) : "SOLD";
-            int sw=220, sh=58, sx=(ctx.getScaledWindowWidth()-sw)/2, sy=ctx.getScaledWindowHeight()-112;
-            ctx.fill(sx,sy,sx+sw,sy+sh,0xE5101118);
-            ctx.fill(sx,sy,sx+sw,sy+3,0xFFFF8428);
-            ctx.drawText(MinecraftClient.getInstance().textRenderer,Text.literal(timer),sx+10,sy+10,remaining>0?0xFFFF653B:0xFFFFD36A,true);
-            ctx.drawText(MinecraftClient.getInstance().textRenderer,Text.literal(data.auctionItem),sx+70,sy+10,0xFFFFFFFF,true);
-            ctx.drawText(MinecraftClient.getInstance().textRenderer,Text.literal("Starting bid: "+data.auctionBid+"  •  x"+data.auctionAmount),sx+10,sy+34,0xFFB8C7D9,true);
-        }
+        // Auction HUD preview is disabled until its screen and settings are implemented for this Minecraft version.
 
 }
 
@@ -682,8 +673,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                 String[] tools={"Auction","Timer","Text on screen","Images","3D text","Rakeback","HUD"};
                 for(int i=0;i<tools.length;i++){final int tool=i;
                     addDrawableChild(ButtonWidget.builder(Text.literal("›  "+tools[i]),b->{
-                        if(tool==0)MinecraftClient.getInstance().setScreen(new AuctionScreen(this));
-                        else if(tool==2)MinecraftClient.getInstance().setScreen(new TextOnScreenScreen(this));
+                        if(tool==2)MinecraftClient.getInstance().setScreen(new TextOnScreenScreen(this));
                         else if(tool==6)openTab(2);
                         else {data.selectedTextSection=tool;save();clearAndInit();}
                     }).dimensions(x,bodyTop+i*42,230,28).build());

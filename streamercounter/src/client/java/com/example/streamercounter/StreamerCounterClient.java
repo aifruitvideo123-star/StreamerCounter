@@ -81,6 +81,10 @@ public class StreamerCounterClient implements ClientModInitializer {
         long auctionSoldUntil = 0L;
         int auctionMinBid = 0;
         boolean auctionShowWorld = true;
+        int timerDurationSeconds = 60;
+        long timerEndTime = 0L;
+        boolean timerActive = false;
+        boolean timerFinished = false;
     }
 
     private static String formatAuctionDuration(int seconds) {
@@ -746,13 +750,13 @@ public class StreamerCounterClient implements ClientModInitializer {
                 addDrawableChild(ButtonWidget.builder(hudButtonText(),b->{data.showHud=!data.showHud;save();b.setMessage(hudButtonText());}).dimensions(x,bodyTop,190,24).build());
                 addDrawableChild(ButtonWidget.builder(Text.literal("Edit HUD"),b->MinecraftClient.getInstance().setScreen(new HudEditScreen(this))).dimensions(x,bodyTop+38,190,24).build());
             }else if(activeTab==3){
-                String[] tools={"Auction","Timer","Text on screen","Images","3D text","Rakeback","HUD"};
+                String[] tools={"Auction","Timer","Text on screen","HUD"};
                 for(int i=0;i<tools.length;i++){final int tool=i;
                     addDrawableChild(ButtonWidget.builder(Text.literal("›  "+tools[i]),b->{
                         if(tool==0)MinecraftClient.getInstance().setScreen(new AuctionScreen(this));
+                        else if(tool==1)MinecraftClient.getInstance().setScreen(new TimerScreen(this));
                         else if(tool==2)MinecraftClient.getInstance().setScreen(new TextOnScreenScreen(this));
-                        else if(tool==6)openTab(2);
-                        else {data.selectedTextSection=tool;save();clearAndInit();}
+                        else if(tool==3)openTab(2);
                     }).dimensions(x,bodyTop+i*42,230,28).build());
                 }
             }else if(activeTab==4){
@@ -814,6 +818,25 @@ public class StreamerCounterClient implements ClientModInitializer {
     }
 
 
+
+
+    private static class TimerScreen extends Screen {
+        private final Screen parent;
+        private TextFieldWidget secondsField;
+        TimerScreen(Screen parent){super(Text.literal("VIP Timer"));this.parent=parent;}
+        @Override protected void init(){
+            int cx=width/2, top=height/2-105;
+            secondsField=new TextFieldWidget(textRenderer,cx-70,top+38,140,22,Text.literal("Seconds"));
+            secondsField.setText(String.valueOf(data.timerDurationSeconds));
+            addDrawableChild(secondsField);
+            int[] vals={10,30,60,120,300,600}; String[] labels={"10 sec","30 sec","1 min","2 min","5 min","10 min"};
+            for(int i=0;i<vals.length;i++){final int v=vals[i];addDrawableChild(ButtonWidget.builder(Text.literal(labels[i]),b->{data.timerDurationSeconds=v;secondsField.setText(String.valueOf(v));save();}).dimensions(cx-150+(i%3)*102,top+70+(i/3)*26,96,22).build());}
+            addDrawableChild(ButtonWidget.builder(Text.literal("Start timer"),b->{try{data.timerDurationSeconds=Math.max(1,Math.min(86400,Integer.parseInt(secondsField.getText().trim())));}catch(Exception ignored){data.timerDurationSeconds=60;}data.timerEndTime=System.currentTimeMillis()+data.timerDurationSeconds*1000L;data.timerActive=true;data.timerFinished=false;save();MinecraftClient.getInstance().setScreen(parent);}).dimensions(cx-150,top+132,145,24).build());
+            addDrawableChild(ButtonWidget.builder(Text.literal(data.timerActive?"Stop timer":"Reset"),b->{data.timerActive=false;data.timerFinished=false;data.timerEndTime=0;save();MinecraftClient.getInstance().setScreen(new TimerScreen(parent));}).dimensions(cx+5,top+132,145,24).build());
+            addDrawableChild(ButtonWidget.builder(Text.literal("Back to Tools"),b->MinecraftClient.getInstance().setScreen(parent)).dimensions(cx-75,top+166,150,22).build());
+        }
+        @Override public void render(DrawContext ctx,int mouseX,int mouseY,float delta){super.render(ctx,mouseX,mouseY,delta);String state=data.timerActive?"RUNNING":data.timerFinished?"FINISHED":"READY";ctx.drawCenteredTextWithShadow(textRenderer,Text.literal("TIMER  •  "+state),width/2,height/2-94,0xFFFFC04A);ctx.drawCenteredTextWithShadow(textRenderer,Text.literal("Choose a preset or enter seconds"),width/2,height/2-54,0xFFFFFFFF);}
+    }
 
     private static class AuctionScreen extends Screen {
         private final Screen parent;
@@ -885,5 +908,17 @@ public class StreamerCounterClient implements ClientModInitializer {
         @Override public void tick(){if(data.auctionActive&&System.currentTimeMillis()>=data.auctionEndTime)finish();if(data.auctionSold&&System.currentTimeMillis()>data.auctionSoldUntil){data.auctionSold=false;data.auctionWinner="";data.auctionHighestBid=0;data.auctionHighestPlayer="No bids yet";save();MinecraftClient.getInstance().setScreen(parent);}}
         @Override public void close(){MinecraftClient.getInstance().setScreen(parent);}
     }
+
+        if(data.timerActive && System.currentTimeMillis()>=data.timerEndTime){data.timerActive=false;data.timerFinished=true;save();}
+        if(data.timerActive || data.timerFinished){
+            long remain=data.timerActive?Math.max(0,(data.timerEndTime-System.currentTimeMillis()+999)/1000):0;
+            int cx=ctx.getScaledWindowWidth()/2, cy=ctx.getScaledWindowHeight()/3;
+            int total=Math.max(1,data.timerDurationSeconds); double progress=data.timerActive?Math.max(0,Math.min(1,(double)remain/total)):0;
+            ctx.fill(cx-62,cy-62,cx+62,cy+62,0xCC10131B);
+            for(int i=0;i<60;i++){double a=-Math.PI/2+i*Math.PI*2/60;int px=cx+(int)(53*Math.cos(a)),py=cy+(int)(53*Math.sin(a));int col=(i<Math.round(progress*60))?0xFFFFC04A:0xFF48505D;ctx.fill(px-2,py-2,px+3,py+3,col);}
+            String time=String.format(Locale.ROOT,"%02d:%02d",remain/60,remain%60);
+            ctx.drawCenteredTextWithShadow(MinecraftClient.getInstance().textRenderer,Text.literal(time),cx,cy-5,0xFFFFFFFF);
+            ctx.drawCenteredTextWithShadow(MinecraftClient.getInstance().textRenderer,Text.literal(data.timerFinished?"TIME UP":"TIMER"),cx,cy+13,data.timerFinished?0xFFFF6B6B:0xFFFFC04A);
+        }
 
 }

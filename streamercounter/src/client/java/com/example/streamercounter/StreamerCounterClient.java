@@ -531,84 +531,77 @@ public class StreamerCounterClient implements ClientModInitializer {
         }
     }
 
+
     private static class CounterMenuScreen extends Screen {
         private final Screen parent;
-        private int page = 0;
-        private static final int ROW_HEIGHT = 24;
-        protected CounterMenuScreen(Screen parent) { super(Text.literal("Streamer Counter VIP")); this.parent = parent; }
-        private java.util.List<String> streamerNames() {
-            java.util.Set<String> names = new java.util.TreeSet<>();
-            names.addAll(data.counts.keySet()); names.addAll(data.streamerEnabled.keySet());
-            if (pending != null) names.add(pending.toLowerCase(Locale.ROOT));
-            return new java.util.ArrayList<>(names);
+        private int page=0;
+        private int activeTab=0;
+        private static final int ROW_HEIGHT=26;
+        private static final String[] TABS={"Overview","Streamers","HUD","Text","Themes","Settings"};
+        protected CounterMenuScreen(Screen parent){super(Text.literal("Streamer Counter VIP"));this.parent=parent;}
+        private java.util.List<String> streamerNames(){
+            java.util.Set<String> names=new java.util.TreeSet<>();names.addAll(data.counts.keySet());names.addAll(data.streamerEnabled.keySet());
+            if(pending!=null)names.add(pending.toLowerCase(Locale.ROOT));return new java.util.ArrayList<>(names);
         }
-        @Override protected void init() {
-            int center = width / 2, buttonWidth = Math.min(300, width - 40), left = center - buttonWidth / 2;
-            int bottom = height - 126, firstRowY = 88;
-            int maxRows = Math.max(1, (bottom - firstRowY - 34) / ROW_HEIGHT);
-            java.util.List<String> names = streamerNames();
-            int pages = Math.max(1, (names.size() + maxRows - 1) / maxRows);
-            page = Math.max(0, Math.min(page, pages - 1));
-            int from = page * maxRows, to = Math.min(names.size(), from + maxRows);
-            for (int i = from; i < to; i++) {
-                String name = names.get(i); int count = data.counts.getOrDefault(name, 0);
-                int rowY = firstRowY + (i - from) * ROW_HEIGHT, actionWidth = 54, gap = 4;
-                int toggleWidth = buttonWidth - actionWidth * 2 - gap * 2;
-                addDrawableChild(ButtonWidget.builder(streamerButtonText(name, count), button -> {
-                    data.streamerEnabled.put(name, !data.streamerEnabled.getOrDefault(name, true)); save();
-                    button.setMessage(streamerButtonText(name, data.counts.getOrDefault(name, 0)));
-                }).dimensions(left, rowY, toggleWidth, 20).build());
-                addDrawableChild(ButtonWidget.builder(Text.literal("Reset"), button -> {
-                    data.counts.put(name, 0); save(); clearAndInit();
-                }).dimensions(left + toggleWidth + gap, rowY, actionWidth, 20).build());
-                addDrawableChild(ButtonWidget.builder(Text.literal("Delete"), button -> {
-                    data.counts.remove(name); data.streamerEnabled.remove(name); data.displayNames.remove(name);
-                    if (data.lastName != null && data.lastName.equalsIgnoreCase(name)) data.lastName = null;
-                    if (pending != null && pending.equalsIgnoreCase(name)) pending = null;
-                    save(); clearAndInit();
-                }).dimensions(left + toggleWidth + gap + actionWidth + gap, rowY, actionWidth, 20).build());
+        private void openTab(int tab){activeTab=tab;page=0;clearAndInit();}
+        private Text hudButtonText(){return Text.literal("HUD: "+(data.showHud?"ON":"OFF"));}
+        private Text themeButtonText(){return Text.literal("VIP Theme: "+(data.iceTheme?"ICE":"GOLD"));}
+        private int accent(){return data.iceTheme?0xFF69D8FF:0xFFFFD54F;}
+        private int textColor(){return data.iceTheme?0xFF9BE8FF:0xFFFFD878;}
+        @Override protected void init(){
+            int panelW=Math.min(920,width-32),left=(width-panelW)/2,top=24;
+            int tabStart=left+218,tabW=Math.min(94,(panelW-238)/6),gap=5;
+            for(int t=0;t<TABS.length;t++){final int tab=t;String label=(t==activeTab?"• ":"")+TABS[t];
+                addDrawableChild(ButtonWidget.builder(Text.literal(label),b->openTab(tab)).dimensions(tabStart+t*(tabW+gap),top+16,tabW,22).build());}
+            addDrawableChild(ButtonWidget.builder(Text.literal("×"),b->close()).dimensions(left+panelW-42,top+16,26,22).build());
+            int bodyTop=top+96,bodyBottom=height-74,x=left+26,contentW=panelW-52;
+            if(activeTab==1){
+                int maxRows=Math.max(1,(bodyBottom-bodyTop-34)/ROW_HEIGHT),pages=Math.max(1,(streamerNames().size()+maxRows-1)/maxRows);
+                page=Math.max(0,Math.min(page,pages-1));int from=page*maxRows,to=Math.min(streamerNames().size(),from+maxRows);
+                java.util.List<String> names=streamerNames();
+                for(int n=from;n<to;n++){String name=names.get(n);int count=data.counts.getOrDefault(name,0),y=bodyTop+(n-from)*ROW_HEIGHT;
+                    int aw=58,g2=6,tw=contentW-aw*2-g2*2;
+                    addDrawableChild(ButtonWidget.builder(streamerButtonText(name,count),b->{data.streamerEnabled.put(name,!data.streamerEnabled.getOrDefault(name,true));save();clearAndInit();}).dimensions(x,y,tw,21).build());
+                    addDrawableChild(ButtonWidget.builder(Text.literal("Reset"),b->{data.counts.put(name,0);save();clearAndInit();}).dimensions(x+tw+g2,y,aw,21).build());
+                    addDrawableChild(ButtonWidget.builder(Text.literal("Delete"),b->{data.counts.remove(name);data.streamerEnabled.remove(name);data.displayNames.remove(name);if(data.lastName!=null&&data.lastName.equalsIgnoreCase(name))data.lastName=null;if(pending!=null&&pending.equalsIgnoreCase(name))pending=null;save();clearAndInit();}).dimensions(x+tw+g2+aw+g2,y,aw,21).build());
+                }
+                if(pages>1){ButtonWidget prev=addDrawableChild(ButtonWidget.builder(Text.literal("‹ Previous"),b->{page--;clearAndInit();}).dimensions(width/2-104,bodyBottom-28,98,22).build());prev.active=page>0;
+                    ButtonWidget next=addDrawableChild(ButtonWidget.builder(Text.literal("Next ›"),b->{page++;clearAndInit();}).dimensions(width/2+6,bodyBottom-28,98,22).build());next.active=page<pages-1;}
+            }else if(activeTab==2){
+                addDrawableChild(ButtonWidget.builder(hudButtonText(),b->{data.showHud=!data.showHud;save();b.setMessage(hudButtonText());}).dimensions(x,bodyTop,190,24).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("Edit HUD"),b->MinecraftClient.getInstance().setScreen(new HudEditScreen(this))).dimensions(x,bodyTop+38,190,24).build());
+            }else if(activeTab==3){
+                addDrawableChild(ButtonWidget.builder(Text.literal("Open Text on Screen editor"),b->MinecraftClient.getInstance().setScreen(new TextOnScreenScreen(this))).dimensions(x,bodyTop,230,24).build());
+            }else if(activeTab==4){
+                addDrawableChild(ButtonWidget.builder(themeButtonText(),b->{data.iceTheme=!data.iceTheme;save();clearAndInit();}).dimensions(x,bodyTop,210,24).build());
+            }else if(activeTab==5){
+                addDrawableChild(ButtonWidget.builder(Text.literal("Reset All Counters"),b->{data.counts.clear();data.lastName=null;pending=null;save();clearAndInit();}).dimensions(x,bodyTop,190,24).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("Close Menu"),b->close()).dimensions(x,bodyTop+38,190,24).build());
             }
-            if (pages > 1) {
-                ButtonWidget prev = addDrawableChild(ButtonWidget.builder(Text.literal("Previous"), b -> { page--; clearAndInit(); })
-                        .dimensions(center - 95, bottom - 28, 90, 20).build()); prev.active = page > 0;
-                ButtonWidget next = addDrawableChild(ButtonWidget.builder(Text.literal("Next"), b -> { page++; clearAndInit(); })
-                        .dimensions(center + 5, bottom - 28, 90, 20).build()); next.active = page < pages - 1;
-            }
-            int half = (buttonWidth - 6) / 2;
-            addDrawableChild(ButtonWidget.builder(hudButtonText(), b -> { data.showHud = !data.showHud; save(); b.setMessage(hudButtonText()); })
-                    .dimensions(left, height - 98, half, 20).build());
-            addDrawableChild(ButtonWidget.builder(Text.literal("Edit HUD"), b -> MinecraftClient.getInstance().setScreen(new HudEditScreen(this)))
-                    .dimensions(left + half + 6, height - 98, half, 20).build());
-            addDrawableChild(ButtonWidget.builder(themeButtonText(), b -> { data.iceTheme = !data.iceTheme; save(); b.setMessage(themeButtonText()); })
-                    .dimensions(left, height - 70, half, 20).build());
-            addDrawableChild(ButtonWidget.builder(Text.literal("Reset All"), b -> { data.counts.clear(); data.lastName = null; pending = null; save(); clearAndInit(); })
-                    .dimensions(left + half + 6, height - 70, half, 20).build());
-            addDrawableChild(ButtonWidget.builder(Text.literal("Close"), b -> close()).dimensions(left, height - 42, buttonWidth, 20).build());
         }
-        private Text streamerButtonText(String name, int count) {
-            return Text.literal(name + "  |  " + (data.streamerEnabled.getOrDefault(name, true) ? "ON" : "OFF") + "  |  " + count + " TPs");
+        private Text streamerButtonText(String name,int count){return Text.literal(name+"   •   "+(data.streamerEnabled.getOrDefault(name,true)?"ON":"OFF")+"   •   "+count+" TPs");}
+        @Override public void render(DrawContext ctx,int mx,int my,float delta){
+            int panelW=Math.min(920,width-32),left=(width-panelW)/2,top=24,right=left+panelW,bottom=height-24;
+            ctx.fill(0,0,width,height,0x50000000);ctx.fill(left-1,top-1,right+1,bottom+1,0xAA000000);
+            ctx.fill(left,top,right,bottom,0xB8141A24);ctx.fill(left+1,top+1,right-1,top+3,accent());
+            ctx.fill(left+1,top+58,right-1,top+59,0x665F7188);
+            ctx.drawText(textRenderer,"STREAMERCOUNTER VIP",left+22,top+22,0xFFFFFFFF,true);
+            ctx.drawText(textRenderer,"CONTROL CENTER",left+22,top+39,textColor(),true);
+            int bodyTop=top+96,bodyBottom=height-74,x=left+26;
+            ctx.drawText(textRenderer,TABS[activeTab].toUpperCase(Locale.ROOT),x,top+76,accent(),true);
+            ctx.fill(x,bodyTop-12,right-26,bodyBottom+8,0x55232E3D);
+            if(activeTab==0){int total=0;for(Integer value:data.counts.values())if(value!=null)total+=value;
+                String[] lines={"Your live overview","Tracked streamers: "+streamerNames().size(),"Total TP counter: "+total,"Last detected: "+(data.lastName==null?"—":data.lastName),"HUD: "+(data.showHud?"Enabled":"Disabled"),"Use the tabs above to manage streamers, HUD, text and theme."};
+                for(int j=0;j<lines.length;j++)ctx.drawText(textRenderer,lines[j],x+18,bodyTop+18+j*24,j==0?0xFFFFFFFF:textColor(),true);
+            }else if(activeTab==1&&streamerNames().isEmpty()){ctx.drawText(textRenderer,"No streamers detected yet.",x+18,bodyTop+18,0xFFFFFFFF,true);ctx.drawText(textRenderer,"Streamers appear here after /tpahere <name>.",x+18,bodyTop+42,textColor(),true);
+            }else if(activeTab==2)ctx.drawText(textRenderer,"Toggle the HUD or open its editor.",x+220,bodyTop+6,textColor(),true);
+            else if(activeTab==3)ctx.drawText(textRenderer,"Create, position and style your on-screen text.",x+250,bodyTop+6,textColor(),true);
+            else if(activeTab==4)ctx.drawText(textRenderer,"Choose the VIP accent theme.",x+220,bodyTop+6,textColor(),true);
+            else if(activeTab==5)ctx.drawText(textRenderer,"Careful: resetting removes the saved counter totals.",x+220,bodyTop+6,0xFFFF9B82,true);
+            super.render(ctx,mx,my,delta);String credit="VIP EDITION  •  MADE BY ALPBEY3503";
+            ctx.drawText(textRenderer,credit,left+22,bottom-18,textColor(),true);
         }
-        private Text hudButtonText() { return Text.literal("HUD: " + (data.showHud ? "ON" : "OFF")); }
-        private Text themeButtonText() { return Text.literal("VIP Theme: " + (data.iceTheme ? "ICE" : "GOLD")); }
-        private int accent() { return data.iceTheme ? 0xFF69D8FF : 0xFFFFD54F; }
-        private int menuText() { return data.iceTheme ? 0xFF9BE8FF : 0xFFFFD878; }
-        private int panel() { return data.iceTheme ? 0xFF101F2B : 0xFF241D12; }
-        @Override public void render(DrawContext ctx, int mx, int my, float delta) {
-            ctx.fill(0, 0, width, height, 0x90000000);
-            int pw = Math.min(360, width - 20), left = (width - pw) / 2, top = 12, right = left + pw, bottom = height - 126;
-            ctx.fill(left - 3, top - 3, right + 3, bottom + 3, accent());
-            ctx.fill(left, top, right, bottom, panel()); ctx.fill(left + 2, top + 2, right - 2, top + 5, accent());
-            String heading = "Streamer Counter VIP", subtitle = "Enable or disable streamers individually";
-            drawFlowText(ctx, textRenderer, heading, width / 2 - textRenderer.getWidth(heading) / 2, top + 16, menuText(), true);
-            drawFlowText(ctx, textRenderer, subtitle, width / 2 - textRenderer.getWidth(subtitle) / 2, top + 40, menuText(), true);
-            if (streamerNames().isEmpty()) {
-                ctx.drawCenteredTextWithShadow(textRenderer, "No streamers detected yet.", width / 2, top + 78, menuText());
-                ctx.drawCenteredTextWithShadow(textRenderer, "Streamers will appear here after /tpahere <name>.", width / 2, top + 96, menuText());
-            }
-            super.render(ctx, mx, my, delta);
-            String credit = "VIP Edition | Made by AlpBey3503";
-            drawFlowText(ctx, textRenderer, credit, width / 2 - textRenderer.getWidth(credit) / 2, height - 14, menuText(), true);
-        }
-        @Override public void close() { MinecraftClient.getInstance().setScreen(parent); }
+        @Override public void close(){MinecraftClient.getInstance().setScreen(parent);}
     }
+
 }

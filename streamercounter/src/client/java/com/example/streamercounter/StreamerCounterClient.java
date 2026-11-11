@@ -480,18 +480,18 @@ public class StreamerCounterClient implements ClientModInitializer {
             }).bounds(x+74, 184, 68, 20).build());
             addRenderableWidget(Button.builder(Component.literal("Size −"), b -> {
                 ScreenText t=current(); if(t!=null){t.size=Math.max(8,t.size-2);save();}
-            }).bounds(x, 212, 68, 20).build());
+            }).bounds(x, 236, 68, 20).build());
             addRenderableWidget(Button.builder(Component.literal("Size +"), b -> {
                 ScreenText t=current(); if(t!=null){t.size=Math.min(96,t.size+2);save();}
-            }).bounds(x+74, 212, 68, 20).build());
+            }).bounds(x+74, 236, 68, 20).build());
             addRenderableWidget(Button.builder(Component.literal("Font / Style"),b->{
                 ScreenText t=current(); if(t!=null){String[] styles={"default","bold","italic","bold_italic","flow"};int n=0;for(;n<styles.length;n++)if(styles[n].equals(t.font))break;t.font=styles[(n+1)%styles.length];t.bold=t.font.equals("bold")||t.font.equals("bold_italic");t.italic=t.font.equals("italic")||t.font.equals("bold_italic");save();clearWidgets();init();}
-            }).bounds(x, 240, 146, 20).build());
+            }).bounds(x, 288, 146, 20).build());
             addRenderableWidget(Button.builder(Component.literal("Color"),b->{
                 ScreenText t=current();if(t!=null){int[] colors={0xFFFFFFFF,0xFFFFD54F,0xFF69D8FF,0xFFFF6B6B,0xFF78E08F};int n=0;for(;n<colors.length;n++)if(colors[n]==t.color)break;t.color=colors[(n+1)%colors.length];save();}
-            }).bounds(x, 268, 68, 20).build());
+            }).bounds(x, 320, 68, 20).build());
             addRenderableWidget(Button.builder(Component.literal("Done"),b->onClose())
-                .bounds(x+74, 268, 68, 20).build());
+                .bounds(x+74, 320, 68, 20).build());
             }
         private ScreenText current(){return selected>=0&&selected<data.screenTexts.size()?data.screenTexts.get(selected):null;}
         @Override public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {

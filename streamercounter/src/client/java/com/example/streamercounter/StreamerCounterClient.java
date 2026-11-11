@@ -295,8 +295,6 @@ public class StreamerCounterClient implements ClientModInitializer {
         }
     }
 
-}
-
     private static void drawHud(GuiGraphicsExtractor graphics, int x, int y) {
         Minecraft mc = Minecraft.getInstance();
         List<String> names = hudNames();

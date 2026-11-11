@@ -463,17 +463,17 @@ public class StreamerCounterClient implements ClientModInitializer {
                 if(selected>=0&&selected<data.screenTexts.size()){data.screenTexts.remove(selected);selected=-1;save();clearAndInit();}
             }).dimensions(x+74,184,68,20).build());
             addDrawableChild(ButtonWidget.builder(Text.literal("Size −"),b->{ScreenText t=current();if(t!=null){t.size=Math.max(8,t.size-2);save();}})
-                .dimensions(x,268,68,20).build());
+                .dimensions(x,236,68,20).build());
             addDrawableChild(ButtonWidget.builder(Text.literal("Size +"),b->{ScreenText t=current();if(t!=null){t.size=Math.min(96,t.size+2);save();}})
-                .dimensions(x+74,268,68,20).build());
+                .dimensions(x+74,236,68,20).build());
             addDrawableChild(ButtonWidget.builder(Text.literal("Font / Style"),b->{
                 ScreenText t=current(); if(t!=null){String[] styles={"default","bold","italic","bold_italic","flow"};int n=0;for(;n<styles.length;n++)if(styles[n].equals(t.font))break;t.font=styles[(n+1)%styles.length];t.bold=t.font.equals("bold")||t.font.equals("bold_italic");t.italic=t.font.equals("italic")||t.font.equals("bold_italic");save();clearAndInit();}
-            }).dimensions(x,240,146,20).build());
+            }).dimensions(x,288,146,20).build());
             addDrawableChild(ButtonWidget.builder(Text.literal("Color"),b->{
                 ScreenText t=current();if(t!=null){int[] colors={0xFFFFFFFF,0xFFFFD54F,0xFF69D8FF,0xFFFF6B6B,0xFF78E08F};int n=0;for(;n<colors.length;n++)if(colors[n]==t.color)break;t.color=colors[(n+1)%colors.length];save();}
-            }).dimensions(x,268,68,20).build());
+            }).dimensions(x,320,68,20).build());
             addDrawableChild(ButtonWidget.builder(Text.literal("Done"),b->close())
-                .dimensions(x+74,268,68,20).build());
+                .dimensions(x+74,320,68,20).build());
             }
         private ScreenText current(){return selected>=0&&selected<data.screenTexts.size()?data.screenTexts.get(selected):null;}
         @Override public boolean mouseClicked(Click click,boolean doubled) {
@@ -510,8 +510,9 @@ public class StreamerCounterClient implements ClientModInitializer {
             ctx.drawText(textRenderer,"EDIT TEXT",right+16,top+14,0xFFFFFFFF,true);
             ctx.drawText(textRenderer,"Select a text on the left. Hidden texts stay in this list.",right+16,top+38,0xFFB8C7D9,true);
             ctx.drawText(textRenderer,"TEXT",right+16,top+67,0xFFFFD54F,true);
-            ctx.drawText(textRenderer,"SIZE / FONT STYLE",right+16,top+105,0xFFFFD54F,true);
-            ctx.drawText(textRenderer,"COLOR",right+16,top+185,0xFFFFD54F,true);
+            ctx.drawText(textRenderer,"SIZE",right+16,top+219,0xFFFFD54F,true);
+            ctx.drawText(textRenderer,"FONT / STYLE",right+16,top+271,0xFFFFD54F,true);
+            ctx.drawText(textRenderer,"COLOR",right+16,top+303,0xFFFFD54F,true);
             if(data.screenTexts!=null) for(ScreenText item:data.screenTexts) if(item!=null&&item.visible&&item.text!=null&&!item.text.isEmpty()) {
                 float scale=Math.max(8,Math.min(96,item.size))/9.0f;
                 ctx.getMatrices().pushMatrix(); ctx.getMatrices().translate(item.x,item.y); ctx.getMatrices().scale(scale,scale);
@@ -522,7 +523,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                 }else{Text styled=Text.literal(item.text).styled(st->st.withBold(item.bold).withItalic(item.italic));ctx.drawText(textRenderer,styled,0,0,item.color,item.shadow);} ctx.getMatrices().popMatrix();
             }
             ScreenText chosen=current();
-            if(chosen!=null) ctx.drawText(textRenderer,"Selected: "+(chosen.text==null?"":chosen.text)+"   |   Size: "+chosen.size,right+16,top+330,0xFFB8C7D9,true);
+            if(chosen!=null) ctx.drawText(textRenderer,"Selected: "+(chosen.text==null?"":chosen.text)+"   |   Size: "+chosen.size,right+16,top+365,0xFFB8C7D9,true);
             else ctx.drawText(textRenderer,"Add a text to begin editing.",right+16,top+330,0xFFB8C7D9,true);
             ctx.drawText(textRenderer,"Drag visible text to move it.",right+16,height-34,0xFF6C9BCB,true);
             super.render(ctx,mx,my,delta);

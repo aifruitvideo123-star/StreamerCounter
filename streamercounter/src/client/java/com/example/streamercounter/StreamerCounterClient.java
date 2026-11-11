@@ -952,7 +952,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                     for(int slot=0;slot<client.player.getInventory().getContainerSize();slot++){
                         var stack=client.player.getInventory().getItem(slot);
                         if(!stack.isEmpty()&&stack.getHoverName().getString().equals(data.auctionItem)){
-                            g.renderItem(stack,cx-318,t+52); break;
+                            g.fill(cx-318,t+52,cx-294,t+76,0xFFFF8126); break;
                         }
                     }
                 }

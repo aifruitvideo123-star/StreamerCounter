@@ -480,7 +480,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                 ScreenText t=current();if(t!=null){int[] colors={0xFFFFFFFF,0xFFFFD54F,0xFF69D8FF,0xFFFF6B6B,0xFF78E08F};int n=0;for(;n<colors.length;n++)if(colors[n]==t.color)break;t.color=colors[(n+1)%colors.length];save();}
             }).dimensions(x,320,68,20).build());
             addDrawableChild(ButtonWidget.builder(Text.literal("Back to Menu"),b->close())
-                .dimensions(x+74,320,68,20).build());
+                .dimensions(x+74,320,110,20).build());
             }
         private ScreenText current(){return selected>=0&&selected<data.screenTexts.size()?data.screenTexts.get(selected):null;}
         @Override public boolean mouseClicked(Click click,boolean doubled) {
@@ -553,7 +553,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         private void openTab(int tab){activeTab=tab;page=0;clearAndInit();}
         private Text hudButtonText(){return Text.literal("HUD: "+(data.showHud?"ON":"OFF"));}
         private static final String[] VIP_THEMES={"GOLD","ICE","CHRISTMAS","HALLOWEEN","NETHER","EMERALD","PURPLE","OCEAN"};
-        private String currentTheme(){return data.vipTheme==null?(data.iceTheme?"ICE":"GOLD"):data.vipTheme;}
+        private String currentTheme(){return data.iceTheme&&"GOLD".equals(data.vipTheme)?"ICE":(data.vipTheme==null?"GOLD":data.vipTheme);}
         private Text themeButtonText(){return Text.literal("Theme: "+currentTheme()+"  →");}
         private int accent(){return switch(currentTheme()){case "ICE","OCEAN"->0xFF69D8FF;case "CHRISTMAS"->0xFF55D878;case "HALLOWEEN"->0xFFFF8738;case "NETHER"->0xFFFF5555;case "EMERALD"->0xFF45D69A;case "PURPLE"->0xFFB58CFF;default->0xFFFFD54F;};}
         private int textColor(){return switch(currentTheme()){case "ICE","OCEAN"->0xFF9BE8FF;case "CHRISTMAS"->0xFFFFD8D8;case "HALLOWEEN"->0xFFFFC18A;case "NETHER"->0xFFFFA0A0;case "EMERALD"->0xFF9BFFD1;case "PURPLE"->0xFFDCCBFF;default->0xFFFFD878;};}

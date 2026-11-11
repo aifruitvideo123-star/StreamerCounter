@@ -565,7 +565,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         private final int page;
         private final int activeTab;
         private static final int ROW_HEIGHT = 26;
-        private static final String[] TABS = {"Overview","Streamers","HUD","Text","Themes","Settings"};
+        private static final String[] TABS = {"Overview","Streamers","HUD","Tools","Themes","Settings"};
 
         CounterMenuScreen(Screen parent, int page) { this(parent,page,0); }
         CounterMenuScreen(Screen parent, int page, int activeTab) {
@@ -629,10 +629,14 @@ public class StreamerCounterClient implements ClientModInitializer {
                 addRenderableWidget(Button.builder(Component.literal("Edit HUD"),b->Minecraft.getInstance().setScreen(new HudEditScreen(this)))
                     .bounds(contentX,bodyTop+38,190,24).build());
             } else if(activeTab==3){
-                String[] sections={"Auctions","Text on Screen","Timer","Sessions"};
-                for(int i=0;i<sections.length;i++){final int section=i;String label=(data.selectedTextSection==i?"• ":"")+sections[i];
-                    addRenderableWidget(Button.builder(Component.literal(label),b->{data.selectedTextSection=section;save();Minecraft.getInstance().setScreen(new CounterMenuScreen(parent,0,3));}).bounds(contentX,bodyTop+i*34,190,24).build());}
-                addRenderableWidget(Button.builder(Component.literal("Open Text Editor"),b->Minecraft.getInstance().setScreen(new TextOnScreenScreen(this))).bounds(contentX+210,bodyTop+34,190,24).build());
+                String[] tools={"Auction","Timer","Text on screen","Images","3D text","Rakeback","HUD"};
+                for(int i=0;i<tools.length;i++){final int tool=i;
+                    addRenderableWidget(Button.builder(Component.literal("›  "+tools[i]),b->{
+                        if(tool==2)Minecraft.getInstance().setScreen(new TextOnScreenScreen(this));
+                        else if(tool==6)openTab(2);
+                        else Minecraft.getInstance().setScreen(new CounterMenuScreen(parent,0,3));
+                    }).bounds(contentX,bodyTop+i*42,230,28).build());
+                }
             } else if(activeTab==4){
                 addRenderableWidget(Button.builder(themeButtonText(),b->{String[] themes=VIP_THEMES;int n=0;for(;n<themes.length;n++)if(themes[n].equals(currentTheme()))break;data.vipTheme=themes[(n+1)%themes.length];data.iceTheme=data.vipTheme.equals("ICE");save();Minecraft.getInstance().setScreen(new CounterMenuScreen(parent,0,4));})
                     .bounds(contentX,bodyTop,250,24).build());
@@ -680,8 +684,8 @@ public class StreamerCounterClient implements ClientModInitializer {
             }else if(activeTab==2){
                 g.text(font,"Toggle the HUD or open its editor.",x+220,bodyTop+6,textColor(),true);
             }else if(activeTab==3){
-                String[] descriptions={"Auctions tools will be configured here later.","Create, position and style your on-screen text.","A customizable stream timer will be added here.","Session tracking tools will be configured here."};
-                g.text(font,descriptions[Math.max(0,Math.min(3,data.selectedTextSection))],x+220,bodyTop+8,textColor(),true);
+                String[] statuses={"Idle","Idle","Edit your on-screen text","Coming soon","Coming soon","Off",data.showHud?"1 plate on":"Off"};
+                for(int i=0;i<statuses.length;i++)g.text(font,statuses[i],x+260,bodyTop+10+i*42,textColor(),true);
             }else if(activeTab==4){
                 g.text(font,"Choose from 8 VIP themes: Gold, Ice, Christmas, Halloween, Nether, Emerald, Purple and Ocean.",x+220,bodyTop+6,textColor(),true);
             }else if(activeTab==5){

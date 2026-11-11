@@ -690,10 +690,10 @@ public class StreamerCounterClient implements ClientModInitializer {
         }
         @Override public void extractRenderState(GuiGraphicsExtractor g,int mx,int my,float delta){
             int panelW=Math.min(920,width-32),left=(width-panelW)/2,top=24,right=left+panelW,bottom=height-24;
-            drawSeasonDecor(g);
             g.fill(0,0,width,height,0x50000000);
             g.fill(left-1,top-1,right+1,bottom+1,0xAA000000);
             g.fill(left,top,right,bottom,panelColor());
+            drawSeasonDecor(g);
             g.fill(left+1,top+1,right-1,top+3,accent());
             g.fill(left+1,top+58,right-1,top+59,0x665F7188);
             String title="STREAMERCOUNTER VIP";

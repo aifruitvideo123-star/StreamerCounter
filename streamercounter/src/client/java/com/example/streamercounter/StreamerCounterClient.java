@@ -544,7 +544,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         private int page=0;
         private int activeTab=0;
         private static final int ROW_HEIGHT=26;
-        private static final String[] TABS={"Overview","Streamers","HUD","Text","Themes","Settings"};
+        private static final String[] TABS={"Overview","Streamers","HUD","Tools","Themes","Settings"};
         protected CounterMenuScreen(Screen parent){super(Text.literal("Streamer Counter VIP"));this.parent=parent;}
         private java.util.List<String> streamerNames(){
             java.util.Set<String> names=new java.util.TreeSet<>();names.addAll(data.counts.keySet());names.addAll(data.streamerEnabled.keySet());
@@ -580,10 +580,14 @@ public class StreamerCounterClient implements ClientModInitializer {
                 addDrawableChild(ButtonWidget.builder(hudButtonText(),b->{data.showHud=!data.showHud;save();b.setMessage(hudButtonText());}).dimensions(x,bodyTop,190,24).build());
                 addDrawableChild(ButtonWidget.builder(Text.literal("Edit HUD"),b->MinecraftClient.getInstance().setScreen(new HudEditScreen(this))).dimensions(x,bodyTop+38,190,24).build());
             }else if(activeTab==3){
-                String[] sections={"Auctions","Text on Screen","Timer","Sessions"};
-                for(int i=0;i<sections.length;i++){final int section=i;String label=(data.selectedTextSection==i?"• ":"")+sections[i];
-                    addDrawableChild(ButtonWidget.builder(Text.literal(label),b->{data.selectedTextSection=section;save();clearAndInit();}).dimensions(x,bodyTop+i*34,190,24).build());}
-                addDrawableChild(ButtonWidget.builder(Text.literal("Open Text Editor"),b->MinecraftClient.getInstance().setScreen(new TextOnScreenScreen(this))).dimensions(x+210,bodyTop+34,190,24).build());
+                String[] tools={"Auction","Timer","Text on screen","Images","3D text","Rakeback","HUD"};
+                for(int i=0;i<tools.length;i++){final int tool=i;
+                    addDrawableChild(ButtonWidget.builder(Text.literal("›  "+tools[i]),b->{
+                        if(tool==2)MinecraftClient.getInstance().setScreen(new TextOnScreenScreen(this));
+                        else if(tool==6)openTab(2);
+                        else {data.selectedTextSection=tool;save();clearAndInit();}
+                    }).dimensions(x,bodyTop+i*42,230,28).build());
+                }
             }else if(activeTab==4){
                 addDrawableChild(ButtonWidget.builder(themeButtonText(),b->{String[] themes=VIP_THEMES;int n=0;for(;n<themes.length;n++)if(themes[n].equals(currentTheme()))break;data.vipTheme=themes[(n+1)%themes.length];data.iceTheme=data.vipTheme.equals("ICE");save();clearAndInit();}).dimensions(x,bodyTop,250,24).build());
             }else if(activeTab==5){
@@ -616,7 +620,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                 for(int j=0;j<lines.length;j++)ctx.drawText(textRenderer,lines[j],x+18,bodyTop+18+j*24,j==0?0xFFFFFFFF:textColor(),true);
             }else if(activeTab==1&&streamerNames().isEmpty()){ctx.drawText(textRenderer,"No streamers detected yet.",x+18,bodyTop+18,0xFFFFFFFF,true);ctx.drawText(textRenderer,"Streamers appear here after /tpahere <name>.",x+18,bodyTop+42,textColor(),true);
             }else if(activeTab==2)ctx.drawText(textRenderer,"Toggle the HUD or open its editor.",x+220,bodyTop+6,textColor(),true);
-            else if(activeTab==3){String[] descriptions={"Auctions tools will be configured here later.","Create, position and style your on-screen text.","A customizable stream timer will be added here.","Session tracking tools will be configured here."};ctx.drawText(textRenderer,descriptions[Math.max(0,Math.min(3,data.selectedTextSection))],x+220,bodyTop+8,textColor(),true);}
+            else if(activeTab==3){String[] statuses={"Idle","Idle","Edit your on-screen text","Coming soon","Coming soon","Off",data.showHud?"1 plate on":"Off"};for(int i=0;i<statuses.length;i++)ctx.drawText(textRenderer,statuses[i],x+260,bodyTop+10+i*42,textColor(),true);}
             else if(activeTab==4)ctx.drawText(textRenderer,"Choose from 8 VIP themes: Gold, Ice, Christmas, Halloween, Nether, Emerald, Purple and Ocean.",x+220,bodyTop+6,textColor(),true);
             else if(activeTab==5)ctx.drawText(textRenderer,"Adjust HUD visibility and size, reset its position, or manage counter data.",x+220,bodyTop+6,textColor(),true);
             super.render(ctx,mx,my,delta);

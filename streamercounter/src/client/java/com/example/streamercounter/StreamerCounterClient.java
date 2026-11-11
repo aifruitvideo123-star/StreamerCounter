@@ -794,6 +794,18 @@ public class StreamerCounterClient implements ClientModInitializer {
                 addDrawableChild(ButtonWidget.builder(Text.literal("Timer ↓"),b->{data.timerHudY=(data.timerHudY<0?height/3:data.timerHudY)+20;save();}).dimensions(x+292,bodyTop+178,78,20).build());
                 addDrawableChild(ButtonWidget.builder(Text.literal("Timer size −"),b->{data.timerHudScale=Math.max(0.6f,data.timerHudScale-0.1f);save();}).dimensions(x+210,bodyTop+202,92,20).build());
                 addDrawableChild(ButtonWidget.builder(Text.literal("Timer size +"),b->{data.timerHudScale=Math.min(1.8f,data.timerHudScale+0.1f);save();}).dimensions(x+306,bodyTop+202,92,20).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("Auction ←"),b->{data.auctionHudX=Math.max(140,(data.auctionHudX<0?width/2:data.auctionHudX)-20);save();}).dimensions(x,bodyTop+154,78,20).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("Auction →"),b->{data.auctionHudX=(data.auctionHudX<0?width/2:data.auctionHudX)+20;save();}).dimensions(x+82,bodyTop+154,78,20).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("Auction ↑"),b->{data.auctionHudY=Math.max(20,data.auctionHudY-20);save();}).dimensions(x,bodyTop+178,78,20).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("Auction ↓"),b->{data.auctionHudY+=20;save();}).dimensions(x+82,bodyTop+178,78,20).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("Auction size −"),b->{data.auctionHudScale=Math.max(0.6f,data.auctionHudScale-0.1f);save();}).dimensions(x,bodyTop+202,92,20).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("Auction size +"),b->{data.auctionHudScale=Math.min(1.8f,data.auctionHudScale+0.1f);save();}).dimensions(x+96,bodyTop+202,92,20).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("Timer ←"),b->{data.timerHudX=Math.max(70,(data.timerHudX<0?width/2:data.timerHudX)-20);save();}).dimensions(x+210,bodyTop+154,78,20).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("Timer →"),b->{data.timerHudX=(data.timerHudX<0?width/2:data.timerHudX)+20;save();}).dimensions(x+292,bodyTop+154,78,20).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("Timer ↑"),b->{data.timerHudY=Math.max(70,(data.timerHudY<0?height/3:data.timerHudY)-20);save();}).dimensions(x+210,bodyTop+178,78,20).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("Timer ↓"),b->{data.timerHudY=(data.timerHudY<0?height/3:data.timerHudY)+20;save();}).dimensions(x+292,bodyTop+178,78,20).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("Timer size −"),b->{data.timerHudScale=Math.max(0.6f,data.timerHudScale-0.1f);save();}).dimensions(x+210,bodyTop+202,92,20).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("Timer size +"),b->{data.timerHudScale=Math.min(1.8f,data.timerHudScale+0.1f);save();}).dimensions(x+306,bodyTop+202,92,20).build());
             }
         
             // Apply translucency to the actual top-level VIP menu controls.
@@ -861,7 +873,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             addDrawableChild(ButtonWidget.builder(Text.literal(data.timerActive?"Stop timer":"Reset"),b->{data.timerActive=false;data.timerFinished=false;data.timerEndTime=0;save();MinecraftClient.getInstance().setScreen(new TimerScreen(parent));}).dimensions(cx+5,top+132,145,24).build());
             addDrawableChild(ButtonWidget.builder(Text.literal("Back to Tools"),b->MinecraftClient.getInstance().setScreen(parent)).dimensions(cx-75,top+202,150,24).build());
         }
-        @Override public void render(DrawContext ctx,int mouseX,int mouseY,float delta){ctx.fill(0,0,width,height,0x88000000);ctx.fill(cx-190,top-18,cx+190,top+238,0xE8120F0B);ctx.fill(cx-190,top-18,cx+190,top-14,0xFFFF8126);super.render(ctx,mouseX,mouseY,delta);String state=data.timerActive?"RUNNING":data.timerFinished?"FINISHED":"READY";ctx.drawCenteredTextWithShadow(textRenderer,Text.literal("TIMER  •  "+state),width/2,height/2-94,0xFFFFC04A);ctx.drawCenteredTextWithShadow(textRenderer,Text.literal("Choose a preset or enter seconds"),width/2,height/2-54,0xFFFFFFFF);}
+        @Override public void render(DrawContext ctx,int mouseX,int mouseY,float delta){ctx.fill(0,0,width,height,0x88000000);int cx=width/2, top=height/2-125;ctx.fill(cx-190,top-18,cx+190,top+238,0xE8120F0B);ctx.fill(cx-190,top-18,cx+190,top-14,0xFFFF8126);super.render(ctx,mouseX,mouseY,delta);String state=data.timerActive?"RUNNING":data.timerFinished?"FINISHED":"READY";ctx.drawCenteredTextWithShadow(textRenderer,Text.literal("TIMER  •  "+state),width/2,height/2-94,0xFFFFC04A);ctx.drawCenteredTextWithShadow(textRenderer,Text.literal("Choose a preset or enter seconds"),width/2,height/2-54,0xFFFFFFFF);}
     }
 
     private static class AuctionScreen extends Screen {

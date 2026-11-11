@@ -523,8 +523,9 @@ public class StreamerCounterClient implements ClientModInitializer {
             graphics.text(font,"EDIT TEXT",right+16,top+14,0xFFFFFFFF,true);
             graphics.text(font,"Select a text on the left. Hidden texts stay in this list.",right+16,top+38,0xFFB8C7D9,true);
             graphics.text(font,"TEXT",right+16,top+67,0xFFFFD54F,true);
-            graphics.text(font,"SIZE / FONT STYLE",right+16,top+105,0xFFFFD54F,true);
-            graphics.text(font,"COLOR",right+16,top+185,0xFFFFD54F,true);
+            graphics.text(font,"SIZE",right+16,top+219,0xFFFFD54F,true);
+            graphics.text(font,"FONT / STYLE",right+16,top+271,0xFFFFD54F,true);
+            ctx.drawText(textRenderer,"COLOR",right+16,top+303,0xFFFFD54F,true);
             if(data.screenTexts!=null) for(ScreenText item:data.screenTexts) if(item!=null&&item.visible&&item.text!=null&&!item.text.isEmpty()) {
                 float scale=Math.max(8,Math.min(96,item.size))/9.0f;
                 graphics.pose().pushMatrix(); graphics.pose().translate(item.x,item.y); graphics.pose().scale(scale,scale);
@@ -535,7 +536,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                 }else{Component styled=Component.literal(item.text).withStyle(st->st.withBold(item.bold).withItalic(item.italic));graphics.text(font,styled,0,0,item.color,item.shadow);} graphics.pose().popMatrix();
             }
             ScreenText chosen=current();
-            if(chosen!=null) graphics.text(font,"Selected: "+(chosen.text==null?"":chosen.text)+"   |   Size: "+chosen.size,right+16,top+330,0xFFB8C7D9,true);
+            if(chosen!=null) graphics.text(font,"Selected: "+(chosen.text==null?"":chosen.text)+"   |   Size: "+chosen.size,right+16,top+365,0xFFB8C7D9,true);
             else graphics.text(font,"Add a text to begin editing.",right+16,top+330,0xFFB8C7D9,true);
             graphics.text(font,"Drag visible text to move it.",right+16,height-34,0xFF6C9BCB,true);
             super.extractRenderState(graphics,mx,my,delta);

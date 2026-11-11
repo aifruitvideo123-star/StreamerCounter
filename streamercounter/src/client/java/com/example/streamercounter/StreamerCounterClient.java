@@ -75,6 +75,10 @@ public class StreamerCounterClient implements ClientModInitializer {
         long auctionSoldUntil = 0L;
         int auctionMinBid = 0;
         boolean auctionShowWorld = true;
+        int timerDurationSeconds = 60;
+        long timerEndTime = 0L;
+        boolean timerActive = false;
+        boolean timerFinished = false;
     }
 
     private static String formatAuctionDuration(int seconds) {
@@ -791,13 +795,13 @@ public class StreamerCounterClient implements ClientModInitializer {
                 addRenderableWidget(Button.builder(Component.literal("Edit HUD"),b->Minecraft.getInstance().setScreen(new HudEditScreen(this)))
                     .bounds(contentX,bodyTop+38,190,24).build());
             } else if(activeTab==3){
-                String[] tools={"Auction","Timer","Text on screen","Images","3D text","Rakeback","HUD"};
+                String[] tools={"Auction","Timer","Text on screen","HUD"};
                 for(int i=0;i<tools.length;i++){final int tool=i;
                     addRenderableWidget(Button.builder(Component.literal("›  "+tools[i]),b->{
                         if(tool==0)Minecraft.getInstance().setScreen(new AuctionScreen(this));
+                        else if(tool==1)Minecraft.getInstance().setScreen(new TimerScreen(this));
                         else if(tool==2)Minecraft.getInstance().setScreen(new TextOnScreenScreen(this));
-                        else if(tool==6)openTab(2);
-                        else Minecraft.getInstance().setScreen(new CounterMenuScreen(parent,0,3));
+                        else if(tool==3)openTab(2);
                     }).bounds(contentX,bodyTop+i*42,230,28).build());
                 }
             } else if(activeTab==4){
@@ -878,6 +882,24 @@ public class StreamerCounterClient implements ClientModInitializer {
     }
 
 
+
+ 
+    private static class TimerScreen extends Screen {
+        private final Screen parent;
+        private EditBox secondsField;
+        TimerScreen(Screen parent){super(Component.literal("VIP Timer"));this.parent=parent;}
+        @Override protected void init(){
+            int cx=width/2, top=height/2-105;
+            secondsField=new EditBox(font,cx-70,top+38,140,22,Component.literal("Seconds"));
+            secondsField.setValue(String.valueOf(data.timerDurationSeconds));addRenderableWidget(secondsField);
+            int[] vals={10,30,60,120,300,600}; String[] labels={"10 sec","30 sec","1 min","2 min","5 min","10 min"};
+            for(int i=0;i<vals.length;i++){final int v=vals[i];addRenderableWidget(Button.builder(Component.literal(labels[i]),b->{data.timerDurationSeconds=v;secondsField.setValue(String.valueOf(v));save();}).bounds(cx-150+(i%3)*102,top+70+(i/3)*26,96,22).build());}
+            addRenderableWidget(Button.builder(Component.literal("Start timer"),b->{try{data.timerDurationSeconds=Math.max(1,Math.min(86400,Integer.parseInt(secondsField.getValue().trim())));}catch(Exception ignored){data.timerDurationSeconds=60;}data.timerEndTime=System.currentTimeMillis()+data.timerDurationSeconds*1000L;data.timerActive=true;data.timerFinished=false;save();Minecraft.getInstance().setScreen(parent);}).bounds(cx-150,top+132,145,24).build());
+            addRenderableWidget(Button.builder(Component.literal(data.timerActive?"Stop timer":"Reset"),b->{data.timerActive=false;data.timerFinished=false;data.timerEndTime=0;save();Minecraft.getInstance().setScreen(new TimerScreen(parent));}).bounds(cx+5,top+132,145,24).build());
+            addRenderableWidget(Button.builder(Component.literal("Back to Tools"),b->Minecraft.getInstance().setScreen(parent)).bounds(cx-75,top+166,150,22).build());
+        }
+        @Override public void render(GuiGraphicsExtractor g,int mouseX,int mouseY,float delta){super.render(g,mouseX,mouseY,delta);g.text(font,Component.literal("TIMER  •  "+(data.timerActive?"RUNNING":data.timerFinished?"FINISHED":"READY")),width/2-font.width("TIMER  •  READY")/2,height/2-94,0xFFFFC04A);g.text(font,Component.literal("Choose a preset or enter seconds"),width/2-font.width("Choose a preset or enter seconds")/2,height/2-54,0xFFFFFFFF);}
+    }
 
     private static class AuctionScreen extends Screen {
         private final Screen parent;
@@ -1017,5 +1039,18 @@ public class StreamerCounterClient implements ClientModInitializer {
             }
         }
         @Override public void onClose(){Minecraft.getInstance().setScreen(parent);}
-    }
+    } 
+        if(data.timerActive && System.currentTimeMillis()>=data.timerEndTime){data.timerActive=false;data.timerFinished=true;save();}
+        if(data.timerActive || data.timerFinished){
+            long remain=data.timerActive?Math.max(0,(data.timerEndTime-System.currentTimeMillis()+999)/1000):0;
+            int cx=mc.getWindow().getGuiScaledWidth()/2, cy=mc.getWindow().getGuiScaledHeight()/3;
+            int total=Math.max(1,data.timerDurationSeconds); double progress=data.timerActive?Math.max(0,Math.min(1,(double)remain/total)):0;
+            graphics.fill(cx-62,cy-62,cx+62,cy+62,0xCC10131B);
+            for(int i=0;i<60;i++){double a=-Math.PI/2+i*Math.PI*2/60;int px=cx+(int)(53*Math.cos(a)),py=cy+(int)(53*Math.sin(a));int col=(i<Math.round(progress*60))?0xFFFFC04A:0xFF48505D;graphics.fill(px-2,py-2,px+3,py+3,col);}
+            String time=String.format(Locale.ROOT,"%02d:%02d",remain/60,remain%60);
+            graphics.text(mc.font,Component.literal(time),cx-mc.font.width(time)/2,cy-5,0xFFFFFFFF);
+            String status=data.timerFinished?"TIME UP":"TIMER";
+            graphics.text(mc.font,Component.literal(status),cx-mc.font.width(status)/2,cy+13,data.timerFinished?0xFFFF6B6B:0xFFFFC04A);
+        }
+
 }

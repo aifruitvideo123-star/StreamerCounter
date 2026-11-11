@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "id": "streamercounter_vip",
+  "id": "streamercounter_media",
   "version": "${version}",
-  "name": "Streamer Counter VIP",
-  "description": "VIP edition with selectable HUD themes and arrival notifications after /tpahere.",
+  "name": "StreamerCounter MEDIA",
+  "description": "MEDIA edition with a subtle red and white animated interface, streamer promotion tools and moderator-oriented display extras.",
   "authors": [
     "aifruitvideo123-star"
   ],

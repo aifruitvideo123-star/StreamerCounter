@@ -278,7 +278,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             drawFlowText(graphics,mc.font,data.auctionActive ? String.format(Locale.ROOT,"%02d:%02d",left/60,left%60) : data.auctionWinner,cx-100,y+27,0xFFFF8126,true);
             drawFlowText(graphics,mc.font,"DURATION "+formatAuctionDuration(data.auctionDurationSeconds),cx-100,y+39,0xFFFFC04A,true);
             drawFlowText(graphics,mc.font,data.auctionHighestPlayer+"  $"+formatAuctionMoney(data.auctionHighestBid),cx-100,y+49,data.textColor,true);
-            if(data.ownerAuctionStats)drawFlowText(graphics,mc.font,"BIDS "+data.auctionBids.size()+"  •  PLAYERS "+data.auctionBids.size(),cx-100,y+61,0xFFFFD36B,true);
+            if(data.ownerAuctionStats)drawFlowText(graphics,mc.font,"BIDDERS "+data.auctionBids.size(),cx-100,y+61,0xFFFFD36B,true);
             if (data.auctionActive && System.currentTimeMillis() >= data.auctionEndTime) {
             data.auctionActive=false; data.auctionSold=true;
             data.auctionWinner=data.auctionHighestBid>0?data.auctionHighestPlayer:"No bids";
@@ -307,6 +307,10 @@ public class StreamerCounterClient implements ClientModInitializer {
             int total=Math.max(1,data.timerDurationSeconds); double progress=data.timerActive?Math.max(0,Math.min(1,(double)remain/total)):0;
             if(data.ownerGlow)graphics.fill(timerCx-timerRadius-4,timerCy-timerRadius-4,timerCx+timerRadius+4,timerCy+timerRadius+4,0x6659CFFF); graphics.fill(timerCx-timerRadius,timerCy-timerRadius,timerCx+timerRadius,timerCy+timerRadius,withOpacity(0x10131B,data.ownerHudOpacity));
             for(int i=0;i<60;i++){double a=-Math.PI/2+i*Math.PI*2/60; if(data.ownerTimerStyle==1)a+=Math.sin(System.currentTimeMillis()/350.0*data.ownerAnimationSpeed)*0.025;int px=timerCx+(int)(timerRadius*0.85*Math.cos(a)),py=timerCy+(int)(timerRadius*0.85*Math.sin(a));int col=(i<Math.round(progress*60))?(data.ownerTimerStyle==1?0xFF54E8FF:data.ownerTimerStyle==2?0xFFFFFFFF:0xFFFFC04A):(data.ownerTimerStyle==1?0xFF243B4A:0xFF48505D);graphics.fill(px-2,py-2,px+3,py+3,col);}
+            if(data.ownerParticles){
+                double orbit=System.currentTimeMillis()/420.0*data.ownerAnimationSpeed;
+                for(int i=0;i<8;i++){double a=orbit+i*Math.PI/4;int sx=timerCx+(int)((timerRadius+9)*Math.cos(a)),sy=timerCy+(int)((timerRadius+9)*Math.sin(a));graphics.fill(sx-1,sy-1,sx+2,sy+2,0xFFFFD36B);}
+            }
             String time=String.format(Locale.ROOT,"%02d:%02d",remain/60,remain%60);
             graphics.text(mc.font,Component.literal(time),timerCx-mc.font.width(time)/2,timerCy-5,0xFFFFFFFF);
             String status=data.timerFinished?"TIME UP":"TIMER";
@@ -870,6 +874,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                 addRenderableWidget(Button.builder(Component.literal("Animation speed +"),b->{data.ownerAnimationSpeed=Math.min(2.5f,data.ownerAnimationSpeed+0.1f);save();}).bounds(contentX+378,bodyTop+64,110,24).build());
                 addRenderableWidget(Button.builder(Component.literal("Reset owner effects"),b->{data.ownerGlow=true;data.ownerParticles=true;data.ownerAnimations=true;data.ownerAuctionStats=true;data.ownerTimerPulse=true;data.ownerHudOpacity=0.88f;data.ownerAnimationSpeed=1f;data.ownerTimerStyle=0;save();Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,0,6));}).bounds(contentX+260,bodyTop+96,230,24).build());
                 addRenderableWidget(Button.builder(Component.literal("Move / resize HUDs"),b->Minecraft.getInstance().gui.setScreen(new LayoutEditScreen(this))).bounds(contentX,bodyTop+146,230,26).build());
+            }
             // Apply translucency to the actual top-level VIP menu controls.
             for (var child : children()) {
                 if (child instanceof net.minecraft.client.gui.components.AbstractWidget button) button.setAlpha(0.0f);

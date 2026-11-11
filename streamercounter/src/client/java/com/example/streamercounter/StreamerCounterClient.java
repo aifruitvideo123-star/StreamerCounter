@@ -851,33 +851,31 @@ public class StreamerCounterClient implements ClientModInitializer {
             minBid=new EditBox(font,l+170,t+118,190,22,Component.literal("Minimum bid"));minBid.setValue(String.valueOf(data.auctionMinBid));addRenderableWidget(minBid);
             addRenderableWidget(Button.builder(Component.literal("Use held item"),b->{Minecraft mc=Minecraft.getInstance();if(mc.player!=null&&!mc.player.getMainHandItem().isEmpty())data.auctionItem=mc.player.getMainHandItem().getHoverName().getString();save();mc.setScreen(new AuctionScreen(parent));}).bounds(l+18,t+62,150,22).build());
             int[] ds={30,60,120,300,600};String[] ls={"30s","1m","2m","5m","10m"};
-            for(int i=0;i<ds.length;i++){final int v=ds[i];addRenderableWidget(Button.builder(Component.literal(ls[i]),b->{data.auctionDurationSeconds=v;save();Minecraft.getInstance().setScreen(new AuctionScreen(parent));}).bounds(l+18+i*58,t+94,54,20).build());}
+            for(int i=0;i<ds.length;i++){final int v=ds[i];addRenderableWidget(Button.builder(Component.literal(ls[i]),b->{data.auctionDurationSeconds=v;save();Minecraft.getInstance().gui.setScreen(new AuctionScreen(parent));}).bounds(l+18+i*58,t+94,54,20).build());}
             if(data.auctionActive){
                 addRenderableWidget(Button.builder(Component.literal("+10s"),b->extend(10)).bounds(l+18,t+160,70,22).build());
                 addRenderableWidget(Button.builder(Component.literal("+30s"),b->extend(30)).bounds(l+94,t+160,70,22).build());
                 addRenderableWidget(Button.builder(Component.literal("+1m"),b->extend(60)).bounds(l+170,t+160,70,22).build());
                 addRenderableWidget(Button.builder(Component.literal("End now"),b->finish()).bounds(l+18,t+192,90,22).build());
-                addRenderableWidget(Button.builder(Component.literal("Cancel"),b->{data.auctionActive=false;data.auctionBids.clear();save();Minecraft.getInstance().setScreen(new AuctionScreen(parent));}).bounds(l+116,t+192,90,22).build());
+                addRenderableWidget(Button.builder(Component.literal("Cancel"),b->{data.auctionActive=false;data.auctionBids.clear();save();Minecraft.getInstance().gui.setScreen(new AuctionScreen(parent));}).bounds(l+116,t+192,90,22).build());
             }else{
-                addRenderableWidget(Button.builder(Component.literal("Start auction"),b->{try{data.auctionMinBid=Math.max(0,Integer.parseInt(minBid.getValue().trim()));}catch(Exception ignored){}data.auctionBids.clear();data.auctionHighestBid=0;data.auctionHighestPlayer="No bids yet";data.auctionSold=false;data.auctionActive=true;data.auctionEndTime=System.currentTimeMillis()+data.auctionDurationSeconds*1000L;save();Minecraft.getInstance().setScreen(new AuctionScreen(parent));}).bounds(l+18,t+160,342,28).build());
+                addRenderableWidget(Button.builder(Component.literal("Start auction"),b->{try{data.auctionMinBid=Math.max(0,Integer.parseInt(minBid.getValue().trim()));}catch(Exception ignored){}data.auctionBids.clear();data.auctionHighestBid=0;data.auctionHighestPlayer="No bids yet";data.auctionSold=false;data.auctionActive=true;data.auctionEndTime=System.currentTimeMillis()+data.auctionDurationSeconds*1000L;save();Minecraft.getInstance().gui.setScreen(new AuctionScreen(parent));}).bounds(l+18,t+160,342,28).build());
             }
-            addRenderableWidget(Button.builder(Component.literal("Back to Tools"),b->Minecraft.getInstance().setScreen(parent)).bounds(l+18,t+232,160,22).build());
+            addRenderableWidget(Button.builder(Component.literal("Back to Tools"),b->Minecraft.getInstance().gui.setScreen(parent)).bounds(l+18,t+232,160,22).build());
         }
         private void extend(int sec){data.auctionEndTime+=sec*1000L;save();}
-        private void finish(){data.auctionActive=false;data.auctionSold=true;data.auctionWinner=data.auctionHighestBid>0?data.auctionHighestPlayer:"No bids";data.auctionSoldUntil=System.currentTimeMillis()+8000;save();Minecraft.getInstance().setScreen(new AuctionScreen(parent));}
+        private void finish(){data.auctionActive=false;data.auctionSold=true;data.auctionWinner=data.auctionHighestBid>0?data.auctionHighestPlayer:"No bids";data.auctionSoldUntil=System.currentTimeMillis()+8000;save();Minecraft.getInstance().gui.setScreen(new AuctionScreen(parent));}
         @Override public void extractRenderState(GuiGraphicsExtractor g,int mx,int my,float delta){
             int cx=width/2,t=height/2-150,a=data.iceTheme?0xFF69D8FF:0xFFFF8126;
             g.fill(0,0,width,height,0x55000000);g.fill(cx-340,t,cx+340,t+300,0xEE160E0A);g.fill(cx-340,t,cx+340,t+2,a);g.fill(cx,t+42,cx+1,t+270,0x665B4635);
             drawFlowText(g,font,data.auctionActive?"LIVE AUCTION":"NEW AUCTION",cx-318,t+18,0xFFFFFFFF,true);
             drawFlowText(g,font,"ITEM",cx-318,t+48,a,true);drawFlowText(g,font,data.auctionItem,cx-318,t+68,0xFFFFFFFF,true);
-            drawFlowText(g,font,"DURATION",cx-318,t+98,textColor(),true);drawFlowText(g,font,data.auctionDurationSeconds+" seconds",cx-318,t+132,0xFFFFFFFF,true);drawFlowText(g,font,"MIN BID",cx-148,t+98,textColor(),true);
-            if(data.auctionActive){long left=Math.max(0,(data.auctionEndTime-System.currentTimeMillis()+999)/1000);drawFlowText(g,font,"TIME LEFT",cx-318,t+170,a,true);drawFlowText(g,font,String.format(Locale.ROOT,"%02d:%02d",left/60,left%60),cx-318,t+190,0xFFFFFFFF,true);drawFlowText(g,font,"HIGHEST: "+data.auctionHighestPlayer+"  $"+String.format(Locale.ROOT,"%.2f",data.auctionHighestBid),cx-318,t+245,textColor(),true);int row=0;for(var e:data.auctionBids.entrySet()){if(row>=8)break;drawFlowText(g,font,e.getKey()+"   $"+String.format(Locale.ROOT,"%.2f",e.getValue()),cx+22,t+54+row*22,textColor(),true);row++;}drawFlowText(g,font,"PAYMENTS TO YOU COUNT AS BIDS",cx+22,t+245,0xFFB9A28D,true);}
-            else if(data.auctionSold){drawFlowText(g,font,"SOLD",cx-318,t+170,a,true);drawFlowText(g,font,data.auctionWinner,cx-318,t+195,0xFFFFFFFF,true);}else drawFlowText(g,font,"Hold an item and select Use held item.",cx-318,t+170,textColor(),true);
+            drawFlowText(g,font,"DURATION",cx-318,t+98,data.textColor,true);drawFlowText(g,font,data.auctionDurationSeconds+" seconds",cx-318,t+132,0xFFFFFFFF,true);drawFlowText(g,font,"MIN BID",cx-148,t+98,data.textColor,true);
+            if(data.auctionActive){long left=Math.max(0,(data.auctionEndTime-System.currentTimeMillis()+999)/1000);drawFlowText(g,font,"TIME LEFT",cx-318,t+170,a,true);drawFlowText(g,font,String.format(Locale.ROOT,"%02d:%02d",left/60,left%60),cx-318,t+190,0xFFFFFFFF,true);drawFlowText(g,font,"HIGHEST: "+data.auctionHighestPlayer+"  $"+String.format(Locale.ROOT,"%.2f",data.auctionHighestBid),cx-318,t+245,data.textColor,true);int row=0;for(var e:data.auctionBids.entrySet()){if(row>=8)break;drawFlowText(g,font,e.getKey()+"   $"+String.format(Locale.ROOT,"%.2f",e.getValue()),cx+22,t+54+row*22,data.textColor,true);row++;}drawFlowText(g,font,"PAYMENTS TO YOU COUNT AS BIDS",cx+22,t+245,0xFFB9A28D,true);}
+            else if(data.auctionSold){drawFlowText(g,font,"SOLD",cx-318,t+170,a,true);drawFlowText(g,font,data.auctionWinner,cx-318,t+195,0xFFFFFFFF,true);}else drawFlowText(g,font,"Hold an item and select Use held item.",cx-318,t+170,data.textColor,true);
             super.extractRenderState(g,mx,my,delta);
         }
-        private void extend(int sec){data.auctionEndTime+=sec*1000L;save();}
-        private void finish(){data.auctionActive=false;data.auctionSold=true;data.auctionWinner=data.auctionHighestBid>0?data.auctionHighestPlayer:"No bids";data.auctionSoldUntil=System.currentTimeMillis()+8000;save();Minecraft.getInstance().setScreen(new AuctionScreen(parent));}
         @Override public void tick(){if(data.auctionActive&&System.currentTimeMillis()>=data.auctionEndTime)finish();if(data.auctionSold&&System.currentTimeMillis()>data.auctionSoldUntil){data.auctionSold=false;save();}}
-        @Override public void onClose(){Minecraft.getInstance().setScreen(parent);}
+        @Override public void onClose(){Minecraft.getInstance().gui.setScreen(parent);}
     }
 }

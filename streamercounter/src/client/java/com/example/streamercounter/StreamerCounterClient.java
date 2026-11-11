@@ -343,7 +343,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             String name = displayName(key);
             String ownerName = mc.player == null ? "" : mc.player.getName().getString();
             boolean isOwner = name.equalsIgnoreCase(ownerName);
-            if(isOwner){graphics.fill(x+3,rowY-2,x+width-3,rowY+10,0x553FFFFFF);graphics.fill(x+3,rowY-2,x+width-3,rowY-1,0xFFEEEEEE);}
+            if(isOwner){graphics.fill(x+3,rowY-2,x+width-3,rowY+10,0x553FFFFF);graphics.fill(x+3,rowY-2,x+width-3,rowY-1,0xFFEEEEEE);}
             String count = String.valueOf(data.counts.getOrDefault(key, 0));
             if(isOwner){drawFlowText(graphics,mc.font,"✦",x+6,rowY,0xFFFFFFFF,true);drawFlowText(graphics,mc.font,name,x+18,rowY,0xFFFFFFFF,true);}
             else drawFlowText(graphics, mc.font, name, x + 6, rowY, data.textColor, false);

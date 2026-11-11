@@ -11,7 +11,7 @@ loom {
     splitEnvironmentSourceSets()
 
     mods {
-        "streamercounter_vip" {
+        "streamercounter_media" {
             sourceSet sourceSets.main
             sourceSet sourceSets.client
         }

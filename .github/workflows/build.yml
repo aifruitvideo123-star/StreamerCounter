@@ -1,8 +1,8 @@
-name: Build Fabric Mod (26.2)
+name: Build StreamerCounter MEDIA (26.2)
 
 on:
   push:
-    branches: [main, master, port/26.2]
+    branches: [main, master, port/26.2, media/26.2]
   workflow_dispatch:
 
 permissions:
@@ -50,6 +50,6 @@ jobs:
       - name: Upload mod JAR
         uses: actions/upload-artifact@v4
         with:
-          name: StreamerCounter-Mod-26.2
+          name: StreamerCounter-MEDIA-26.2
           path: artifact/*.jar
           if-no-files-found: error

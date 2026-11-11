@@ -298,6 +298,17 @@ public class StreamerCounterClient implements ClientModInitializer {
             drawFlowText(ctx,MinecraftClient.getInstance().textRenderer,data.auctionWinner,bannerCx-100,bannerCy-7,0xFFFFFFFF,true);
             drawFlowText(ctx,MinecraftClient.getInstance().textRenderer,"WON FOR $"+formatAuctionMoney(data.auctionHighestBid),bannerCx-100,bannerCy+14,0xFFFF8126,true);
         }
+        if(data.timerActive && System.currentTimeMillis()>=data.timerEndTime){data.timerActive=false;data.timerFinished=true;save();}
+        if(data.timerActive || data.timerFinished){
+            long remain=data.timerActive?Math.max(0,(data.timerEndTime-System.currentTimeMillis()+999)/1000):0;
+            int cx=ctx.getScaledWindowWidth()/2, cy=ctx.getScaledWindowHeight()/3;
+            int total=Math.max(1,data.timerDurationSeconds); double progress=data.timerActive?Math.max(0,Math.min(1,(double)remain/total)):0;
+            ctx.fill(cx-62,cy-62,cx+62,cy+62,0xCC10131B);
+            for(int i=0;i<60;i++){double a=-Math.PI/2+i*Math.PI*2/60;int px=cx+(int)(53*Math.cos(a)),py=cy+(int)(53*Math.sin(a));int col=(i<Math.round(progress*60))?0xFFFFC04A:0xFF48505D;ctx.fill(px-2,py-2,px+3,py+3,col);}
+            String time=String.format(Locale.ROOT,"%02d:%02d",remain/60,remain%60);
+            ctx.drawCenteredTextWithShadow(MinecraftClient.getInstance().textRenderer,Text.literal(time),cx,cy-5,0xFFFFFFFF);
+            ctx.drawCenteredTextWithShadow(MinecraftClient.getInstance().textRenderer,Text.literal(data.timerFinished?"TIME UP":"TIMER"),cx,cy+13,data.timerFinished?0xFFFF6B6B:0xFFFFC04A);
+        }
     }
 
 }
@@ -909,16 +920,5 @@ public class StreamerCounterClient implements ClientModInitializer {
         @Override public void close(){MinecraftClient.getInstance().setScreen(parent);}
     }
 
-        if(data.timerActive && System.currentTimeMillis()>=data.timerEndTime){data.timerActive=false;data.timerFinished=true;save();}
-        if(data.timerActive || data.timerFinished){
-            long remain=data.timerActive?Math.max(0,(data.timerEndTime-System.currentTimeMillis()+999)/1000):0;
-            int cx=ctx.getScaledWindowWidth()/2, cy=ctx.getScaledWindowHeight()/3;
-            int total=Math.max(1,data.timerDurationSeconds); double progress=data.timerActive?Math.max(0,Math.min(1,(double)remain/total)):0;
-            ctx.fill(cx-62,cy-62,cx+62,cy+62,0xCC10131B);
-            for(int i=0;i<60;i++){double a=-Math.PI/2+i*Math.PI*2/60;int px=cx+(int)(53*Math.cos(a)),py=cy+(int)(53*Math.sin(a));int col=(i<Math.round(progress*60))?0xFFFFC04A:0xFF48505D;ctx.fill(px-2,py-2,px+3,py+3,col);}
-            String time=String.format(Locale.ROOT,"%02d:%02d",remain/60,remain%60);
-            ctx.drawCenteredTextWithShadow(MinecraftClient.getInstance().textRenderer,Text.literal(time),cx,cy-5,0xFFFFFFFF);
-            ctx.drawCenteredTextWithShadow(MinecraftClient.getInstance().textRenderer,Text.literal(data.timerFinished?"TIME UP":"TIMER"),cx,cy+13,data.timerFinished?0xFFFF6B6B:0xFFFFC04A);
-        }
 
 }

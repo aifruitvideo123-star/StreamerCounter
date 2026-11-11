@@ -639,7 +639,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         
             // Apply translucency to the actual top-level VIP menu controls.
             for (var child : children()) {
-                if (child instanceof net.minecraft.client.gui.components.AbstractWidget button) button.setAlpha(0.72f);
+                if (child instanceof net.minecraft.client.gui.components.AbstractWidget button) button.setAlpha(0.0f);
             }
         }
         private Component streamerButtonText(String name,int count){
@@ -678,6 +678,21 @@ public class StreamerCounterClient implements ClientModInitializer {
                 g.text(font,"Careful: resetting removes the saved counter totals.",x+220,bodyTop+6,0xFFFF9B82,true);
             }
             super.extractRenderState(g,mx,my,delta);
+            int buttonIndex=0;
+            for (var child : children()) {
+                if (child instanceof net.minecraft.client.gui.components.AbstractWidget button && button.visible) {
+                    int bx=button.getX(), by=button.getY(), bw=button.getWidth(), bh=button.getHeight();
+                    boolean hovered=mx>=bx&&mx<bx+bw&&my>=by&&my<by+bh;
+                    boolean selected=buttonIndex<6&&buttonIndex==activeTab;
+                    int bg=selected?0xAA59432D:(hovered?0x99513D2A:0x66120E0A);
+                    g.fill(bx,by,bx+bw,by+bh,bg);
+                    if(selected)g.fill(bx,by,bx+bw,by+2,accent());
+                    String label=button.getMessage().getString();
+                    int color=selected?0xFFFFE4B5:textColor();
+                    g.text(font,label,bx+(bw-font.width(label))/2,by+(bh-font.lineHeight)/2,color,true);
+                    buttonIndex++;
+                }
+            }
             String credit="VIP EDITION  •  MADE BY ALPBEY3503";
             g.text(font,credit,left+22,bottom-18,textColor(),true);
         }

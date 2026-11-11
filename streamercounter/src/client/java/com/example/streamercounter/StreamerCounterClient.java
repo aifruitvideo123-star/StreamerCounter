@@ -585,6 +585,36 @@ public class StreamerCounterClient implements ClientModInitializer {
         private Component themeButtonText(){return Component.literal("Theme: "+currentTheme()+"  →");}
         private int accent(){return switch(currentTheme()){case "ICE","OCEAN"->0xFF69D8FF;case "CHRISTMAS"->0xFF55D878;case "HALLOWEEN"->0xFFFF8738;case "NETHER"->0xFFFF5555;case "EMERALD"->0xFF45D69A;case "PURPLE"->0xFFB58CFF;default->0xFFFFD54F;};}
         private int textColor(){return switch(currentTheme()){case "ICE","OCEAN"->0xFF9BE8FF;case "CHRISTMAS"->0xFFFFD8D8;case "HALLOWEEN"->0xFFFFC18A;case "NETHER"->0xFFFFA0A0;case "EMERALD"->0xFF9BFFD1;case "PURPLE"->0xFFDCCBFF;default->0xFFFFD878;};}
+        private int panelColor(){return switch(currentTheme()){case "CHRISTMAS"->0xB817241B;case "HALLOWEEN"->0xB8201712;case "ICE","OCEAN"->0xB8111D29;case "NETHER"->0xB8201118;case "EMERALD"->0xB812211D;case "PURPLE"->0xB81C1728;default->0xB8141A24;};}
+        private void drawSeasonDecor(GuiGraphicsExtractor g) {
+            if(currentTheme().equals("CHRISTMAS")){
+                // Pixel-art candy cane and festive baubles in the menu header.
+                g.fill(width-94,42,width-88,72,0xFFFFF1D6);
+                g.fill(width-88,42,width-76,48,0xFFFFF1D6);
+                g.fill(width-94,50,width-88,56,0xFFD93636);
+                g.fill(width-88,60,width-82,66,0xFFD93636);
+                g.fill(width-88,48,width-82,54,0xFFD93636);
+                g.fill(width-62,48,width-52,58,0xFFD93636);
+                g.fill(width-60,50,width-54,56,0xFFFFD7D7);
+                g.fill(width-43,53,width-33,63,0xFFFFD45F);
+                g.fill(width-41,55,width-35,61,0xFFFFF0B0);
+                g.fill(width-30,64,width-20,74,0xFF55D878);
+            } else if(currentTheme().equals("HALLOWEEN")){
+                // Small pixel pumpkin with a stem, eyes and a carved smile.
+                g.fill(width-88,43,width-78,51,0xFF65B84F);
+                g.fill(width-96,50,width-70,72,0xFFFF8738);
+                g.fill(width-92,47,width-74,75,0xFFFF8738);
+                g.fill(width-90,55,width-86,61,0xFF28170F);
+                g.fill(width-80,55,width-76,61,0xFF28170F);
+                g.fill(width-87,65,width-79,68,0xFF28170F);
+                g.fill(width-65,50,width-55,60,0xFFFFB347);
+                g.fill(width-63,52,width-57,58,0xFFFFD18A);
+            } else if(currentTheme().equals("ICE")||currentTheme().equals("OCEAN")){
+                g.fill(width-91,48,width-89,72,0xFFBCEBFF);
+                g.fill(width-100,58,width-80,60,0xFFBCEBFF);
+                g.fill(width-96,51,width-84,67,0xFFBCEBFF);
+            }
+        }
         private int pageCount(int rows){return Math.max(1,(streamerNames().size()+rows-1)/rows);}
         @Override protected void init() {
             int panelW=Math.min(920,width-32), left=(width-panelW)/2, top=24;
@@ -660,36 +690,37 @@ public class StreamerCounterClient implements ClientModInitializer {
         }
         @Override public void extractRenderState(GuiGraphicsExtractor g,int mx,int my,float delta){
             int panelW=Math.min(920,width-32),left=(width-panelW)/2,top=24,right=left+panelW,bottom=height-24;
+            drawSeasonDecor(g);
             g.fill(0,0,width,height,0x50000000);
             g.fill(left-1,top-1,right+1,bottom+1,0xAA000000);
-            g.fill(left,top,right,bottom,0xB8141A24);
+            g.fill(left,top,right,bottom,panelColor());
             g.fill(left+1,top+1,right-1,top+3,accent());
             g.fill(left+1,top+58,right-1,top+59,0x665F7188);
             String title="STREAMERCOUNTER VIP";
-            g.text(font,title,left+22,top+22,0xFFFFFFFF,true);
-            g.text(font,"CONTROL CENTER",left+22,top+39,textColor(),true);
+            drawFlowText(g,font,title,left+22,top+22,0xFFFFFFFF,true);
+            drawFlowText(g,font,"CONTROL CENTER",left+22,top+39,textColor(),true);
             int bodyTop=top+96, bodyBottom=height-74, x=left+26;
             String heading=TABS[activeTab].toUpperCase(Locale.ROOT);
-            g.text(font,heading,x,top+76,accent(),true);
+            drawFlowText(g,font,heading,x,top+76,accent(),true);
             g.fill(x,bodyTop-12,right-26,bodyBottom+8,0x55232E3D);
             if(activeTab==0){
                 int total=0;for(Integer value:data.counts.values())if(value!=null)total+=value;
                 String[] lines={"Your live overview","Tracked streamers: "+streamerNames().size(),"Total TP counter: "+total,
                     "Last detected: "+(data.lastName==null?"—":data.lastName),"HUD: "+(data.showHud?"Enabled":"Disabled"),
                     "Use the tabs above to manage streamers, HUD, text and theme."};
-                for(int j=0;j<lines.length;j++)g.text(font,lines[j],x+18,bodyTop+18+j*24,j==0?0xFFFFFFFF:textColor(),true);
+                for(int j=0;j<lines.length;j++)drawFlowText(g,font,lines[j],x+18,bodyTop+18+j*24,j==0?0xFFFFFFFF:textColor(),true);
             }else if(activeTab==1&&streamerNames().isEmpty()){
-                g.text(font,"No streamers detected yet.",x+18,bodyTop+18,0xFFFFFFFF,true);
-                g.text(font,"Streamers appear here after /tpahere <name>.",x+18,bodyTop+42,textColor(),true);
+                drawFlowText(g,font,"No streamers detected yet.",x+18,bodyTop+18,0xFFFFFFFF,true);
+                drawFlowText(g,font,"Streamers appear here after /tpahere <name>.",x+18,bodyTop+42,textColor(),true);
             }else if(activeTab==2){
-                g.text(font,"Toggle the HUD or open its editor.",x+220,bodyTop+6,textColor(),true);
+                drawFlowText(g,font,"Toggle the HUD or open its editor.",x+220,bodyTop+6,textColor(),true);
             }else if(activeTab==3){
                 String[] statuses={"Idle","Idle","Edit your on-screen text","Coming soon","Coming soon","Off",data.showHud?"1 plate on":"Off"};
-                for(int i=0;i<statuses.length;i++)g.text(font,statuses[i],x+260,bodyTop+10+i*42,textColor(),true);
+                for(int i=0;i<statuses.length;i++)drawFlowText(g,font,statuses[i],x+260,bodyTop+10+i*42,textColor(),true);
             }else if(activeTab==4){
-                g.text(font,"Choose from 8 VIP themes: Gold, Ice, Christmas, Halloween, Nether, Emerald, Purple and Ocean.",x+220,bodyTop+6,textColor(),true);
+                drawFlowText(g,font,"Choose from 8 VIP themes: Gold, Ice, Christmas, Halloween, Nether, Emerald, Purple and Ocean.",x+220,bodyTop+6,textColor(),true);
             }else if(activeTab==5){
-                g.text(font,"Adjust HUD visibility and size, reset its position, or manage counter data.",x+220,bodyTop+6,textColor(),true);
+                drawFlowText(g,font,"Adjust HUD visibility and size, reset its position, or manage counter data.",x+220,bodyTop+6,textColor(),true);
             }
             super.extractRenderState(g,mx,my,delta);
             int buttonIndex=0;
@@ -703,12 +734,12 @@ public class StreamerCounterClient implements ClientModInitializer {
                     if(selected)g.fill(bx,by,bx+bw,by+2,accent());
                     String label=button.getMessage().getString();
                     int color=selected?0xFFFFE4B5:textColor();
-                    g.text(font,label,bx+(bw-font.width(label))/2,by+(bh-font.lineHeight)/2,color,true);
+                    drawFlowText(g,font,label,bx+(bw-font.width(label))/2,by+(bh-font.lineHeight)/2,color,true);
                     buttonIndex++;
                 }
             }
             String credit="VIP EDITION  •  MADE BY ALPBEY3503";
-            g.text(font,credit,left+22,bottom-18,textColor(),true);
+            drawFlowText(g,font,credit,left+22,bottom-18,textColor(),true);
         }
         @Override public void onClose(){Minecraft.getInstance().setScreen(parent);}
     }

@@ -75,6 +75,8 @@ public class StreamerCounterClient implements ClientModInitializer {
         long auctionSoldUntil = 0L;
         int auctionMinBid = 0;
         boolean auctionShowWorld = true;
+        int auctionHudX=-1, auctionHudY=28, timerHudX=-1, timerHudY=-1;
+        float auctionHudScale=1.0f, timerHudScale=1.0f;
         int timerDurationSeconds = 60;
         long timerEndTime = 0L;
         boolean timerActive = false;
@@ -252,9 +254,11 @@ public class StreamerCounterClient implements ClientModInitializer {
     
         if (data.auctionSold && System.currentTimeMillis() > data.auctionSoldUntil) { data.auctionSold=false; data.auctionWinner=""; data.auctionHighestBid=0; data.auctionHighestPlayer="No bids yet"; save(); }
         if (data.auctionShowWorld && (data.auctionActive || (data.auctionSold && System.currentTimeMillis() <= data.auctionSoldUntil))) {
-            int cx = mc.getWindow().getGuiScaledWidth()/2, y = 28;
+            int hudW=mc.getWindow().getGuiScaledWidth(), hudH=mc.getWindow().getGuiScaledHeight();
+            float auctionScale=Math.max(0.6f,Math.min(1.8f,data.auctionHudScale)); int aw=(int)(132*auctionScale), ah=(int)((data.auctionSold?104:76)*auctionScale);
+            int cx=data.auctionHudX<0?hudW/2:data.auctionHudX, y=data.auctionHudY;
             long left = data.auctionActive ? Math.max(0,(data.auctionEndTime-System.currentTimeMillis()+999)/1000) : 0;
-            graphics.fill(cx-132,y,cx+132,y+(data.auctionSold?104:76),0xCC120C08); graphics.fill(cx-132,y,cx+132,y+2,0xFFFF8126);
+            graphics.fill(cx-aw,y,cx+aw,y+ah,0xCC120C08); graphics.fill(cx-aw,y,cx+aw,y+2,0xFFFF8126);
             if (data.auctionActive && mc.player != null) {
                 for (int slot=0; slot<mc.player.getInventory().getContainerSize(); slot++) {
                     var stack=mc.player.getInventory().getItem(slot);
@@ -284,10 +288,10 @@ public class StreamerCounterClient implements ClientModInitializer {
         if(data.timerActive && System.currentTimeMillis()>=data.timerEndTime){data.timerActive=false;data.timerFinished=true;save();}
         if(data.timerActive || data.timerFinished){
             long remain=data.timerActive?Math.max(0,(data.timerEndTime-System.currentTimeMillis()+999)/1000):0;
-            int timerCx=mc.getWindow().getGuiScaledWidth()/2, timerCy=mc.getWindow().getGuiScaledHeight()/3;
+            int timerCx=data.timerHudX<0?mc.getWindow().getGuiScaledWidth()/2:data.timerHudX, timerCy=data.timerHudY<0?mc.getWindow().getGuiScaledHeight()/3:data.timerHudY; float timerScale=Math.max(0.6f,Math.min(1.8f,data.timerHudScale)); int timerRadius=(int)(62*timerScale);
             int total=Math.max(1,data.timerDurationSeconds); double progress=data.timerActive?Math.max(0,Math.min(1,(double)remain/total)):0;
-            graphics.fill(timerCx-62,timerCy-62,timerCx+62,timerCy+62,0xCC10131B);
-            for(int i=0;i<60;i++){double a=-Math.PI/2+i*Math.PI*2/60;int px=timerCx+(int)(53*Math.cos(a)),py=timerCy+(int)(53*Math.sin(a));int col=(i<Math.round(progress*60))?0xFFFFC04A:0xFF48505D;graphics.fill(px-2,py-2,px+3,py+3,col);}
+            graphics.fill(timerCx-timerRadius,timerCy-timerRadius,timerCx+timerRadius,timerCy+timerRadius,0xCC10131B);
+            for(int i=0;i<60;i++){double a=-Math.PI/2+i*Math.PI*2/60;int px=timerCx+(int)(timerRadius*0.85*Math.cos(a)),py=timerCy+(int)(timerRadius*0.85*Math.sin(a));int col=(i<Math.round(progress*60))?0xFFFFC04A:0xFF48505D;graphics.fill(px-2,py-2,px+3,py+3,col);}
             String time=String.format(Locale.ROOT,"%02d:%02d",remain/60,remain%60);
             graphics.text(mc.font,Component.literal(time),timerCx-mc.font.width(time)/2,timerCy-5,0xFFFFFFFF);
             String status=data.timerFinished?"TIME UP":"TIMER";
@@ -826,6 +830,18 @@ public class StreamerCounterClient implements ClientModInitializer {
                 addRenderableWidget(Button.builder(Component.literal("Reset HUD Position"),b->{data.hudX=-1;data.hudY=8;save();}).bounds(contentX,bodyTop+60,180,22).build());
                 addRenderableWidget(Button.builder(Component.literal("Reset All Counters"),b->{data.counts.clear();data.lastName=null;pending=null;save();Minecraft.getInstance().setScreen(new CounterMenuScreen(parent,0,5));}).bounds(contentX,bodyTop+90,180,22).build());
                 addRenderableWidget(Button.builder(Component.literal("Close Menu"),b->onClose()).bounds(contentX,bodyTop+120,180,22).build());
+                addRenderableWidget(Button.builder(Component.literal("Auction ←"),b->{data.auctionHudX=Math.max(140,(data.auctionHudX<0?width/2:data.auctionHudX)-20);save();}).bounds(x,bodyTop+154,78,20).build());
+                addRenderableWidget(Button.builder(Component.literal("Auction →"),b->{data.auctionHudX=(data.auctionHudX<0?width/2:data.auctionHudX)+20;save();}).bounds(x+82,bodyTop+154,78,20).build());
+                addRenderableWidget(Button.builder(Component.literal("Auction ↑"),b->{data.auctionHudY=Math.max(20,data.auctionHudY-20);save();}).bounds(x,bodyTop+178,78,20).build());
+                addRenderableWidget(Button.builder(Component.literal("Auction ↓"),b->{data.auctionHudY+=20;save();}).bounds(x+82,bodyTop+178,78,20).build());
+                addRenderableWidget(Button.builder(Component.literal("Auction size −"),b->{data.auctionHudScale=Math.max(0.6f,data.auctionHudScale-0.1f);save();}).bounds(x,bodyTop+202,92,20).build());
+                addRenderableWidget(Button.builder(Component.literal("Auction size +"),b->{data.auctionHudScale=Math.min(1.8f,data.auctionHudScale+0.1f);save();}).bounds(x+96,bodyTop+202,92,20).build());
+                addRenderableWidget(Button.builder(Component.literal("Timer ←"),b->{data.timerHudX=Math.max(70,(data.timerHudX<0?width/2:data.timerHudX)-20);save();}).bounds(x+210,bodyTop+154,78,20).build());
+                addRenderableWidget(Button.builder(Component.literal("Timer →"),b->{data.timerHudX=(data.timerHudX<0?width/2:data.timerHudX)+20;save();}).bounds(x+292,bodyTop+154,78,20).build());
+                addRenderableWidget(Button.builder(Component.literal("Timer ↑"),b->{data.timerHudY=Math.max(70,(data.timerHudY<0?height/3:data.timerHudY)-20);save();}).bounds(x+210,bodyTop+178,78,20).build());
+                addRenderableWidget(Button.builder(Component.literal("Timer ↓"),b->{data.timerHudY=(data.timerHudY<0?height/3:data.timerHudY)+20;save();}).bounds(x+292,bodyTop+178,78,20).build());
+                addRenderableWidget(Button.builder(Component.literal("Timer size −"),b->{data.timerHudScale=Math.max(0.6f,data.timerHudScale-0.1f);save();}).bounds(x+210,bodyTop+202,92,20).build());
+                addRenderableWidget(Button.builder(Component.literal("Timer size +"),b->{data.timerHudScale=Math.min(1.8f,data.timerHudScale+0.1f);save();}).bounds(x+306,bodyTop+202,92,20).build());
             }
         
             // Apply translucency to the actual top-level VIP menu controls.
@@ -900,16 +916,16 @@ public class StreamerCounterClient implements ClientModInitializer {
         private EditBox secondsField;
         TimerScreen(Screen parent){super(Component.literal("VIP Timer"));this.parent=parent;}
         @Override protected void init(){
-            int cx=width/2, top=height/2-105;
-            secondsField=new EditBox(font,cx-70,top+38,140,22,Component.literal("Seconds"));
+            int cx=width/2, top=height/2-125;
+            secondsField=new EditBox(font,cx-70,top+48,180,26,Component.literal("Seconds"));
             secondsField.setValue(String.valueOf(data.timerDurationSeconds));addRenderableWidget(secondsField);
             int[] vals={10,30,60,120,300,600}; String[] labels={"10 sec","30 sec","1 min","2 min","5 min","10 min"};
-            for(int i=0;i<vals.length;i++){final int v=vals[i];addRenderableWidget(Button.builder(Component.literal(labels[i]),b->{data.timerDurationSeconds=v;secondsField.setValue(String.valueOf(v));save();}).bounds(cx-150+(i%3)*102,top+70+(i/3)*26,96,22).build());}
-            addRenderableWidget(Button.builder(Component.literal("Start timer"),b->{try{data.timerDurationSeconds=Math.max(1,Math.min(86400,Integer.parseInt(secondsField.getValue().trim())));}catch(Exception ignored){data.timerDurationSeconds=60;}data.timerEndTime=System.currentTimeMillis()+data.timerDurationSeconds*1000L;data.timerActive=true;data.timerFinished=false;save();Minecraft.getInstance().setScreen(parent);}).bounds(cx-150,top+132,145,24).build());
+            for(int i=0;i<vals.length;i++){final int v=vals[i];addRenderableWidget(Button.builder(Component.literal(labels[i]),b->{data.timerDurationSeconds=v;secondsField.setValue(String.valueOf(v));save();}).bounds(cx-150+(i%3)*102,top+88+(i/3)*30,96,24).build());}
+            addRenderableWidget(Button.builder(Component.literal("Start timer"),b->{try{data.timerDurationSeconds=Math.max(1,Math.min(86400,Integer.parseInt(secondsField.getValue().trim())));}catch(Exception ignored){data.timerDurationSeconds=60;}data.timerEndTime=System.currentTimeMillis()+data.timerDurationSeconds*1000L;data.timerActive=true;data.timerFinished=false;save();Minecraft.getInstance().setScreen(parent);}).bounds(cx-150,top+166,145,28).build());
             addRenderableWidget(Button.builder(Component.literal(data.timerActive?"Stop timer":"Reset"),b->{data.timerActive=false;data.timerFinished=false;data.timerEndTime=0;save();Minecraft.getInstance().setScreen(new TimerScreen(parent));}).bounds(cx+5,top+132,145,24).build());
-            addRenderableWidget(Button.builder(Component.literal("Back to Tools"),b->Minecraft.getInstance().setScreen(parent)).bounds(cx-75,top+166,150,22).build());
+            addRenderableWidget(Button.builder(Component.literal("Back to Tools"),b->Minecraft.getInstance().setScreen(parent)).bounds(cx-75,top+202,150,24).build());
         }
-        @Override public void extractRenderState(GuiGraphicsExtractor g,int mouseX,int mouseY,float delta){super.extractRenderState(g,mouseX,mouseY,delta);g.text(font,Component.literal("TIMER  •  "+(data.timerActive?"RUNNING":data.timerFinished?"FINISHED":"READY")),width/2-font.width("TIMER  •  READY")/2,height/2-94,0xFFFFC04A);g.text(font,Component.literal("Choose a preset or enter seconds"),width/2-font.width("Choose a preset or enter seconds")/2,height/2-54,0xFFFFFFFF);}
+        @Override public void extractRenderState(GuiGraphicsExtractor g,int mouseX,int mouseY,float delta){g.fill(0,0,width,height,0x88000000);g.fill(width/2-190,height/2-143,width/2+190,height/2+113,0xE8120F0B);g.fill(width/2-190,height/2-143,width/2+190,height/2-139,0xFFFF8126);super.extractRenderState(g,mouseX,mouseY,delta);g.text(font,Component.literal("TIMER  •  "+(data.timerActive?"RUNNING":data.timerFinished?"FINISHED":"READY")),width/2-font.width("TIMER  •  READY")/2,height/2-94,0xFFFFC04A);g.text(font,Component.literal("Choose a preset or enter seconds"),width/2-font.width("Choose a preset or enter seconds")/2,height/2-54,0xFFFFFFFF);}
     }
 
     private static class AuctionScreen extends Screen {

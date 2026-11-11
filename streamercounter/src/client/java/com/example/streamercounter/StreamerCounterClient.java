@@ -108,6 +108,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         String text = "Your text";
         int x = 80, y = 80, color = 0xFFFFFFFF, size = 16;
         String font = "default";
+        String effect = "flow";
         boolean visible = true, bold = false, italic = false, shadow = true;
     }
 
@@ -254,18 +255,16 @@ public class StreamerCounterClient implements ClientModInitializer {
             ctx.getMatrices().translate(entry.x, entry.y);
             ctx.getMatrices().scale(scale, scale);
             
-            if ("flow".equals(entry.font)) {
-                int[] flow = {0xFFFF5C8A,0xFFFFB347,0xFFFFFF66,0xFF75E08A,0xFF62D9FF,0xFFB58CFF};
-                int px=0;
-                for(int ci=0;ci<entry.text.length();ci++){
-                    String ch=String.valueOf(entry.text.charAt(ci));
-                    int color=flow[ci%flow.length];
-                    ctx.drawText(MinecraftClient.getInstance().textRenderer,Text.literal(ch),px,0,color,entry.shadow);
-                    px+=MinecraftClient.getInstance().textRenderer.getWidth(ch);
-                }
+            if ("flow".equals(entry.effect)) {
+                drawFlowText(ctx, MinecraftClient.getInstance().textRenderer, entry.text, 0, 0, 0xFFE34B55, entry.shadow);
+            } else if ("pulse".equals(entry.effect)) {
+                int pulse = (int)(128 + 127 * Math.sin(System.currentTimeMillis() / 180.0));
+                int color = (pulse > 185) ? 0xFFFFFFFF : 0xFFE34B55;
+                Text styled = Text.literal(entry.text).styled(st -> st.withBold(entry.bold).withItalic(entry.italic));
+                ctx.drawText(MinecraftClient.getInstance().textRenderer, styled, 0, 0, color, entry.shadow);
             } else {
-                Text styled=Text.literal(entry.text).styled(st->st.withBold(entry.bold).withItalic(entry.italic));
-                ctx.drawText(MinecraftClient.getInstance().textRenderer,styled,0,0,entry.color,entry.shadow);
+                Text styled = Text.literal(entry.text).styled(st -> st.withBold(entry.bold).withItalic(entry.italic));
+                ctx.drawText(MinecraftClient.getInstance().textRenderer, styled, 0, 0, 0xFFFFFFFF, entry.shadow);
             }
             ctx.getMatrices().popMatrix();
         }
@@ -352,7 +351,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             int cp = text.codePointAt(offset);
             String glyph = new String(Character.toChars(cp));
             float wave = (float)(0.5 + 0.5 * Math.sin(index * 0.72 - phase));
-            ctx.drawText(font, glyph, cursor, y, blendColor(base, 0xFFFFFFFF, 0.12f + wave * 0.48f), shadow);
+            ctx.drawText(font, glyph, cursor, y, blendColor(0xFFE34B55, 0xFFFFFFFF, 0.10f + wave * 0.78f), shadow);
             cursor += font.getWidth(glyph);
             offset += Character.charCount(cp);
             index++;
@@ -585,8 +584,11 @@ public class StreamerCounterClient implements ClientModInitializer {
             addDrawableChild(ButtonWidget.builder(Text.literal("Size +"),b->{ScreenText t=current();if(t!=null){t.size=Math.min(96,t.size+2);save();}})
                 .dimensions(x+74,236,68,20).build());
             addDrawableChild(ButtonWidget.builder(Text.literal("Font / Style"),b->{
-                ScreenText t=current(); if(t!=null){String[] styles={"default","bold","italic","bold_italic","flow"};int n=0;for(;n<styles.length;n++)if(styles[n].equals(t.font))break;t.font=styles[(n+1)%styles.length];t.bold=t.font.equals("bold")||t.font.equals("bold_italic");t.italic=t.font.equals("italic")||t.font.equals("bold_italic");save();clearAndInit();}
+                ScreenText t=current(); if(t!=null){String[] styles={"default","bold","italic","bold_italic"};int n=0;for(;n<styles.length;n++)if(styles[n].equals(t.font))break;t.font=styles[(n+1)%styles.length];t.bold=t.font.equals("bold")||t.font.equals("bold_italic");t.italic=t.font.equals("italic")||t.font.equals("bold_italic");save();clearAndInit();}
             }).dimensions(x,288,146,20).build());
+            addDrawableChild(ButtonWidget.builder(Text.literal("Effect: " + (current()==null ? "Flow" : current().effect)),b->{
+                ScreenText t=current(); if(t!=null){String[] effects={"flow","pulse","static"};int n=0;for(;n<effects.length;n++)if(effects[n].equals(t.effect))break;t.effect=effects[(n+1)%effects.length];save();clearAndInit();}
+            }).dimensions(x,352,146,20).build());
             addDrawableChild(ButtonWidget.builder(Text.literal("Color"),b->{
                 ScreenText t=current();if(t!=null){int[] colors={0xFFFFFFFF,0xFFFFD54F,0xFF69D8FF,0xFFFF6B6B,0xFF78E08F};int n=0;for(;n<colors.length;n++)if(colors[n]==t.color)break;t.color=colors[(n+1)%colors.length];save();}
             }).dimensions(x,320,68,20).build());
@@ -635,10 +637,16 @@ public class StreamerCounterClient implements ClientModInitializer {
                 float scale=Math.max(8,Math.min(96,item.size))/9.0f;
                 ctx.getMatrices().pushMatrix(); ctx.getMatrices().translate(item.x,item.y); ctx.getMatrices().scale(scale,scale);
                 
-                if("flow".equals(item.font)){
-                    int[] flow={0xFFFF5C8A,0xFFFFB347,0xFFFFFF66,0xFF75E08A,0xFF62D9FF,0xFFB58CFF};int px=0;
-                    for(int ci=0;ci<item.text.length();ci++){String ch=String.valueOf(item.text.charAt(ci));ctx.drawText(textRenderer,Text.literal(ch),px,0,flow[ci%flow.length],item.shadow);px+=textRenderer.getWidth(ch);}
-                }else{Text styled=Text.literal(item.text).styled(st->st.withBold(item.bold).withItalic(item.italic));ctx.drawText(textRenderer,styled,0,0,item.color,item.shadow);} ctx.getMatrices().popMatrix();
+                if("flow".equals(item.effect)){
+                    drawFlowText(ctx,textRenderer,item.text,0,0,0xFFE34B55,item.shadow);
+                }else if("pulse".equals(item.effect)){
+                    int pulse=(int)(128+127*Math.sin(System.currentTimeMillis()/180.0));
+                    Text styled=Text.literal(item.text).styled(st->st.withBold(item.bold).withItalic(item.italic));
+                    ctx.drawText(textRenderer,styled,0,0,pulse>185?0xFFFFFFFF:0xFFE34B55,item.shadow);
+                }else{
+                    Text styled=Text.literal(item.text).styled(st->st.withBold(item.bold).withItalic(item.italic));
+                    ctx.drawText(textRenderer,styled,0,0,0xFFFFFFFF,item.shadow);
+                } ctx.getMatrices().popMatrix();
             }
             ScreenText chosen=current();
             if(chosen!=null) ctx.drawText(textRenderer,"Selected: "+(chosen.text==null?"":chosen.text)+"   |   Size: "+chosen.size,right+16,top+365,0xFFB8C7D9,true);

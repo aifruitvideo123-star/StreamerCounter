@@ -305,6 +305,11 @@ public class StreamerCounterClient implements ClientModInitializer {
         }
         }
         if(data.timerActive && System.currentTimeMillis()>=data.timerEndTime){data.timerActive=false;data.timerFinished=true;timerFinishedAt=System.currentTimeMillis();save();}
+        if(timerFinishedAt>0 && System.currentTimeMillis()-timerFinishedAt>=5200){
+            data.timerFinished=false;
+            timerFinishedAt=0L;
+            save();
+        }
         if(data.timerActive || data.timerFinished){
             long remain=data.timerActive?Math.max(0,(data.timerEndTime-System.currentTimeMillis()+999)/1000):0;
             int timerCx=data.timerHudX<0?ctx.getScaledWindowWidth()/2:data.timerHudX, timerCy=data.timerHudY<0?ctx.getScaledWindowHeight()/3:data.timerHudY; float timerScale=Math.max(0.6f,Math.min(1.8f,data.timerHudScale)); int timerRadius=(int)(62*timerScale);

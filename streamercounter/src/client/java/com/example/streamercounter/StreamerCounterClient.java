@@ -255,7 +255,8 @@ public class StreamerCounterClient implements ClientModInitializer {
             ctx.getMatrices().popMatrix();
         }
     
-        if (data.auctionSold && System.currentTimeMillis() > data.auctionSoldUntil) { data.auctionSold=false; data.auctionWinner=""; data.auctionHighestBid=0; data.auctionHighestPlayer="No bids yet"; save(); }\n        if (data.auctionShowWorld && (data.auctionActive || (data.auctionSold && System.currentTimeMillis() <= data.auctionSoldUntil))) {
+        if (data.auctionSold && System.currentTimeMillis() > data.auctionSoldUntil) { data.auctionSold=false; data.auctionWinner=""; data.auctionHighestBid=0; data.auctionHighestPlayer="No bids yet"; save(); }
+        if (data.auctionShowWorld && (data.auctionActive || (data.auctionSold && System.currentTimeMillis() <= data.auctionSoldUntil))) {
             int cx = ctx.getScaledWindowWidth()/2, y = 28;
             long left = data.auctionActive ? Math.max(0,(data.auctionEndTime-System.currentTimeMillis()+999)/1000) : 0;
             ctx.fill(cx-132,y,cx+132,y+(data.auctionSold?104:76),0xCC120C08); ctx.fill(cx-132,y,cx+132,y+2,0xFFFF8126);

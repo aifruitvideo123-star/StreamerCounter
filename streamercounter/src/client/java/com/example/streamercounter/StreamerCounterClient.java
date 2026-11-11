@@ -298,6 +298,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             drawFlowText(ctx,MinecraftClient.getInstance().textRenderer,data.auctionWinner,bannerCx-100,bannerCy-7,0xFFFFFFFF,true);
             drawFlowText(ctx,MinecraftClient.getInstance().textRenderer,"WON FOR $"+formatAuctionMoney(data.auctionHighestBid),bannerCx-100,bannerCy+14,0xFFFF8126,true);
         }
+        }
         if(data.timerActive && System.currentTimeMillis()>=data.timerEndTime){data.timerActive=false;data.timerFinished=true;save();}
         if(data.timerActive || data.timerFinished){
             long remain=data.timerActive?Math.max(0,(data.timerEndTime-System.currentTimeMillis()+999)/1000):0;

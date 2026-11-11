@@ -275,25 +275,25 @@ public class StreamerCounterClient implements ClientModInitializer {
                     if (!stack.isEmpty() && stack.getName().getString().equals(data.auctionItem)) { ctx.drawItem(stack,cx-124,y+8); break; }
                 }
             }
-            drawFlowText(ctx,MinecraftClient.getInstance().textRe        if (data.auctionActive && System.currentTimeMillis() >= data.auctionEndTime) {
+            drawFlowText(ctx,MinecraftClient.getInstance().textRenderer,data.auctionSold ? "SOLD" : data.auctionItem,cx-100,y+8,0xFFFFFFFF,true);
+            drawFlowText(ctx,MinecraftClient.getInstance().textRenderer,data.auctionActive ? String.format(Locale.ROOT,"%02d:%02d",left/60,left%60) : data.auctionWinner,cx-100,y+27,0xFFFF8126,true);
+            drawFlowText(ctx,MinecraftClient.getInstance().textRenderer,data.auctionHighestPlayer+"  $"+formatAuctionMoney(data.auctionHighestBid),cx-100,y+49,data.textColor,true);
+            if (data.auctionActive && System.currentTimeMillis() >= data.auctionEndTime) {
             data.auctionActive=false; data.auctionSold=true;
             data.auctionWinner=data.auctionHighestBid>0?data.auctionHighestPlayer:"No bids";
             data.auctionSoldUntil=System.currentTimeMillis()+10000L; save();
         }
         if (data.auctionSold && System.currentTimeMillis() <= data.auctionSoldUntil) {
-            long elapsed = System.currentTimeMillis() - (data.auctionSoldUntil - 10000L);
-            int pulse = (int)(Math.sin(elapsed / 150.0) * 5) + 5;
-            int cx = ctx.getScaledWindowWidth()/2, cy = ctx.getScaledWindowHeight()/2;
+            long elapsed=10000L-(data.auctionSoldUntil-System.currentTimeMillis());
+            int pulse=(int)(Math.sin(elapsed/150.0)*5)+5;
+            int cx=ctx.getScaledWindowWidth()/2, cy=ctx.getScaledWindowHeight()/2;
             ctx.fill(cx-154-pulse,cy-42,cx+154+pulse,cy+43,0xDD120C08);
             ctx.fill(cx-154-pulse,cy-42,cx+154+pulse,cy-39,0xFFFF8126);
             drawFlowText(ctx,MinecraftClient.getInstance().textRenderer,"★ AUCTION WON ★",cx-92,cy-29,0xFFFFC04A,true);
             drawFlowText(ctx,MinecraftClient.getInstance().textRenderer,data.auctionWinner,cx-100,cy-7,0xFFFFFFFF,true);
             drawFlowText(ctx,MinecraftClient.getInstance().textRenderer,"WON FOR $"+formatAuctionMoney(data.auctionHighestBid),cx-100,cy+14,0xFFFF8126,true);
         }
-nderer,data.auctionSold ? "SOLD" : data.auctionItem,cx-100,y+8,0xFFFFFFFF,true);
-            drawFlowText(ctx,MinecraftClient.getInstance().textRenderer,data.auctionActive ? String.format(Locale.ROOT,"%02d:%02d",left/60,left%60) : data.auctionWinner,cx-100,y+27,0xFFFF8126,true);
-            drawFlowText(ctx,MinecraftClient.getInstance().textRenderer,data.auctionHighestPlayer+"  $"+formatAuctionMoney(data.auctionHighestBid),cx-100,y+49,data.textColor,true);
-        }
+    }
 
 }
 
@@ -868,7 +868,15 @@ nderer,data.auctionSold ? "SOLD" : data.auctionItem,cx-100,y+8,0xFFFFFFFF,true);
             int cx=width/2,t=height/2-170,a=data.iceTheme?0xFF69D8FF:0xFFFF8126;
             g.fill(0,0,width,height,0x55000000);g.fill(cx-340,t,cx+340,t+340,0xEE160E0A);g.fill(cx-340,t,cx+340,t+2,a);g.fill(cx,t+42,cx+1,t+310,0x665B4635);
             drawFlowText(g,textRenderer,data.auctionSold?"AUCTION COMPLETE":data.auctionActive?"LIVE AUCTION":"NEW AUCTION",cx-318,t+18,0xFFFFFFFF,true);
-            else{
+            if(data.auctionSold){
+                // Winner animation is rendered by the in-game HUD.
+            long elapsed=System.currentTimeMillis();int pulse=(int)(Math.sin(elapsed/180.0)*5)+12;
+                g.fill(cx-310,t+82,cx+310,t+230,0x552A1608);g.fill(cx-310,t+82,cx-310+pulse,t+230,a);g.fill(cx+310-pulse,t+82,cx+310,t+230,a);
+                drawFlowText(g,textRenderer,"★  SOLD  ★",cx-65,t+104,a,true);drawFlowText(g,textRenderer,data.auctionWinner,cx-130,t+142,0xFFFFFFFF,true);
+                drawFlowText(g,textRenderer,"WINNING BID  $"+formatAuctionMoney(data.auctionHighestBid),cx-145,t+174,data.textColor,true);
+                drawFlowText(g,textRenderer,"This result closes in 10 seconds",cx-125,t+205,0xFFB9A28D,true);
+                for(int i=0;i<18;i++){int px=cx-280+(int)((i*47+elapsed/18)%560);int py=t+65+(int)((i*31+elapsed/12)%190);g.fill(px,py,px+4,py+4,(i%2==0)?a:0xFFFFD76A);}
+            }else{
                 MinecraftClient client=MinecraftClient.getInstance();
                 if(client.player!=null){for(int slot=0;slot<client.player.getInventory().size();slot++){var stack=client.player.getInventory().getStack(slot);if(!stack.isEmpty()&&stack.getName().getString().equals(data.auctionItem)){g.drawItem(stack,cx-318,t+52);break;}}}
                 drawFlowText(g,textRenderer,"ITEM",cx-286,t+48,a,true);drawFlowText(g,textRenderer,data.auctionItem,cx-286,t+68,0xFFFFFFFF,true);

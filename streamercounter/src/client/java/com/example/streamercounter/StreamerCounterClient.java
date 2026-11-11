@@ -875,7 +875,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                 for(int i=0;i<ds.length;i++){
                     final int seconds=ds[i];
                     addRenderableWidget(Button.builder(Component.literal(labels[i]),b->{
-                        data.auctionDurationSeconds=seconds;save();Minecraft.getInstance().gui.setScreen(new AuctionScreen(parent));
+                        data.auctionDurationSeconds=seconds;save();Minecraft.getInstance().setScreen(new AuctionScreen(parent));
                     }).bounds(left+i*56,t+144,52,20).build());
                 }
                 addRenderableWidget(Button.builder(Component.literal("Start auction"),b->{
@@ -883,7 +883,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                     data.auctionBids.clear();data.auctionHighestBid=0;data.auctionHighestPlayer="No bids yet";
                     data.auctionSold=false;data.auctionActive=true;
                     data.auctionEndTime=System.currentTimeMillis()+data.auctionDurationSeconds*1000L;
-                    save();Minecraft.getInstance().gui.setScreen(new AuctionScreen(parent));
+                    save();Minecraft.getInstance().setScreen(new AuctionScreen(parent));
                 }).bounds(left,t+226,280,26).build());
 
                 Minecraft mc=Minecraft.getInstance();
@@ -897,7 +897,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                         int col=shown%2,row=shown/2;
                         String label=itemName.length()>15?itemName.substring(0,14)+"…":itemName;
                         addRenderableWidget(Button.builder(Component.literal(label+" x"+count),b->{
-                            data.auctionItem=itemName;save();Minecraft.getInstance().gui.setScreen(new AuctionScreen(parent));
+                            data.auctionItem=itemName;save();Minecraft.getInstance().setScreen(new AuctionScreen(parent));
                         }).bounds(cx+22+col*150,t+78+row*27,144,22).build());
                         shown++;
                     }
@@ -909,10 +909,10 @@ public class StreamerCounterClient implements ClientModInitializer {
                 addRenderableWidget(Button.builder(Component.literal("End now"),b->finish()).bounds(left,t+178,132,22).build());
                 addRenderableWidget(Button.builder(Component.literal("Cancel"),b->{
                     data.auctionActive=false;data.auctionBids.clear();data.auctionSold=false;save();
-                    Minecraft.getInstance().gui.setScreen(new AuctionScreen(parent));
+                    Minecraft.getInstance().setScreen(new AuctionScreen(parent));
                 }).bounds(left+140,t+178,132,22).build());
             }
-            addRenderableWidget(Button.builder(Component.literal("Back to Tools"),b->Minecraft.getInstance().gui.setScreen(parent))
+            addRenderableWidget(Button.builder(Component.literal("Back to Tools"),b->Minecraft.getInstance().setScreen(parent))
                 .bounds(left,t+278,160,22).build());
         }
 
@@ -921,7 +921,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             data.auctionActive=false;data.auctionSold=true;
             data.auctionWinner=data.auctionHighestBid>0?data.auctionHighestPlayer:"No bids";
             data.auctionSoldUntil=System.currentTimeMillis()+10000L;save();
-            Minecraft.getInstance().gui.setScreen(new AuctionScreen(parent));
+            Minecraft.getInstance().setScreen(new AuctionScreen(parent));
         }
 
         @Override public void extractRenderState(GuiGraphicsExtractor g,int mx,int my,float delta){
@@ -952,7 +952,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                     for(int slot=0;slot<client.player.getInventory().getContainerSize();slot++){
                         var stack=client.player.getInventory().getItem(slot);
                         if(!stack.isEmpty()&&stack.getHoverName().getString().equals(data.auctionItem)){
-                            g.renderItem(stack,cx-318,t+52); break;
+                            g.fill(cx-318,t+52,cx-294,t+76,0xFFFF8126); break;
                         }
                     }
                 }
@@ -986,9 +986,9 @@ public class StreamerCounterClient implements ClientModInitializer {
             if(data.auctionActive&&System.currentTimeMillis()>=data.auctionEndTime)finish();
             if(data.auctionSold&&System.currentTimeMillis()>data.auctionSoldUntil){
                 data.auctionSold=false;data.auctionWinner="";data.auctionHighestBid=0;data.auctionHighestPlayer="No bids yet";save();
-                Minecraft.getInstance().gui.setScreen(parent);
+                Minecraft.getInstance().setScreen(parent);
             }
         }
-        @Override public void onClose(){Minecraft.getInstance().gui.setScreen(parent);}
+        @Override public void onClose(){Minecraft.getInstance().setScreen(parent);}
     }
 }

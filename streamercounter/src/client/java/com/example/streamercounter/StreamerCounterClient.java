@@ -203,7 +203,20 @@ public class StreamerCounterClient implements ClientModInitializer {
                 graphics.pose().popMatrix();
             }
         }
-    }
+    
+        if (data.auctionActive && data.auctionHud) {
+            long remaining = Math.max(0L, data.auctionEndTime - System.currentTimeMillis());
+            String timer = remaining > 0 ? String.format(Locale.ROOT, "%02d:%02d", remaining/60000, (remaining/1000)%60) : "SOLD";
+            Minecraft mc = Minecraft.getInstance();
+            int sw=220, sh=58, sx=(mc.getWindow().getGuiScaledWidth()-sw)/2, sy=mc.getWindow().getGuiScaledHeight()-112;
+            graphics.fill(sx,sy,sx+sw,sy+sh,0xE5101118);
+            graphics.fill(sx,sy,sx+sw,sy+3,0xFFFF8428);
+            graphics.text(mc.font,timer,sx+10,sy+10,remaining>0?0xFFFF653B:0xFFFFD36A,true);
+            graphics.text(mc.font,data.auctionItem,sx+70,sy+10,0xFFFFFFFF,true);
+            graphics.text(mc.font,"Starting bid: "+data.auctionBid+"  •  x"+data.auctionAmount,sx+10,sy+34,0xFFB8C7D9,true);
+        }
+
+}
 
     private static void drawHud(GuiGraphicsExtractor graphics, int x, int y) {
         Minecraft mc = Minecraft.getInstance();

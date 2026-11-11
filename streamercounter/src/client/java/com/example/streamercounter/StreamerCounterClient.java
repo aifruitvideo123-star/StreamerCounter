@@ -904,11 +904,11 @@ public class StreamerCounterClient implements ClientModInitializer {
     private static class LayoutEditScreen extends Screen {
         private final Screen parent; private int selected=0; private boolean dragging=false; private double offX,offY;
         LayoutEditScreen(Screen parent){super(Component.literal("Move and resize HUDs"));this.parent=parent;}
-        private int px(int i){return i==0?(data.hudX<0?width-hudWidth(data.hudScale)-8:data.hudX):i==1?(data.auctionHudX<0?width/2:data.auctionHudX):(data.timerHudX<0?width/2:data.timerHudX);}
-        private int py(int i){return i==0?visibleHudY(height):i==1?data.auctionHudY:(data.timerHudY<0?height/3:data.timerHudY);}
+        private int px(int i){return i==0?(data.hudX<0?width-hudWidth(data.hudScale)-8:data.hudX):i==1?(data.auctionHudX<0?width/2-pw(1)/2:data.auctionHudX-pw(1)/2):(data.timerHudX<0?width/2-pw(2)/2:data.timerHudX-pw(2)/2);}
+        private int py(int i){return i==0?visibleHudY(height):i==1?data.auctionHudY:(data.timerHudY<0?height/3- pw(2)/2:data.timerHudY-pw(2)/2);}
         private int pw(int i){return i==0?hudWidth(data.hudScale):i==1?(int)(264*Math.max(.6f,Math.min(1.8f,data.auctionHudScale))):(int)(124*Math.max(.6f,Math.min(1.8f,data.timerHudScale)));}
-        private int ph(int i){return i==0?hudHeight(data.hudScale):i==1?104:(int)(124*Math.max(.6f,Math.min(1.8f,data.timerHudScale)));}
-        private void move(int i,int x,int y){if(i==0){data.hudX=x;data.hudY=y;}else if(i==1){data.auctionHudX=x;data.auctionHudY=y;}else{data.timerHudX=x;data.timerHudY=y;}}
+        private int ph(int i){return i==0?hudHeight(data.hudScale):i==1?(int)((data.auctionSold?104:76)*Math.max(.6f,Math.min(1.8f,data.auctionHudScale))):(int)(124*Math.max(.6f,Math.min(1.8f,data.timerHudScale)));}
+        private void move(int i,int x,int y){if(i==0){data.hudX=x;data.hudY=y;}else if(i==1){data.auctionHudX=x+pw(1)/2;data.auctionHudY=y;}else{data.timerHudX=x+pw(2)/2;data.timerHudY=y+pw(2)/2;}}
         private void scale(int i,float d){if(i==0)data.hudScale=Math.max(.5f,Math.min(2f,data.hudScale+d));else if(i==1)data.auctionHudScale=Math.max(.6f,Math.min(1.8f,data.auctionHudScale+d));else data.timerHudScale=Math.max(.6f,Math.min(1.8f,data.timerHudScale+d));}
         @Override protected void init(){addRenderableWidget(Button.builder(Component.literal("Done"),b->Minecraft.getInstance().setScreen(parent)).bounds(width/2-50,height-34,100,22).build());}
         @Override public boolean mouseClicked(MouseButtonEvent e,boolean doubled){if(e.button()==0){for(int i=2;i>=0;i--){int x=px(i),y=py(i),w=pw(i),h=ph(i);if(e.x()>=x&&e.x()<=x+w&&e.y()>=y&&e.y()<=y+h){selected=i;dragging=true;offX=e.x()-x;offY=e.y()-y;return true;}}}return super.mouseClicked(e,doubled);}

@@ -783,18 +783,18 @@ public class StreamerCounterClient implements ClientModInitializer {
                 addDrawableChild(ButtonWidget.builder(Text.literal("Reset All Counters"),b->{data.counts.clear();data.lastName=null;pending=null;save();clearAndInit();}).dimensions(x,bodyTop+90,180,22).build());
                 addDrawableChild(ButtonWidget.builder(Text.literal("Close Menu"),b->close()).dimensions(x,bodyTop+120,180,22).build());
                 addDrawableChild(ButtonWidget.builder(Text.literal("Move and resize HUDs"),b->MinecraftClient.getInstance().setScreen(new LayoutEditScreen(this))).dimensions(x,bodyTop+154,230,26).build());
-                                addDrawableChild(ButtonWidget.builder(Text.literal("Auction ←"),b->{data.auctionHudX=Math.max(140,(data.auctionHudX<0?width/2:data.auctionHudX)-20);save();}).dimensions(x,bodyTop+154,78,20).build());
-                addDrawableChild(ButtonWidget.builder(Text.literal("Auction →"),b->{data.auctionHudX=(data.auctionHudX<0?width/2:data.auctionHudX)+20;save();}).dimensions(x+82,bodyTop+154,78,20).build());
-                addDrawableChild(ButtonWidget.builder(Text.literal("Auction ↑"),b->{data.auctionHudY=Math.max(20,data.auctionHudY-20);save();}).dimensions(x,bodyTop+178,78,20).build());
-                addDrawableChild(ButtonWidget.builder(Text.literal("Auction ↓"),b->{data.auctionHudY+=20;save();}).dimensions(x+82,bodyTop+178,78,20).build());
-                addDrawableChild(ButtonWidget.builder(Text.literal("Auction size −"),b->{data.auctionHudScale=Math.max(0.6f,data.auctionHudScale-0.1f);save();}).dimensions(x,bodyTop+202,92,20).build());
-                addDrawableChild(ButtonWidget.builder(Text.literal("Auction size +"),b->{data.auctionHudScale=Math.min(1.8f,data.auctionHudScale+0.1f);save();}).dimensions(x+96,bodyTop+202,92,20).build());
-                addDrawableChild(ButtonWidget.builder(Text.literal("Timer ←"),b->{data.timerHudX=Math.max(70,(data.timerHudX<0?width/2:data.timerHudX)-20);save();}).dimensions(x+210,bodyTop+154,78,20).build());
-                addDrawableChild(ButtonWidget.builder(Text.literal("Timer →"),b->{data.timerHudX=(data.timerHudX<0?width/2:data.timerHudX)+20;save();}).dimensions(x+292,bodyTop+154,78,20).build());
-                addDrawableChild(ButtonWidget.builder(Text.literal("Timer ↑"),b->{data.timerHudY=Math.max(70,(data.timerHudY<0?height/3:data.timerHudY)-20);save();}).dimensions(x+210,bodyTop+178,78,20).build());
-                addDrawableChild(ButtonWidget.builder(Text.literal("Timer ↓"),b->{data.timerHudY=(data.timerHudY<0?height/3:data.timerHudY)+20;save();}).dimensions(x+292,bodyTop+178,78,20).build());
-                addDrawableChild(ButtonWidget.builder(Text.literal("Timer size −"),b->{data.timerHudScale=Math.max(0.6f,data.timerHudScale-0.1f);save();}).dimensions(x+210,bodyTop+202,92,20).build());
-                addDrawableChild(ButtonWidget.builder(Text.literal("Timer size +"),b->{data.timerHudScale=Math.min(1.8f,data.timerHudScale+0.1f);save();}).dimensions(x+306,bodyTop+202,92,20).build());
+
+
+
+
+
+
+
+
+
+
+
+
             }
         
             // Apply translucency to the actual top-level VIP menu controls.
@@ -852,11 +852,11 @@ public class StreamerCounterClient implements ClientModInitializer {
         private final Screen parent;
         private int selected=0; private boolean dragging=false; private double offX,offY;
         LayoutEditScreen(Screen parent){super(Text.literal("Move and resize HUDs"));this.parent=parent;}
-        private int px(int i){return i==0?(data.hudX<0?width-hudWidth(data.hudScale)-8:data.hudX):i==1?(data.auctionHudX<0?width/2:data.auctionHudX):(data.timerHudX<0?width/2:data.timerHudX);}
-        private int py(int i){return i==0?visibleHudY(height):i==1?data.auctionHudY:(data.timerHudY<0?height/3:data.timerHudY);}
+        private int px(int i){return i==0?(data.hudX<0?width-hudWidth(data.hudScale)-8:data.hudX):i==1?(data.auctionHudX<0?width/2-pw(1)/2:data.auctionHudX-pw(1)/2):(data.timerHudX<0?width/2-pw(2)/2:data.timerHudX-pw(2)/2);}
+        private int py(int i){return i==0?visibleHudY(height):i==1?data.auctionHudY:(data.timerHudY<0?height/3- pw(2)/2:data.timerHudY-pw(2)/2);}
         private int pw(int i){return i==0?hudWidth(data.hudScale):i==1?(int)(264*Math.max(.6f,Math.min(1.8f,data.auctionHudScale))):(int)(124*Math.max(.6f,Math.min(1.8f,data.timerHudScale)));}
-        private int ph(int i){return i==0?hudHeight(data.hudScale):i==1?(int)(data.auctionSold?104:76)*1:(int)(124*Math.max(.6f,Math.min(1.8f,data.timerHudScale));}
-        private void move(int i,int x,int y){if(i==0){data.hudX=x;data.hudY=y;}else if(i==1){data.auctionHudX=x;data.auctionHudY=y;}else{data.timerHudX=x;data.timerHudY=y;}}
+        private int ph(int i){return i==0?hudHeight(data.hudScale):i==1?(int)((data.auctionSold?104:76)*Math.max(.6f,Math.min(1.8f,data.auctionHudScale))):(int)(124*Math.max(.6f,Math.min(1.8f,data.timerHudScale)));}
+        private void move(int i,int x,int y){if(i==0){data.hudX=x;data.hudY=y;}else if(i==1){data.auctionHudX=x+pw(1)/2;data.auctionHudY=y;}else{data.timerHudX=x+pw(2)/2;data.timerHudY=y+pw(2)/2;}}
         private void scale(int i,float d){if(i==0)data.hudScale=Math.max(.5f,Math.min(2f,data.hudScale+d));else if(i==1)data.auctionHudScale=Math.max(.6f,Math.min(1.8f,data.auctionHudScale+d));else data.timerHudScale=Math.max(.6f,Math.min(1.8f,data.timerHudScale+d));}
         @Override protected void init(){addDrawableChild(ButtonWidget.builder(Text.literal("Done"),b->MinecraftClient.getInstance().setScreen(parent)).dimensions(width/2-50,height-34,100,22).build());}
         @Override public boolean mouseClicked(Click click,boolean doubled){if(click.button()==0){for(int i=2;i>=0;i--){int x=px(i),y=py(i),w=pw(i),h=ph(i);if(click.x()>=x&&click.x()<=x+w&&click.y()>=y&&click.y()<=y+h){selected=i;dragging=true;offX=click.x()-x;offY=click.y()-y;return true;}}}return super.mouseClicked(click,doubled);}

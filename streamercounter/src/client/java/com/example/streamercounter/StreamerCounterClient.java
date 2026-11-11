@@ -259,6 +259,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             }
             drawFlowText(graphics,mc.font,data.auctionSold ? "SOLD" : data.auctionItem,cx-100,y+8,0xFFFFFFFF,true);
             drawFlowText(graphics,mc.font,data.auctionActive ? String.format(Locale.ROOT,"%02d:%02d",left/60,left%60) : data.auctionWinner,cx-100,y+27,0xFFFF8126,true);
+            drawFlowText(graphics,mc.font,"DURATION "+formatAuctionDuration(data.auctionDurationSeconds),cx-100,y+39,0xFFFFC04A,true);
             drawFlowText(graphics,mc.font,data.auctionHighestPlayer+"  $"+formatAuctionMoney(data.auctionHighestBid),cx-100,y+49,data.textColor,true);
             if (data.auctionActive && System.currentTimeMillis() >= data.auctionEndTime) {
             data.auctionActive=false; data.auctionSold=true;
@@ -266,14 +267,14 @@ public class StreamerCounterClient implements ClientModInitializer {
             data.auctionSoldUntil=System.currentTimeMillis()+10000L; save();
         }
         if (data.auctionSold && System.currentTimeMillis() <= data.auctionSoldUntil) {
-            long elapsed=10000L-(data.auctionSoldUntil-System.currentTimeMillis());
-            int pulse=(int)(Math.sin(elapsed/150.0)*5)+5;
-            int cx=mc.getWindow().getGuiScaledWidth()/2, cy=mc.getWindow().getGuiScaledHeight()/2;
-            graphics.fill(cx-154-pulse,cy-42,cx+154+pulse,cy+43,0xDD120C08);
-            graphics.fill(cx-154-pulse,cy-42,cx+154+pulse,cy-39,0xFFFF8126);
-            drawFlowText(graphics,mc.font,"★ AUCTION WON ★",cx-92,cy-29,0xFFFFC04A,true);
-            drawFlowText(graphics,mc.font,data.auctionWinner,cx-100,cy-7,0xFFFFFFFF,true);
-            drawFlowText(graphics,mc.font,"WON FOR $"+formatAuctionMoney(data.auctionHighestBid),cx-100,cy+14,0xFFFF8126,true);
+            long bannerElapsed=10000L-(data.auctionSoldUntil-System.currentTimeMillis());
+            int bannerPulse=(int)(Math.sin(bannerElapsed/150.0)*5)+5;
+            int bannerCx=mc.getWindow().getGuiScaledWidth()/2, bannerCy=mc.getWindow().getGuiScaledHeight()/2;
+            graphics.fill(bannerCx-154-bannerPulse,bannerCy-42,bannerCx+154+bannerPulse,bannerCy+43,0xDD120C08);
+            graphics.fill(bannerCx-154-bannerPulse,bannerCy-42,bannerCx+154+bannerPulse,bannerCy-39,0xFFFF8126);
+            drawFlowText(graphics,mc.font,"★ AUCTION WON ★",bannerCx-92,bannerCy-29,0xFFFFC04A,true);
+            drawFlowText(graphics,mc.font,data.auctionWinner,bannerCx-100,bannerCy-7,0xFFFFFFFF,true);
+            drawFlowText(graphics,mc.font,"WON FOR $"+formatAuctionMoney(data.auctionHighestBid),bannerCx-100,bannerCy+14,0xFFFF8126,true);
         }
     }
 
@@ -368,11 +369,11 @@ public class StreamerCounterClient implements ClientModInitializer {
                         button -> {
                             data.textColor = HUD_COLORS[colorIndex];
                             save();
-                            Minecraft.getInstance().gui.setScreen(parent);
+                            Minecraft.getInstance().setScreen(parent);
                         }).bounds(firstX + column * 118, firstY + row * 28, 108, 20).build());
             }
             addRenderableWidget(Button.builder(Component.literal("Back"), button ->
-                    Minecraft.getInstance().gui.setScreen(parent))
+                    Minecraft.getInstance().setScreen(parent))
                     .bounds(center - 50, firstY + 3 * 28 + 4, 100, 20).build());
         }
 
@@ -403,7 +404,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         protected void init() {
             int center = width / 2;
             addRenderableWidget(Button.builder(Component.literal("Text Color: " + hudColorName()), b ->
-                    Minecraft.getInstance().gui.setScreen(new HudColorScreen(this)))
+                    Minecraft.getInstance().setScreen(new HudColorScreen(this)))
                     .bounds(center - 90, height - 86, 180, 20).build());
             addRenderableWidget(Button.builder(Component.literal("Smaller"), b -> {
                 data.hudScale = Math.max(0.6f, data.hudScale - 0.1f);
@@ -481,7 +482,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         public void onClose() {
             draggingHud = false;
             save();
-            Minecraft.getInstance().gui.setScreen(parent);
+            Minecraft.getInstance().setScreen(parent);
         }
     }
 
@@ -653,7 +654,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             if(pending!=null) names.add(pending.toLowerCase(Locale.ROOT));
             return new ArrayList<>(names);
         }
-        private void openTab(int tab) { Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,0,tab)); }
+        private void openTab(int tab) { Minecraft.getInstance().setScreen(new CounterMenuScreen(parent,0,tab)); }
         private Component hudButtonText(){return Component.literal("HUD: "+(data.showHud?"ON":"OFF"));}
         private static final String[] VIP_THEMES={"GOLD","ICE","CHRISTMAS","HALLOWEEN","NETHER","EMERALD","PURPLE","OCEAN"};
         private String currentTheme(){return data.iceTheme&&"GOLD".equals(data.vipTheme)?"ICE":(data.vipTheme==null?"GOLD":data.vipTheme);}
@@ -769,46 +770,46 @@ public class StreamerCounterClient implements ClientModInitializer {
                     String name=names.get(n); int count=data.counts.getOrDefault(name,0);
                     int y=bodyTop+(n-from)*ROW_HEIGHT, actionW=58, gap2=6, toggleW=contentW-actionW*2-gap2*2;
                     addRenderableWidget(Button.builder(streamerButtonText(name,count),b->{
-                        data.streamerEnabled.put(name,!data.streamerEnabled.getOrDefault(name,true));save();Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,current,1));
+                        data.streamerEnabled.put(name,!data.streamerEnabled.getOrDefault(name,true));save();Minecraft.getInstance().setScreen(new CounterMenuScreen(parent,current,1));
                     }).bounds(contentX,y,toggleW,21).build());
-                    addRenderableWidget(Button.builder(Component.literal("Reset"),b->{data.counts.put(name,0);save();Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,current,1));})
+                    addRenderableWidget(Button.builder(Component.literal("Reset"),b->{data.counts.put(name,0);save();Minecraft.getInstance().setScreen(new CounterMenuScreen(parent,current,1));})
                         .bounds(contentX+toggleW+gap2,y,actionW,21).build());
                     addRenderableWidget(Button.builder(Component.literal("Delete"),b->{
                         data.counts.remove(name);data.streamerEnabled.remove(name);data.displayNames.remove(name);
                         if(data.lastName!=null&&data.lastName.equalsIgnoreCase(name))data.lastName=null;
-                        if(pending!=null&&pending.equalsIgnoreCase(name))pending=null;save();Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,current,1));
+                        if(pending!=null&&pending.equalsIgnoreCase(name))pending=null;save();Minecraft.getInstance().setScreen(new CounterMenuScreen(parent,current,1));
                     }).bounds(contentX+toggleW+gap2+actionW+gap2,y,actionW,21).build());
                 }
                 if(pages>1){
-                    Button prev=addRenderableWidget(Button.builder(Component.literal("‹ Previous"),b->Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,current-1,1))).bounds(width/2-104,bodyBottom-28,98,22).build());
+                    Button prev=addRenderableWidget(Button.builder(Component.literal("‹ Previous"),b->Minecraft.getInstance().setScreen(new CounterMenuScreen(parent,current-1,1))).bounds(width/2-104,bodyBottom-28,98,22).build());
                     prev.active=current>0;
-                    Button next=addRenderableWidget(Button.builder(Component.literal("Next ›"),b->Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,current+1,1))).bounds(width/2+6,bodyBottom-28,98,22).build());
+                    Button next=addRenderableWidget(Button.builder(Component.literal("Next ›"),b->Minecraft.getInstance().setScreen(new CounterMenuScreen(parent,current+1,1))).bounds(width/2+6,bodyBottom-28,98,22).build());
                     next.active=current<pages-1;
                 }
             } else if(activeTab==2){
                 addRenderableWidget(Button.builder(hudButtonText(),b->{data.showHud=!data.showHud;save();b.setMessage(hudButtonText());})
                     .bounds(contentX,bodyTop,190,24).build());
-                addRenderableWidget(Button.builder(Component.literal("Edit HUD"),b->Minecraft.getInstance().gui.setScreen(new HudEditScreen(this)))
+                addRenderableWidget(Button.builder(Component.literal("Edit HUD"),b->Minecraft.getInstance().setScreen(new HudEditScreen(this)))
                     .bounds(contentX,bodyTop+38,190,24).build());
             } else if(activeTab==3){
                 String[] tools={"Auction","Timer","Text on screen","Images","3D text","Rakeback","HUD"};
                 for(int i=0;i<tools.length;i++){final int tool=i;
                     addRenderableWidget(Button.builder(Component.literal("›  "+tools[i]),b->{
-                        if(tool==0)Minecraft.getInstance().gui.setScreen(new AuctionScreen(this));
-                        else if(tool==2)Minecraft.getInstance().gui.setScreen(new TextOnScreenScreen(this));
+                        if(tool==0)Minecraft.getInstance().setScreen(new AuctionScreen(this));
+                        else if(tool==2)Minecraft.getInstance().setScreen(new TextOnScreenScreen(this));
                         else if(tool==6)openTab(2);
-                        else Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,0,3));
+                        else Minecraft.getInstance().setScreen(new CounterMenuScreen(parent,0,3));
                     }).bounds(contentX,bodyTop+i*42,230,28).build());
                 }
             } else if(activeTab==4){
-                addRenderableWidget(Button.builder(themeButtonText(),b->{String[] themes=VIP_THEMES;int n=0;for(;n<themes.length;n++)if(themes[n].equals(currentTheme()))break;data.vipTheme=themes[(n+1)%themes.length];data.iceTheme=data.vipTheme.equals("ICE");save();Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,0,4));})
+                addRenderableWidget(Button.builder(themeButtonText(),b->{String[] themes=VIP_THEMES;int n=0;for(;n<themes.length;n++)if(themes[n].equals(currentTheme()))break;data.vipTheme=themes[(n+1)%themes.length];data.iceTheme=data.vipTheme.equals("ICE");save();Minecraft.getInstance().setScreen(new CounterMenuScreen(parent,0,4));})
                     .bounds(contentX,bodyTop,250,24).build());
             } else if(activeTab==5){
                 addRenderableWidget(Button.builder(Component.literal("HUD: "+(data.showHud?"ON":"OFF")),b->{data.showHud=!data.showHud;save();b.setMessage(Component.literal("HUD: "+(data.showHud?"ON":"OFF")));}).bounds(contentX,bodyTop,180,22).build());
                 addRenderableWidget(Button.builder(Component.literal("HUD Size −"),b->{data.hudScale=Math.max(0.5f,data.hudScale-0.1f);save();}).bounds(contentX,bodyTop+30,88,22).build());
                 addRenderableWidget(Button.builder(Component.literal("HUD Size +"),b->{data.hudScale=Math.min(2.0f,data.hudScale+0.1f);save();}).bounds(contentX+94,bodyTop+30,88,22).build());
                 addRenderableWidget(Button.builder(Component.literal("Reset HUD Position"),b->{data.hudX=-1;data.hudY=8;save();}).bounds(contentX,bodyTop+60,180,22).build());
-                addRenderableWidget(Button.builder(Component.literal("Reset All Counters"),b->{data.counts.clear();data.lastName=null;pending=null;save();Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,0,5));}).bounds(contentX,bodyTop+90,180,22).build());
+                addRenderableWidget(Button.builder(Component.literal("Reset All Counters"),b->{data.counts.clear();data.lastName=null;pending=null;save();Minecraft.getInstance().setScreen(new CounterMenuScreen(parent,0,5));}).bounds(contentX,bodyTop+90,180,22).build());
                 addRenderableWidget(Button.builder(Component.literal("Close Menu"),b->onClose()).bounds(contentX,bodyTop+120,180,22).build());
             }
         
@@ -873,7 +874,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             String credit="VIP EDITION  •  MADE BY ALPBEY3503";
             drawFlowText(g,font,credit,left+22,bottom-18,textColor(),true);
         }
-        @Override public void onClose(){Minecraft.getInstance().gui.setScreen(parent);}
+        @Override public void onClose(){Minecraft.getInstance().setScreen(parent);}
     }
 
 
@@ -901,7 +902,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                 for(int i=0;i<ds.length;i++){
                     final int seconds=ds[i];
                     addRenderableWidget(Button.builder(Component.literal(labels[i]),b->{
-                        data.auctionDurationSeconds=seconds;save();Minecraft.getInstance().gui.setScreen(new AuctionScreen(parent));
+                        data.auctionDurationSeconds=seconds;save();Minecraft.getInstance().setScreen(new AuctionScreen(parent));
                     }).bounds(left+i*56,t+144,52,20).build());
                 }
                 addRenderableWidget(Button.builder(Component.literal("Start auction"),b->{
@@ -909,7 +910,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                     data.auctionBids.clear();data.auctionHighestBid=0;data.auctionHighestPlayer="No bids yet";
                     data.auctionSold=false;data.auctionActive=true;
                     data.auctionEndTime=System.currentTimeMillis()+data.auctionDurationSeconds*1000L;
-                    save();Minecraft.getInstance().gui.setScreen(new AuctionScreen(parent));
+                    save();Minecraft.getInstance().setScreen(new AuctionScreen(parent));
                 }).bounds(left,t+226,280,26).build());
 
                 Minecraft mc=Minecraft.getInstance();
@@ -923,7 +924,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                         int col=shown%2,row=shown/2;
                         String label=itemName.length()>15?itemName.substring(0,14)+"…":itemName;
                         addRenderableWidget(Button.builder(Component.literal(label+" x"+count),b->{
-                            data.auctionItem=itemName;save();Minecraft.getInstance().gui.setScreen(new AuctionScreen(parent));
+                            data.auctionItem=itemName;save();Minecraft.getInstance().setScreen(new AuctionScreen(parent));
                         }).bounds(cx+22+col*150,t+78+row*27,144,22).build());
                         shown++;
                     }
@@ -935,10 +936,10 @@ public class StreamerCounterClient implements ClientModInitializer {
                 addRenderableWidget(Button.builder(Component.literal("End now"),b->finish()).bounds(left,t+178,132,22).build());
                 addRenderableWidget(Button.builder(Component.literal("Cancel"),b->{
                     data.auctionActive=false;data.auctionBids.clear();data.auctionSold=false;save();
-                    Minecraft.getInstance().gui.setScreen(new AuctionScreen(parent));
+                    Minecraft.getInstance().setScreen(new AuctionScreen(parent));
                 }).bounds(left+140,t+178,132,22).build());
             }
-            addRenderableWidget(Button.builder(Component.literal("Back to Tools"),b->Minecraft.getInstance().gui.setScreen(parent))
+            addRenderableWidget(Button.builder(Component.literal("Back to Tools"),b->Minecraft.getInstance().setScreen(parent))
                 .bounds(left,t+278,160,22).build());
         }
 
@@ -947,6 +948,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             data.auctionActive=false;data.auctionSold=true;
             data.auctionWinner=data.auctionHighestBid>0?data.auctionHighestPlayer:"No bids";
             data.auctionSoldUntil=System.currentTimeMillis()+10000L;save();
+            Minecraft.getInstance().setScreen(new AuctionScreen(parent));
         }
 
         @Override public void extractRenderState(GuiGraphicsExtractor g,int mx,int my,float delta){
@@ -957,8 +959,6 @@ public class StreamerCounterClient implements ClientModInitializer {
             g.fill(cx,t+42,cx+1,t+310,0x665B4635);
             drawFlowText(g,font,data.auctionSold?"AUCTION COMPLETE":data.auctionActive?"LIVE AUCTION":"NEW AUCTION",cx-318,t+18,0xFFFFFFFF,true);
             if(data.auctionSold){
-                // Winner animation is rendered by the in-game HUD.
-            
                 long elapsed=System.currentTimeMillis();
                 int pulse=(int)(Math.sin(elapsed/180.0)*5)+12;
                 g.fill(cx-310,t+82,cx+310,t+230,0x552A1608);
@@ -1013,9 +1013,9 @@ public class StreamerCounterClient implements ClientModInitializer {
             if(data.auctionActive&&System.currentTimeMillis()>=data.auctionEndTime)finish();
             if(data.auctionSold&&System.currentTimeMillis()>data.auctionSoldUntil){
                 data.auctionSold=false;data.auctionWinner="";data.auctionHighestBid=0;data.auctionHighestPlayer="No bids yet";save();
-                Minecraft.getInstance().gui.setScreen(parent);
+                Minecraft.getInstance().setScreen(parent);
             }
         }
-        @Override public void onClose(){Minecraft.getInstance().gui.setScreen(parent);}
+        @Override public void onClose(){Minecraft.getInstance().setScreen(parent);}
     }
 }

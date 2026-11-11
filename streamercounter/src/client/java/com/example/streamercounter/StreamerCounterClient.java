@@ -279,6 +279,11 @@ public class StreamerCounterClient implements ClientModInitializer {
             }
             addDrawableChild(ButtonWidget.builder(Text.literal("Back"), button -> MinecraftClient.getInstance().setScreen(parent))
                     .dimensions(center - 50, firstY + 88, 100, 20).build());
+        
+            // Subtle transparency lets the menu background show through; the selected theme supplies the accent colors.
+            for (var child : children()) {
+                if (child instanceof net.minecraft.client.gui.widget.ClickableWidget button) button.setAlpha(0.82f);
+            }
         }
         @Override public void render(DrawContext ctx, int mx, int my, float delta) {
             ctx.fill(0, 0, width, height, 0xC0000000);

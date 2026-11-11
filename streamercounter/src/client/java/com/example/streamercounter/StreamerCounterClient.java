@@ -946,8 +946,17 @@ public class StreamerCounterClient implements ClientModInitializer {
                     g.fill(px,py,px+4,py+4,(i%2==0)?a:0xFFFFD76A);
                 }
             } else {
-                drawFlowText(g,font,"ITEM",cx-318,t+48,a,true);
-                drawFlowText(g,font,data.auctionItem,cx-318,t+68,0xFFFFFFFF,true);
+                var client=Minecraft.getInstance();
+                if(client.player!=null){
+                    for(int slot=0;slot<client.player.getInventory().getContainerSize();slot++){
+                        var stack=client.player.getInventory().getItem(slot);
+                        if(!stack.isEmpty()&&stack.getHoverName().getString().equals(data.auctionItem)){
+                            g.renderItem(stack,cx-318,t+52); break;
+                        }
+                    }
+                }
+                drawFlowText(g,font,"ITEM",cx-286,t+48,a,true);
+                drawFlowText(g,font,data.auctionItem,cx-286,t+68,0xFFFFFFFF,true);
                 if(data.auctionActive){
                     long left=Math.max(0,(data.auctionEndTime-System.currentTimeMillis()+999)/1000);
                     drawFlowText(g,font,"TIME LEFT",cx-318,t+105,a,true);

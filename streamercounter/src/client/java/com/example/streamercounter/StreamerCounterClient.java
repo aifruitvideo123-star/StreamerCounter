@@ -588,33 +588,89 @@ public class StreamerCounterClient implements ClientModInitializer {
         private int panelColor(){return switch(currentTheme()){case "CHRISTMAS"->0xB817241B;case "HALLOWEEN"->0xB8201712;case "ICE","OCEAN"->0xB8111D29;case "NETHER"->0xB8201118;case "EMERALD"->0xB812211D;case "PURPLE"->0xB81C1728;default->0xB8141A24;};}
         private void drawSeasonDecor(GuiGraphicsExtractor g) {
             int decoX=(width+Math.min(920,width-32))/2-110;
-            if(currentTheme().equals("CHRISTMAS")){
-                // Pixel-art candy cane and festive baubles in the menu header.
+            String theme=currentTheme();
+            if(theme.equals("CHRISTMAS")){
+                // Candy cane, hanging baubles, holly and little snow accents.
                 g.fill(decoX+16,42,decoX+22,72,0xFFFFF1D6);
                 g.fill(decoX+22,42,decoX+34,48,0xFFFFF1D6);
                 g.fill(decoX+16,50,decoX+22,56,0xFFD93636);
                 g.fill(decoX+22,60,decoX+28,66,0xFFD93636);
                 g.fill(decoX+22,48,decoX+28,54,0xFFD93636);
-                g.fill(decoX+48,48,decoX+58,58,0xFFD93636);
-                g.fill(decoX+50,50,decoX+56,56,0xFFFFD7D7);
-                g.fill(decoX+67,53,decoX+77,63,0xFFFFD45F);
-                g.fill(decoX+69,55,decoX+75,61,0xFFFFF0B0);
+                g.fill(decoX+48,42,decoX+49,51,0xFFFFD45F);
+                g.fill(decoX+44,50,decoX+54,60,0xFFD93636);
+                g.fill(decoX+46,52,decoX+52,58,0xFFFFD7D7);
+                g.fill(decoX+67,42,decoX+68,54,0xFFFFD45F);
+                g.fill(decoX+63,53,decoX+73,63,0xFFFFD45F);
+                g.fill(decoX+65,55,decoX+71,61,0xFFFFF0B0);
                 g.fill(decoX+80,64,decoX+90,74,0xFF55D878);
-            } else if(currentTheme().equals("HALLOWEEN")){
-                // Small pixel pumpkin with a stem, eyes and a carved smile.
+                g.fill(decoX+77,60,decoX+83,66,0xFF278A49);
+                g.fill(decoX+95,48,decoX+101,50,0xFFBCEBFF);
+                g.fill(decoX+97,44,decoX+99,54,0xFFBCEBFF);
+                g.fill(decoX+110,65,decoX+116,67,0xFFBCEBFF);
+                g.fill(decoX+112,61,decoX+114,71,0xFFBCEBFF);
+            } else if(theme.equals("HALLOWEEN")){
+                // Jack-o-lanterns, a tiny bat and warm candle-like highlights.
                 g.fill(decoX+22,43,decoX+32,51,0xFF65B84F);
                 g.fill(decoX+14,50,decoX+40,72,0xFFFF8738);
                 g.fill(decoX+18,47,decoX+36,75,0xFFFF8738);
                 g.fill(decoX+20,55,decoX+24,61,0xFF28170F);
                 g.fill(decoX+30,55,decoX+34,61,0xFF28170F);
                 g.fill(decoX+23,65,decoX+31,68,0xFF28170F);
-                g.fill(decoX+45,50,decoX+55,60,0xFFFFB347);
-                g.fill(decoX+47,52,decoX+53,58,0xFFFFD18A);
-            } else if(currentTheme().equals("ICE")||currentTheme().equals("OCEAN")){
-                g.fill(decoX+19,48,decoX+21,72,0xFFBCEBFF);
-                g.fill(decoX+10,58,decoX+30,60,0xFFBCEBFF);
-                g.fill(decoX+14,51,decoX+26,67,0xFFBCEBFF);
+                g.fill(decoX+49,53,decoX+59,63,0xFFFFB347);
+                g.fill(decoX+51,55,decoX+57,61,0xFF28170F);
+                g.fill(decoX+53,47,decoX+55,54,0xFF65B84F);
+                g.fill(decoX+75,51,decoX+89,55,0xFF24152E);
+                g.fill(decoX+78,47,decoX+82,54,0xFF24152E);
+                g.fill(decoX+85,47,decoX+89,54,0xFF24152E);
+                g.fill(decoX+96,61,decoX+102,63,0xFFFFB347);
+                g.fill(decoX+98,57,decoX+100,67,0xFFFFB347);
+            } else if(theme.equals("ICE")||theme.equals("OCEAN")){
+                // Layered snowflake / icy sparkle.
+                g.fill(decoX+19,43,decoX+21,75,0xFFBCEBFF);
+                g.fill(decoX+5,57,decoX+35,59,0xFFBCEBFF);
+                g.fill(decoX+10,48,decoX+30,68,0xFFBCEBFF);
+                g.fill(decoX+48,48,decoX+52,52,0xFF69D8FF);
+                g.fill(decoX+46,58,decoX+54,60,0xFF69D8FF);
+                g.fill(decoX+48,66,decoX+52,70,0xFF69D8FF);
+                g.fill(decoX+70,50,decoX+76,56,0xFFBCEBFF);
+                g.fill(decoX+68,58,decoX+78,60,0xFFBCEBFF);
+            } else if(theme.equals("NETHER")){
+                g.fill(decoX+18,48,decoX+32,62,0xFFFF5555);
+                g.fill(decoX+21,51,decoX+29,59,0xFFFFB347);
+                g.fill(decoX+48,56,decoX+62,60,0xFF8E263B);
+                g.fill(decoX+53,48,decoX+57,68,0xFFFF5555);
+                g.fill(decoX+76,48,decoX+90,52,0xFFFF5555);
+                g.fill(decoX+82,44,decoX+86,58,0xFFFF8A5B);
+            } else if(theme.equals("EMERALD")){
+                g.fill(decoX+20,44,decoX+34,58,0xFF45D69A);
+                g.fill(decoX+24,48,decoX+30,54,0xFFB8FFE1);
+                g.fill(decoX+50,50,decoX+64,54,0xFF45D69A);
+                g.fill(decoX+55,45,decoX+59,60,0xFF45D69A);
+                g.fill(decoX+78,48,decoX+92,62,0xFF238B68);
+                g.fill(decoX+82,52,decoX+88,58,0xFF9BFFD1);
+            } else if(theme.equals("PURPLE")){
+                g.fill(decoX+20,48,decoX+34,52,0xFFB58CFF);
+                g.fill(decoX+25,43,decoX+29,58,0xFFB58CFF);
+                g.fill(decoX+52,50,decoX+64,62,0xFF7D5BC7);
+                g.fill(decoX+55,53,decoX+61,59,0xFFDCCBFF);
+                g.fill(decoX+80,45,decoX+84,65,0xFFB58CFF);
+                g.fill(decoX+72,53,decoX+92,57,0xFFB58CFF);
+            } else {
+                // Gold theme: small crown and shimmering stars.
+                g.fill(decoX+18,55,decoX+42,68,0xFFFFD45F);
+                g.fill(decoX+18,48,decoX+23,57,0xFFFFD45F);
+                g.fill(decoX+28,43,decoX+33,57,0xFFFFD45F);
+                g.fill(decoX+38,48,decoX+43,57,0xFFFFD45F);
+                g.fill(decoX+52,50,decoX+58,56,0xFFFFF0B0);
+                g.fill(decoX+72,60,decoX+78,66,0xFFFFD45F);
+                g.fill(decoX+90,46,decoX+96,52,0xFFFFF0B0);
             }
+            // Fine corner sparkles make the theme visible without cluttering controls.
+            int sparkle=accent();
+            g.fill(22,104,24,112,sparkle); g.fill(19,107,27,109,sparkle);
+            g.fill(width-25,104,width-23,112,sparkle); g.fill(width-28,107,width-20,109,sparkle);
+            g.fill(22,height-88,24,height-80,sparkle); g.fill(19,height-85,27,height-83,sparkle);
+            g.fill(width-25,height-88,width-23,height-80,sparkle); g.fill(width-28,height-85,width-20,height-83,sparkle);
         }
         private int pageCount(int rows){return Math.max(1,(streamerNames().size()+rows-1)/rows);}
         @Override protected void init() {

@@ -973,4 +973,3 @@ public class StreamerCounterClient implements ClientModInitializer {
         @Override public void onClose(){Minecraft.getInstance().gui.setScreen(parent);}
     }
 }
-}

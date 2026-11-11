@@ -77,6 +77,15 @@ public class StreamerCounterClient implements ClientModInitializer {
         boolean auctionShowWorld = true;
     }
 
+    private static String formatAuctionMoney(double value) {
+        double abs = Math.abs(value);
+        if (abs >= 1_000_000_000_000d) return String.format(Locale.ROOT, "%.2fT", value / 1_000_000_000_000d).replaceAll("\\.?0+T$", "T");
+        if (abs >= 1_000_000_000d) return String.format(Locale.ROOT, "%.2fB", value / 1_000_000_000d).replaceAll("\\.?0+B$", "B");
+        if (abs >= 1_000_000d) return String.format(Locale.ROOT, "%.2fM", value / 1_000_000d).replaceAll("\\.?0+M$", "M");
+        if (abs >= 1_000d) return String.format(Locale.ROOT, "%.2fK", value / 1_000d).replaceAll("\\.?0+K$", "K");
+        return String.format(Locale.ROOT, "%.2f", value);
+    }
+
     private static class ScreenText {
         String text = "Your text";
         int x = 80, y = 80, color = 0xFFFFFFFF, size = 16;
@@ -232,13 +241,13 @@ public class StreamerCounterClient implements ClientModInitializer {
             }
         }
     
-        if (data.auctionShowWorld && (data.auctionActive || (data.auctionSold && System.currentTimeMillis() <= data.auctionSoldUntil))) {
+        if (data.auctionSold && System.currentTimeMillis() > data.auctionSoldUntil) { data.auctionSold=false; data.auctionWinner=""; data.auctionHighestBid=0; data.auctionHighestPlayer="No bids yet"; save(); }\n        if (data.auctionShowWorld && (data.auctionActive || (data.auctionSold && System.currentTimeMillis() <= data.auctionSoldUntil))) {
             int cx = mc.getWindow().getGuiScaledWidth()/2, y = 28;
             long left = data.auctionActive ? Math.max(0,(data.auctionEndTime-System.currentTimeMillis()+999)/1000) : 0;
-            graphics.fill(cx-112,y,cx+112,y+76,0xCC120C08); graphics.fill(cx-112,y,cx+112,y+2,0xFFFF8126);
+            graphics.fill(cx-132,y,cx+132,y+(data.auctionSold?104:76),0xCC120C08); graphics.fill(cx-132,y,cx+132,y+2,0xFFFF8126);
             drawFlowText(graphics,mc.font,data.auctionSold ? "SOLD" : data.auctionItem,cx-100,y+8,0xFFFFFFFF,true);
             drawFlowText(graphics,mc.font,data.auctionActive ? String.format(Locale.ROOT,"%02d:%02d",left/60,left%60) : data.auctionWinner,cx-100,y+27,0xFFFF8126,true);
-            drawFlowText(graphics,mc.font,data.auctionHighestPlayer+"  $"+String.format(Locale.ROOT,"%.2f",data.auctionHighestBid),cx-100,y+49,data.textColor,true);
+            drawFlowText(graphics,mc.font,data.auctionHighestPlayer+"  $"+formatAuctionMoney(data.auctionHighestBid),cx-100,y+49,data.textColor,true);
         }
 
 }
@@ -949,7 +958,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                     int row=0;
                     for(var entry:data.auctionBids.entrySet()){
                         if(row>=8)break;
-                        drawFlowText(g,font,entry.getKey()+"   $"+String.format(Locale.ROOT,"%.2f",entry.getValue()),cx+22,t+78+row*25,data.textColor,true);
+                        drawFlowText(g,font,entry.getKey()+"   $"+formatAuctionMoney(entry.getValue()),cx+22,t+78+row*25,data.textColor,true);
                         row++;
                     }
                 } else {

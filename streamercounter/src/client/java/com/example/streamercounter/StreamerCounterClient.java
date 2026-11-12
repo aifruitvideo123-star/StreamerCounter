@@ -130,6 +130,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         String text = "Your text";
         int x = 80, y = 80, color = 0xFFFFFFFF, size = 16;
         String font = "default";
+        String effect = "flow";
         boolean visible = true, bold = false, italic = false, shadow = true;
     }
 
@@ -643,8 +644,11 @@ public class StreamerCounterClient implements ClientModInitializer {
                 ScreenText t=current(); if(t!=null){t.size=Math.min(96,t.size+2);save();}
             }).bounds(x+74, 236, 68, 20).build());
             addRenderableWidget(Button.builder(Component.literal("Font / Style"),b->{
-                ScreenText t=current(); if(t!=null){String[] styles={"default","bold","italic","bold_italic","flow"};int n=0;for(;n<styles.length;n++)if(styles[n].equals(t.font))break;t.font=styles[(n+1)%styles.length];t.bold=t.font.equals("bold")||t.font.equals("bold_italic");t.italic=t.font.equals("italic")||t.font.equals("bold_italic");save();clearWidgets();init();}
+                ScreenText t=current(); if(t!=null){String[] styles={"default","bold","italic","bold_italic"};int n=0;for(;n<styles.length;n++)if(styles[n].equals(t.font))break;t.font=styles[(n+1)%styles.length];t.bold=t.font.equals("bold")||t.font.equals("bold_italic");t.italic=t.font.equals("italic")||t.font.equals("bold_italic");save();clearWidgets();init();}
             }).bounds(x, 288, 146, 20).build());
+            addRenderableWidget(Button.builder(Component.literal("Effect: " + (current()==null ? "Flow" : current().effect)),b->{
+                ScreenText t=current();if(t!=null){String[] effects={"flow","pulse","static"};int n=0;for(;n<effects.length;n++)if(effects[n].equals(t.effect))break;t.effect=effects[(n+1)%effects.length];save();clearWidgets();init();}
+            }).bounds(x, 352, 146, 20).build());
             addRenderableWidget(Button.builder(Component.literal("Color"),b->{
                 ScreenText t=current();if(t!=null){int[] colors={0xFFFFFFFF,0xFFFFD54F,0xFF69D8FF,0xFFFF6B6B,0xFF78E08F};int n=0;for(;n<colors.length;n++)if(colors[n]==t.color)break;t.color=colors[(n+1)%colors.length];save();}
             }).bounds(x, 320, 68, 20).build());
@@ -702,10 +706,13 @@ public class StreamerCounterClient implements ClientModInitializer {
                 float scale=Math.max(8,Math.min(96,item.size))/9.0f;
                 graphics.pose().pushMatrix(); graphics.pose().translate(item.x,item.y); graphics.pose().scale(scale,scale);
                 
-                if("flow".equals(item.font)){
-                    int[] flow={0xFFFF5C8A,0xFFFFB347,0xFFFFFF66,0xFF75E08A,0xFF62D9FF,0xFFB58CFF};int px=0;
-                    for(int ci=0;ci<item.text.length();ci++){String ch=String.valueOf(item.text.charAt(ci));graphics.text(font,ch,px,0,flow[ci%flow.length],item.shadow);px+=font.width(ch);}
-                }else{Component styled=Component.literal(item.text).withStyle(st->st.withBold(item.bold).withItalic(item.italic));graphics.text(font,styled,0,0,item.color,item.shadow);} graphics.pose().popMatrix();
+                if("flow".equals(item.effect)){
+                    drawFlowText(graphics,font,item.text,0,0,item.color,item.shadow);
+                }else if("pulse".equals(item.effect)){
+                    int pulse=(int)(128+127*Math.sin(System.currentTimeMillis()/180.0));Component styled=Component.literal(item.text).withStyle(st->st.withBold(item.bold).withItalic(item.italic));graphics.text(font,styled,0,0,pulse>185?0xFFFFFFFF:item.color,item.shadow);
+                }else{
+                    Component styled=Component.literal(item.text).withStyle(st->st.withBold(item.bold).withItalic(item.italic));graphics.text(font,styled,0,0,item.color,item.shadow);
+                } graphics.pose().popMatrix();
             }
             ScreenText chosen=current();
             if(chosen!=null) graphics.text(font,"Selected: "+(chosen.text==null?"":chosen.text)+"   |   Size: "+chosen.size,right+16,top+365,0xFFB8C7D9,true);
@@ -950,9 +957,6 @@ public class StreamerCounterClient implements ClientModInitializer {
                 drawFlowText(g,font,"Streamers appear here after /tpahere <name>.",x+18,bodyTop+42,textColor(),true);
             }else if(activeTab==2){
                 drawFlowText(g,font,"Toggle the HUD or open its editor.",x+220,bodyTop+6,textColor(),true);
-            }else if(activeTab==3){
-                String[] statuses={"Idle","Idle","Edit your on-screen text","Coming soon","Coming soon","Off",data.showHud?"1 plate on":"Off"};
-                for(int i=0;i<statuses.length;i++)drawFlowText(g,font,statuses[i],x+260,bodyTop+10+i*42,textColor(),true);
             }else if(activeTab==4){
                 drawFlowText(g,font,"OWNER MODE  •  MONOCHROME FLOW",x+220,bodyTop+6,textColor(),true);
             }else if(activeTab==5){

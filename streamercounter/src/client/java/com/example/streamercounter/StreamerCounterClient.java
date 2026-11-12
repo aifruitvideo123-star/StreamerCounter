@@ -836,7 +836,10 @@ public class StreamerCounterClient implements ClientModInitializer {
             drawFlowText(ctx,textRenderer,TABS[activeTab].toUpperCase(Locale.ROOT),x,top+76,accent(),true);
             ctx.fill(x,bodyTop-12,right-26,bodyBottom+8,0x55232E3D);
             if(activeTab==0){int total=0;for(Integer value:data.counts.values())if(value!=null)total+=value;
-                String[] lines={"Your live overview","Tracked streamers: "+streamerNames().size(),"Total TP counter: "+total,"Last detected: "+(data.lastName==null?"—":data.lastName),"HUD: "+(data.showHud?"Enabled":"Disabled"),"Use the tabs above to manage streamers, HUD, text and theme."};
+                String[] lines={"Your live overview","Tracked streamers: "+streamerNames().size(),"Total TP counter: "+total,"Last detected: "+(data.lastName==null?"—":data.lastName),"HUD: "+(data.showHud?"Enabled":"Disabled"),"Enabled streamers: "+streamerNames().stream().filter(n->data.streamerEnabled.getOrDefault(n,true)).count(),
+                    "Auction: "+(data.auctionActive?"Live":"Idle"),"Timer: "+(data.timerActive?"Running":(data.timerFinished?"Finished":"Idle")),
+                    "HUD layout: "+(data.compactHud?"Compact":"Standard")+" • "+Math.round(data.hudOpacity*100)+"% opacity",
+                    "Use the tabs above to manage streamers, HUD, text and theme."};
                 for(int j=0;j<lines.length;j++)drawFlowText(ctx,textRenderer,lines[j],x+18,bodyTop+18+j*24,j==0?0xFFFFFFFF:textColor(),true);
             }else if(activeTab==1&&streamerNames().isEmpty()){drawFlowText(ctx,textRenderer,"No streamers detected yet.",x+18,bodyTop+18,0xFFFFFFFF,true);drawFlowText(ctx,textRenderer,"Streamers appear here after /tpahere <name>.",x+18,bodyTop+42,textColor(),true);
             }else if(activeTab==2)drawFlowText(ctx,textRenderer,"Toggle the HUD or open its editor.",x+220,bodyTop+6,textColor(),true);

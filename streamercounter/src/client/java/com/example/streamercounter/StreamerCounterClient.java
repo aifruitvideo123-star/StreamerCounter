@@ -837,7 +837,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                     .bounds(contentX,bodyTop,190,24).build());
                 addRenderableWidget(Button.builder(Component.literal("Edit HUD"),b->Minecraft.getInstance().gui.setScreen(new HudEditScreen(this)))
                     .bounds(contentX,bodyTop+38,190,24).build());
-                            addRenderableWidget(Button.builder(Component.literal("Compact layout: "+(data.compactHud?"ON":"OFF")),b->{data.compactHud=!data.compactHud;save();clearAndInit();}).bounds(contentX,bodyTop+70,190,24).build());
+                            addRenderableWidget(Button.builder(Component.literal("Compact layout: "+(data.compactHud?"ON":"OFF")),b->{data.compactHud=!data.compactHud;save();Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,0,2));}).bounds(contentX,bodyTop+70,190,24).build());
                             addRenderableWidget(Button.builder(Component.literal("HUD opacity  −"),b->{data.hudOpacity=Math.max(0.15f,data.hudOpacity-0.1f);save();}).bounds(contentX,bodyTop+102,92,22).build());
                 addRenderableWidget(Button.builder(Component.literal("HUD opacity  +"),b->{data.hudOpacity=Math.min(1.0f,data.hudOpacity+0.1f);save();}).bounds(contentX+98,bodyTop+102,92,22).build());
             } else if(activeTab==3){

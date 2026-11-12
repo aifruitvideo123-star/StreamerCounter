@@ -899,7 +899,8 @@ public class StreamerCounterClient implements ClientModInitializer {
                         if(tool==0)MinecraftClient.getInstance().setScreen(new AuctionScreen(this));
                         else if(tool==1)MinecraftClient.getInstance().setScreen(new TimerScreen(this));
                         else if(tool==2)MinecraftClient.getInstance().setScreen(new TextOnScreenScreen(this));
-                        else if(tool==3)openTab(2);\n                         else if(tool==4)MinecraftClient.getInstance().setScreen(new SessionScreen(this));
+                        else if(tool==3)openTab(2);
+                         else if(tool==4)MinecraftClient.getInstance().setScreen(new SessionScreen(this));
                     }).dimensions(x,bodyTop+i*42,230,28).build());
                 }
             }else if(activeTab==4){

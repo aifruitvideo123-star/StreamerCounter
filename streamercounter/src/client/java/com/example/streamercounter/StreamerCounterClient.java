@@ -44,6 +44,25 @@ public class StreamerCounterClient implements ClientModInitializer {
 
     private static long timerFinishedAt = 0L;
     private static Data data = new Data();
+    // Cache the sorted HUD roster; rebuild only after saved data changes.
+    private static boolean hudNamesDirty = true;
+    private static List<String> cachedHudNames = List.of();
+    private static final double[] TIMER_CIRCLE_COS = new double[60];
+    private static final double[] TIMER_CIRCLE_SIN = new double[60];
+    private static final double[] TIMER_PARTICLE_COS = new double[8];
+    private static final double[] TIMER_PARTICLE_SIN = new double[8];
+    static {
+        for (int i = 0; i < 60; i++) {
+            double angle = -Math.PI / 2.0 + i * Math.PI * 2.0 / 60.0;
+            TIMER_CIRCLE_COS[i] = Math.cos(angle);
+            TIMER_CIRCLE_SIN[i] = Math.sin(angle);
+        }
+        for (int i = 0; i < 8; i++) {
+            double angle = i * Math.PI / 4.0;
+            TIMER_PARTICLE_COS[i] = Math.cos(angle);
+            TIMER_PARTICLE_SIN[i] = Math.sin(angle);
+        }
+    }
     private static KeyMapping openMenuKey;
     private static String pending;
     private static long deadline;
@@ -203,9 +222,13 @@ public class StreamerCounterClient implements ClientModInitializer {
     }
 
     private static List<String> hudNames() {
-        return data.counts.keySet().stream()
-                .filter(name -> data.streamerEnabled.getOrDefault(name, true))
-                .sorted(String.CASE_INSENSITIVE_ORDER).toList();
+        if (hudNamesDirty) {
+            cachedHudNames = data.counts.keySet().stream()
+                    .filter(name -> data.streamerEnabled.getOrDefault(name, true))
+                    .sorted(String.CASE_INSENSITIVE_ORDER).toList();
+            hudNamesDirty = false;
+        }
+        return cachedHudNames;
     }
 
     private static String displayName(String key) {
@@ -301,7 +324,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             int timerCx=data.timerHudX<0?mc.getWindow().getGuiScaledWidth()/2:data.timerHudX, timerCy=data.timerHudY<0?mc.getWindow().getGuiScaledHeight()/3:data.timerHudY; float timerScale=Math.max(0.6f,Math.min(1.8f,data.timerHudScale)); int timerRadius=(int)(62*timerScale);
             int total=Math.max(1,data.timerDurationSeconds); double progress=data.timerActive?Math.max(0,Math.min(1,(double)remain/total)):0;
             graphics.fill(timerCx-timerRadius,timerCy-timerRadius,timerCx+timerRadius,timerCy+timerRadius,0xCC10131B);
-            for(int i=0;i<60;i++){double a=-Math.PI/2+i*Math.PI*2/60;int px=timerCx+(int)(timerRadius*0.85*Math.cos(a)),py=timerCy+(int)(timerRadius*0.85*Math.sin(a));int col=(i<Math.round(progress*60))?0xFFFFC04A:0xFF48505D;graphics.fill(px-2,py-2,px+3,py+3,col);}
+            for(int i=0;i<60;i++){int px=timerCx+(int)(timerRadius*0.85*TIMER_CIRCLE_COS[i]),py=timerCy+(int)(timerRadius*0.85*TIMER_CIRCLE_SIN[i]);int col=(i<Math.round(progress*60))?0xFFFFC04A:0xFF48505D;graphics.fill(px-2,py-2,px+3,py+3,col);}
             String time=String.format(Locale.ROOT,"%02d:%02d",remain/60,remain%60);
             graphics.text(mc.font,Component.literal(time),timerCx-mc.font.width(time)/2,timerCy-5,0xFFFFFFFF);
             String status=data.timerFinished?"TIME UP":"TIMER";
@@ -542,6 +565,7 @@ public class StreamerCounterClient implements ClientModInitializer {
     }
 
     private static void save() {
+        hudNamesDirty = true;
         try {
             Files.writeString(FILE, GSON.toJson(data));
         } catch (IOException e) {

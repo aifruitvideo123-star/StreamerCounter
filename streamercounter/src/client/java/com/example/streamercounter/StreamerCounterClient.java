@@ -762,7 +762,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             int cx=width/2, y=Math.max(34,height/2-112);
             addRenderableWidget(Button.builder(Component.literal(data.sessionActive?"End Session":"Start Session"),b->{
                 if(data.sessionActive)endSession();else startSession();
-                Minecraft.getInstance().gui.setScreen(new SessionScreen(parent));
+                Minecraft.getInstance().setScreen(new SessionScreen(parent));
             }).bounds(cx-100,y,200,22).build());
             String status=data.sessionActive?"LIVE  •  "+sessionDuration(data.sessionStartedAt,System.currentTimeMillis()):"No active session";
             addRenderableWidget(Button.builder(Component.literal(status),b->{}).bounds(cx-150,y+32,300,20).build());
@@ -776,10 +776,10 @@ public class StreamerCounterClient implements ClientModInitializer {
                 addRenderableWidget(Button.builder(Component.literal(label),b->{}).bounds(cx-190,y+116+row*23,380,20).build());
                 row++;
             }
-            addRenderableWidget(Button.builder(Component.literal("Back"),b->Minecraft.getInstance().gui.setScreen(parent)).bounds(cx-55,height-42,110,20).build());
+            addRenderableWidget(Button.builder(Component.literal("Back"),b->Minecraft.getInstance().setScreen(parent)).bounds(cx-55,height-42,110,20).build());
         }
-        @Override public void extractRenderState(GuiGraphicsExtractor g,int mouseX,int mouseY,float delta){super.extractRenderState(g,mouseX,mouseY,delta);g.drawCenteredString(font,"SESSION TRACKER",width/2,Math.max(16,height/2-130),0xFFFFD45F);}
-        @Override public void onClose(){Minecraft.getInstance().gui.setScreen(parent);}
+        @Override public void extractRenderState(GuiGraphicsExtractor g,int mouseX,int mouseY,float delta){super.extractRenderState(g,mouseX,mouseY,delta);String title="SESSION TRACKER";g.text(font,title,width/2-font.width(title)/2,Math.max(16,height/2-130),0xFFFFD45F,true);}
+        @Override public void onClose(){Minecraft.getInstance().setScreen(parent);}
     }
 
     private static class CounterMenuScreen extends Screen {
@@ -948,7 +948,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                         else if(tool==1)Minecraft.getInstance().setScreen(new TimerScreen(this));
                         else if(tool==2)Minecraft.getInstance().setScreen(new TextOnScreenScreen(this));
                         else if(tool==3)openTab(2);
-                         else if(tool==4)Minecraft.getInstance().gui.setScreen(new SessionScreen(this));
+                         else if(tool==4)Minecraft.getInstance().setScreen(new SessionScreen(this));
                     }).bounds(contentX,bodyTop+i*42,230,28).build());
                 }
             } else if(activeTab==4){

@@ -122,6 +122,8 @@ public class StreamerCounterClient implements ClientModInitializer {
         double sessionIncome = 0.0;
         double sessionExpenses = 0.0;
         int sessionTransactions = 0;
+        boolean sessionHudEnabled = true;
+        int sessionHudX = -1, sessionHudY = 8;
         List<SessionRecord> sessionHistory = new ArrayList<>();
     }
 
@@ -345,6 +347,23 @@ public class StreamerCounterClient implements ClientModInitializer {
             ctx.getMatrices().popMatrix();
         }
     
+
+        if (data.sessionActive && data.sessionHudEnabled) {
+            int sw=ctx.getScaledWindowWidth(), sh=ctx.getScaledWindowHeight(), bw=220, bh=42;
+            int sx=data.sessionHudX<0?(sw-bw)/2:Math.max(0,Math.min(data.sessionHudX,sw-bw));
+            int sy=Math.max(0,Math.min(data.sessionHudY,sh-bh));
+            double net=data.sessionIncome-data.sessionExpenses;
+            int valueColor=net>=0?0xFF8FE35D:0xFFFF6254;
+            ctx.fill(sx,sy,sx+bw,sy+bh,0xD916100C);
+            ctx.fill(sx,sy,sx+bw,sy+2,0xFFFF8A24);
+            ctx.fill(sx+10,sy+11,sx+14,sy+15,0xFF69E58B);
+            ctx.drawTextWithShadow(MinecraftClient.getInstance().textRenderer,Text.literal("LIVE"),sx+22,sy+10,0xFFFFEAD8);
+            String netLabel=(net>=0?"+":"-")+formatAuctionMoney(Math.abs(net));
+            ctx.drawTextWithShadow(MinecraftClient.getInstance().textRenderer,Text.literal(netLabel),sx+bw-12-MinecraftClient.getInstance().textRenderer.getWidth(netLabel),sy+7,valueColor);
+            String detail="IN "+formatAuctionMoney(data.sessionIncome)+"  OUT "+formatAuctionMoney(data.sessionExpenses)+"  •  "+data.sessionTransactions+" bets";
+            ctx.drawText(MinecraftClient.getInstance().textRenderer,detail,sx+12,sy+27,0xFFBDA58E,false);
+        }
+
         if (data.auctionSold && System.currentTimeMillis() > data.auctionSoldUntil) { data.auctionSold=false; data.auctionWinner=""; data.auctionHighestBid=0; data.auctionHighestPlayer="No bids yet"; save(); }
         if (data.auctionShowWorld && (data.auctionActive || (data.auctionSold && System.currentTimeMillis() <= data.auctionSoldUntil))) {
             int hudW=ctx.getScaledWindowWidth(), hudH=ctx.getScaledWindowHeight();
@@ -745,6 +764,8 @@ public class StreamerCounterClient implements ClientModInitializer {
             int navX=left+330;String[] nav={"Overview","Streamers","HUD","Tools","Themes","Settings","Sessions"};
             for(int i=0;i<nav.length;i++){final int tab=i;addDrawableChild(ButtonWidget.builder(Text.literal(nav[i]),b->{if(tab==6){MinecraftClient.getInstance().setScreen(new SessionScreen(parent));}else MinecraftClient.getInstance().setScreen(sessionMenuForTab(parent,tab));}).dimensions(navX+i*83,top+15,78,24).build());}
             int body=top+72,mid=left+(int)(panelW*.39),panelBottom=height-40;
+            addDrawableChild(ButtonWidget.builder(Text.literal("Live HUD: "+(data.sessionHudEnabled?"ON":"OFF")),b->{data.sessionHudEnabled=!data.sessionHudEnabled;save();MinecraftClient.getInstance().setScreen(new SessionScreen(parent));}).dimensions(right-158,body+10,126,24).build());
+
             addDrawableChild(ButtonWidget.builder(Text.literal(data.sessionActive?"End session":"New session"),b->{if(data.sessionActive)endSession();else startSession();MinecraftClient.getInstance().setScreen(new SessionScreen(parent));}).dimensions(mid+panelW/3,body+10,132,25).build());
             addDrawableChild(ButtonWidget.builder(Text.literal("Clear history"),b->{if(data.sessionHistory!=null)data.sessionHistory.clear();save();MinecraftClient.getInstance().setScreen(new SessionScreen(parent));}).dimensions(left+42,panelBottom-38,Math.max(140,mid-left-70),24).build());
             int row=0;if(data.sessionHistory!=null)for(SessionRecord record:data.sessionHistory){if(row>=Math.max(1,(panelBottom-body-100)/34))break;String label="Session "+(data.sessionHistory.size()-row)+"  •  "+(record.income-record.expenses>=0?"+":"-")+formatAuctionMoney(Math.abs(record.income-record.expenses));int rowY=body+50+row*34;addDrawableChild(ButtonWidget.builder(Text.literal(label),b->{}).dimensions(left+42,rowY,Math.max(140,mid-left-70),26).build());row++;}

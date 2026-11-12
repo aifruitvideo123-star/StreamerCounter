@@ -758,26 +758,39 @@ public class StreamerCounterClient implements ClientModInitializer {
         private final Screen parent;
         SessionScreen(Screen parent){super(Component.literal("Sessions"));this.parent=parent;}
         @Override protected void init(){
-            int cx=width/2, y=Math.max(34,height/2-112);
-            addRenderableWidget(Button.builder(Component.literal(data.sessionActive?"End Session":"Start Session"),b->{
-                if(data.sessionActive)endSession();else startSession();
-                Minecraft.getInstance().gui.setScreen(new SessionScreen(parent));
-            }).bounds(cx-100,y,200,22).build());
-            String status=data.sessionActive?"LIVE  •  "+sessionDuration(data.sessionStartedAt,System.currentTimeMillis()):"No active session";
-            addRenderableWidget(Button.builder(Component.literal(status),b->{}).bounds(cx-150,y+32,300,20).build());
-            double net=data.sessionIncome-data.sessionExpenses;
-            addRenderableWidget(Button.builder(Component.literal("Income  +"+formatAuctionMoney(data.sessionIncome)+"   |   Spent  -"+formatAuctionMoney(data.sessionExpenses)),b->{}).bounds(cx-190,y+60,380,20).build());
-            addRenderableWidget(Button.builder(Component.literal("NET  "+(net>=0?"+":"-")+formatAuctionMoney(Math.abs(net))+"    •    Transactions: "+data.sessionTransactions),b->{}).bounds(cx-190,y+86,380,20).build());
-            int row=0;
-            if(data.sessionHistory!=null)for(SessionRecord record:data.sessionHistory){
-                if(row>=4)break;
-                String label="Session  •  "+sessionDuration(record.startedAt,record.endedAt)+"  •  "+(record.income-record.expenses>=0?"+":"-")+formatAuctionMoney(Math.abs(record.income-record.expenses));
-                addRenderableWidget(Button.builder(Component.literal(label),b->{}).bounds(cx-190,y+116+row*23,380,20).build());
-                row++;
-            }
-            addRenderableWidget(Button.builder(Component.literal("Back"),b->Minecraft.getInstance().gui.setScreen(parent)).bounds(cx-55,height-42,110,20).build());
+            int panelW=Math.min(1120,width-36),left=(width-panelW)/2,top=18,right=left+panelW;
+            int navX=left+330;String[] nav={"Overview","Streamers","HUD","Tools","Themes","Settings","Sessions"};
+            for(int i=0;i<nav.length;i++){final int tab=i;addRenderableWidget(Button.builder(Component.literal(nav[i]),b->{if(tab==6){Minecraft.getInstance().gui.setScreen(new SessionScreen(parent));}else Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,0,tab));}).bounds(navX+i*83,top+15,78,24).build());}
+            int body=top+72,mid=left+(int)(panelW*.39),panelBottom=height-40;
+            addRenderableWidget(Button.builder(Component.literal(data.sessionActive?"End session":"New session"),b->{if(data.sessionActive)endSession();else startSession();Minecraft.getInstance().gui.setScreen(new SessionScreen(parent));}).bounds(mid+panelW/3,body+10,132,25).build());
+            addRenderableWidget(Button.builder(Component.literal("Clear history"),b->{if(data.sessionHistory!=null)data.sessionHistory.clear();save();Minecraft.getInstance().gui.setScreen(new SessionScreen(parent));}).bounds(left+42,panelBottom-38,Math.max(140,mid-left-70),24).build());
+            int row=0;if(data.sessionHistory!=null)for(SessionRecord record:data.sessionHistory){if(row>=Math.max(1,(panelBottom-body-100)/34))break;final int idx=row;String label="Session "+(data.sessionHistory.size()-row)+"  •  "+(record.income-record.expenses>=0?"+":"-")+formatAuctionMoney(Math.abs(record.income-record.expenses));addRenderableWidget(Button.builder(Component.literal(label),b->{}).bounds(left+42,body+50+row*34,Math.max(140,mid-left-70),26).build());row++;}
+            addRenderableWidget(Button.builder(Component.literal("Back"),b->Minecraft.getInstance().gui.setScreen(parent)).bounds(width-94,height-42,70,22).build());
+            for(var child:children())if(child instanceof net.minecraft.client.gui.components.AbstractWidget w)w.setAlpha(0.0f);
         }
-        @Override public void extractRenderState(GuiGraphicsExtractor g,int mouseX,int mouseY,float delta){super.extractRenderState(g,mouseX,mouseY,delta);String title="SESSION TRACKER";g.text(font,title,width/2-font.width(title)/2,Math.max(16,height/2-130),0xFFFFD45F,true);}
+        
+        @Override public void extractRenderState(GuiGraphicsExtractor g,int mx,int my,float delta){
+            int panelW=Math.min(1120,width-36),left=(width-panelW)/2,top=18,right=left+panelW,bottom=height-18;
+            g.fill(0,0,width,height,0x70000000);g.fill(left,top,right,bottom,0xE8100C09);
+            g.fill(left+1,top+1,right-1,top+3,0xFFFF8A24);g.fill(left+1,top+54,right-1,top+55,0x665F4936);
+            g.text(font,"StreamerCounter  /  SESSIONS",left+24,top+20,0xFFFFE8D2,true);
+            g.text(font,"TRACK YOUR PLAY SESSION",left+24,top+36,0xFFBDA58E,true);
+            int navX=left+330;String[] nav={"Overview","Streamers","HUD","Tools","Themes","Settings","Sessions"};
+            for(int i=0;i<nav.length;i++){int x=navX+i*83;g.fill(x,top+15,x+78,top+39,i==6?0xFF49301E:0xAA1B120D);String label=nav[i];g.text(font,label,x+39-font.width(label)/2,top+22,0xFFFFEAD8,true);}
+            int body=top+72,mid=left+(int)(panelW*.39),panelBottom=bottom-22;
+            g.fill(left+24,body,mid-10,panelBottom,0xA51B130E);g.fill(mid,body,right-24,panelBottom,0xA51B130E);
+            g.text(font,"HISTORY",left+42,body+18,0xFFFFE9D6,true);g.text(font,"SESSION DETAILS",mid+24,body+18,0xFFFFE9D6,true);
+            String status=data.sessionActive?"LIVE  •  "+sessionDuration(data.sessionStartedAt,System.currentTimeMillis()):"NO ACTIVE SESSION";
+            g.text(font,status,mid+24,body+44,data.sessionActive?0xFFFF9B35:0xFFBDA58E,true);
+            double income=data.sessionIncome,spent=data.sessionExpenses,net=income-spent;
+            String netText=(net>=0?"+":"-")+formatAuctionMoney(Math.abs(net));g.text(font,netText,mid+24,body+72,net>=0?0xFF8FE35D:0xFFFF6254,true);
+            g.text(font,"INCOME  +"+formatAuctionMoney(income)+"     SPENT  -"+formatAuctionMoney(spent),mid+24,body+102,0xFFFFD9B0,true);
+            g.text(font,"Duration: "+(data.sessionActive?sessionDuration(data.sessionStartedAt,System.currentTimeMillis()):"—")+"   •   Transactions: "+data.sessionTransactions,mid+24,body+122,0xFFBDA58E,true);
+            int gx=mid+24,gy=body+170,gw=right-mid-64;g.fill(gx,gy,gx+gw,gy+1,0xFF76513B);int marker=gx+(int)(gw*.82);g.fill(gx,gy-1,marker,gy+1,net>=0?0xFF77D94D:0xFFFF6254);g.fill(marker-2,gy-4,marker+2,gy+5,0xFFFF9B35);
+            g.text(font,"RECENT SESSIONS",mid+24,gy+24,0xFFC9A98C,true);
+            int row=0;if(data.sessionHistory!=null)for(SessionRecord record:data.sessionHistory){if(row>=5)break;String label="Session "+(data.sessionHistory.size()-row)+"  •  "+sessionDuration(record.startedAt,record.endedAt)+"  •  "+(record.income-record.expenses>=0?"+":"-")+formatAuctionMoney(Math.abs(record.income-record.expenses));g.text(font,label,mid+24,gy+44+row*17,0xFFE8D6C4,true);row++;}
+            super.extractRenderState(g,mx,my,delta);
+        }
         @Override public void onClose(){Minecraft.getInstance().gui.setScreen(parent);}
     }
 
@@ -786,7 +799,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         private final int page;
         private final int activeTab;
         private static final int ROW_HEIGHT = 26;
-        private static final String[] TABS = {"Overview","Streamers","HUD","Tools","Themes","Settings"};
+        private static final String[] TABS = {"Overview","Streamers","HUD","Tools","Themes","Settings","Sessions"};
 
         CounterMenuScreen(Screen parent, int page) { this(parent,page,0); }
         CounterMenuScreen(Screen parent, int page, int activeTab) {
@@ -799,7 +812,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             if(pending!=null) names.add(pending.toLowerCase(Locale.ROOT));
             return new ArrayList<>(names);
         }
-        private void openTab(int tab) { Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,0,tab)); }
+        private void openTab(int tab) { if(tab==6){ Minecraft.getInstance().gui.setScreen(new SessionScreen(this)); return; } Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,0,tab)); }
         private Component hudButtonText(){return Component.literal("HUD: "+(data.showHud?"ON":"OFF"));}
         private static final String[] VIP_THEMES={"GOLD","ICE","CHRISTMAS","HALLOWEEN","NETHER","EMERALD","PURPLE","OCEAN"};
         private String currentTheme(){return data.iceTheme&&"GOLD".equals(data.vipTheme)?"ICE":(data.vipTheme==null?"GOLD":data.vipTheme);}
@@ -896,7 +909,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         private int pageCount(int rows){return Math.max(1,(streamerNames().size()+rows-1)/rows);}
         @Override protected void init() {
             int panelW=Math.min(920,width-32), left=(width-panelW)/2, top=24;
-            int tabStart=left+218, tabW=Math.min(94,(panelW-238)/6), gap=5;
+            int tabStart=left+218, tabW=Math.min(94,(panelW-238)/TABS.length), gap=3;
             for(int t=0;t<TABS.length;t++){
                 final int tab=t;
                 String label=(t==activeTab?"• ":"")+TABS[t];

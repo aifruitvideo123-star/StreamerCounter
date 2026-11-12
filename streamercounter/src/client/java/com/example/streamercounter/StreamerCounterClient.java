@@ -69,6 +69,14 @@ public class StreamerCounterClient implements ClientModInitializer {
     private static boolean primed;
     private static double prevDistSq = Double.NaN;
 
+    private static class SessionRecord {
+        long startedAt;
+        long endedAt;
+        double income;
+        double expenses;
+        int transactions;
+    }
+
     private static class Data {
         Map<String, Integer> counts = new HashMap<>();
         Map<String, Boolean> streamerEnabled = new HashMap<>();
@@ -103,6 +111,37 @@ public class StreamerCounterClient implements ClientModInitializer {
         long timerEndTime = 0L;
         boolean timerActive = false;
         boolean timerFinished = false;
+        boolean sessionActive = false;
+        long sessionStartedAt = 0L;
+        double sessionIncome = 0.0;
+        double sessionExpenses = 0.0;
+        int sessionTransactions = 0;
+        List<SessionRecord> sessionHistory = new ArrayList<>();
+    }
+
+    private static double parseSessionAmount(String raw, String suffix) {
+        try {
+            double value=Double.parseDouble(raw.replace(",",""));
+            if(suffix!=null)value*=switch(suffix.toLowerCase(Locale.ROOT)){case "k"->1_000d;case "m"->1_000_000d;case "b"->1_000_000_000d;default->1d;};
+            return value;
+        } catch(NumberFormatException ex){return 0d;}
+    }
+    private static void startSession() {
+        data.sessionActive=true;data.sessionStartedAt=System.currentTimeMillis();
+        data.sessionIncome=0d;data.sessionExpenses=0d;data.sessionTransactions=0;save();
+    }
+    private static void endSession() {
+        if(!data.sessionActive)return;
+        SessionRecord record=new SessionRecord();record.startedAt=data.sessionStartedAt;
+        record.endedAt=System.currentTimeMillis();record.income=data.sessionIncome;
+        record.expenses=data.sessionExpenses;record.transactions=data.sessionTransactions;
+        if(data.sessionHistory==null)data.sessionHistory=new ArrayList<>();
+        data.sessionHistory.add(0,record);
+        while(data.sessionHistory.size()>30)data.sessionHistory.remove(data.sessionHistory.size()-1);
+        data.sessionActive=false;save();
+    }
+    private static String sessionDuration(long from,long to) {
+        long seconds=Math.max(0,(to-from)/1000);return String.format(Locale.ROOT,"%02d:%02d:%02d",seconds/3600,(seconds/60)%60,seconds%60);
     }
 
     private static String formatAuctionDuration(int seconds) {
@@ -188,18 +227,28 @@ public class StreamerCounterClient implements ClientModInitializer {
         });
 
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
-            if (!data.auctionActive || overlay) return;
-            java.util.regex.Matcher payment = java.util.regex.Pattern.compile("(?i)^(.+?)\\s+paid you\\s+\\$?\\s*([0-9][0-9,]*(?:\\.[0-9]+)?)([kmb])?\\s*$").matcher(message.getString().trim());
-            if (!payment.matches()) return;
-            String bidder = payment.group(1).trim();
-            double amount;
-            try { amount = Double.parseDouble(payment.group(2).replace(",", "")); } catch (NumberFormatException ex) { return; }
-            String suffix = payment.group(3);
-            if (suffix != null) amount *= switch (suffix.toLowerCase(Locale.ROOT)) { case "k" -> 1000.0; case "m" -> 1000000.0; case "b" -> 1000000000.0; default -> 1.0; };
-            if (amount <= 0) return;
-            data.auctionBids.merge(bidder, amount, Double::sum);
-            double total = data.auctionBids.get(bidder);
-            if (total > data.auctionHighestBid) { data.auctionHighestBid = total; data.auctionHighestPlayer = bidder; }
+            if(overlay)return;
+            String line=message.getString().trim();
+            if(data.sessionActive){
+                java.util.regex.Matcher incoming=java.util.regex.Pattern.compile("(?i)^(.+?)\\s+paid you\\s+\\$?\\s*([0-9][0-9,]*(?:\\.[0-9]+)?)([kmb])?(?:\\s+.*)?$").matcher(line);
+                java.util.regex.Matcher outgoing=java.util.regex.Pattern.compile("(?i)^you paid\\s+(.+?)\\s+\\$?\\s*([0-9][0-9,]*(?:\\.[0-9]+)?)([kmb])?(?:\\s+.*)?$").matcher(line);
+                if(incoming.matches()){
+                    double amount=parseSessionAmount(incoming.group(2),incoming.group(3));
+                    if(amount>0){data.sessionIncome+=amount;data.sessionTransactions++;save();}
+                }else if(outgoing.matches()){
+                    double amount=parseSessionAmount(outgoing.group(2),outgoing.group(3));
+                    if(amount>0){data.sessionExpenses+=amount;data.sessionTransactions++;save();}
+                }
+            }
+            if(!data.auctionActive)return;
+            java.util.regex.Matcher payment=java.util.regex.Pattern.compile("(?i)^(.+?)\\s+paid you\\s+\\$?\\s*([0-9][0-9,]*(?:\\.[0-9]+)?)([kmb])?\\s*$").matcher(line);
+            if(!payment.matches())return;
+            String bidder=payment.group(1).trim();
+            double amount=parseSessionAmount(payment.group(2),payment.group(3));
+            if(amount<=0)return;
+            data.auctionBids.merge(bidder,amount,Double::sum);
+            double total=data.auctionBids.get(bidder);
+            if(total>data.auctionHighestBid){data.auctionHighestBid=total;data.auctionHighestPlayer=bidder;}
             save();
         });
         HudElementRegistry.attachElementAfter(
@@ -459,6 +508,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                     if (loaded.streamerEnabled == null) loaded.streamerEnabled = new HashMap<>();
                     if (loaded.displayNames == null) loaded.displayNames = new HashMap<>();
                     if (loaded.screenTexts == null) loaded.screenTexts = new ArrayList<>();
+                     if (loaded.sessionHistory == null) loaded.sessionHistory = new ArrayList<>();
                     if (loaded.screenTexts == null) loaded.screenTexts = new ArrayList<>();
                     data = loaded;
                 }
@@ -703,6 +753,33 @@ public class StreamerCounterClient implements ClientModInitializer {
     }
 
 
+    private static class SessionScreen extends Screen {
+        private final Screen parent;
+        SessionScreen(Screen parent){super(Component.literal("Sessions"));this.parent=parent;}
+        @Override protected void init(){
+            int cx=width/2, y=Math.max(34,height/2-112);
+            addRenderableWidget(Button.builder(Component.literal(data.sessionActive?"End Session":"Start Session"),b->{
+                if(data.sessionActive)endSession();else startSession();
+                Minecraft.getInstance().gui.setScreen(new SessionScreen(parent));
+            }).bounds(cx-100,y,200,22).build());
+            String status=data.sessionActive?"LIVE  •  "+sessionDuration(data.sessionStartedAt,System.currentTimeMillis()):"No active session";
+            addRenderableWidget(Button.builder(Component.literal(status),b->{}).bounds(cx-150,y+32,300,20).build());
+            double net=data.sessionIncome-data.sessionExpenses;
+            addRenderableWidget(Button.builder(Component.literal("Income  +"+formatAuctionMoney(data.sessionIncome)+"   |   Spent  -"+formatAuctionMoney(data.sessionExpenses)),b->{}).bounds(cx-190,y+60,380,20).build());
+            addRenderableWidget(Button.builder(Component.literal("NET  "+(net>=0?"+":"-")+formatAuctionMoney(Math.abs(net))+"    •    Transactions: "+data.sessionTransactions),b->{}).bounds(cx-190,y+86,380,20).build());
+            int row=0;
+            if(data.sessionHistory!=null)for(SessionRecord record:data.sessionHistory){
+                if(row>=4)break;
+                String label="Session  •  "+sessionDuration(record.startedAt,record.endedAt)+"  •  "+(record.income-record.expenses>=0?"+":"-")+formatAuctionMoney(Math.abs(record.income-record.expenses));
+                addRenderableWidget(Button.builder(Component.literal(label),b->{}).bounds(cx-190,y+116+row*23,380,20).build());
+                row++;
+            }
+            addRenderableWidget(Button.builder(Component.literal("Back"),b->Minecraft.getInstance().gui.setScreen(parent)).bounds(cx-55,height-42,110,20).build());
+        }
+        @Override public void extractRenderState(GuiGraphicsExtractor g,int mouseX,int mouseY,float delta){super.extractRenderState(g,mouseX,mouseY,delta);g.drawCenteredString(font,"SESSION TRACKER",width/2,Math.max(16,height/2-130),0xFFFFD45F);}
+        @Override public void onClose(){Minecraft.getInstance().gui.setScreen(parent);}
+    }
+
     private static class CounterMenuScreen extends Screen {
         private final Screen parent;
         private final int page;
@@ -865,13 +942,13 @@ public class StreamerCounterClient implements ClientModInitializer {
                 addRenderableWidget(Button.builder(Component.literal("HUD opacity  +"),b->{data.hudOpacity=Math.min(1.0f,data.hudOpacity+0.1f);save();})
                     .bounds(contentX+98,bodyTop+102,92,22).build());
             } else if(activeTab==3){
-                String[] tools={"Auction","Timer","Text on screen","HUD"};
+                String[] tools={"Auction","Timer","Text on screen","HUD","Sessions"};
                 for(int i=0;i<tools.length;i++){final int tool=i;
                     addRenderableWidget(Button.builder(Component.literal("›  "+tools[i]),b->{
                         if(tool==0)Minecraft.getInstance().setScreen(new AuctionScreen(this));
                         else if(tool==1)Minecraft.getInstance().setScreen(new TimerScreen(this));
                         else if(tool==2)Minecraft.getInstance().setScreen(new TextOnScreenScreen(this));
-                        else if(tool==3)openTab(2);
+                        else if(tool==3)openTab(2);\n                         else if(tool==4)Minecraft.getInstance().gui.setScreen(new SessionScreen(this));
                     }).bounds(contentX,bodyTop+i*42,230,28).build());
                 }
             } else if(activeTab==4){

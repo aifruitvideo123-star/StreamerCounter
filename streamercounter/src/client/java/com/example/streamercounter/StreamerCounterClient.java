@@ -129,6 +129,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         String text = "Your text";
         int x = 80, y = 80, color = 0xFFFFFFFF, size = 16;
         String font = "default";
+        String effect = "flow";
         boolean visible = true, bold = false, italic = false, shadow = true;
     }
 
@@ -613,8 +614,11 @@ public class StreamerCounterClient implements ClientModInitializer {
             addDrawableChild(ButtonWidget.builder(Text.literal("Size +"),b->{ScreenText t=current();if(t!=null){t.size=Math.min(96,t.size+2);save();}})
                 .dimensions(x+74,236,68,20).build());
             addDrawableChild(ButtonWidget.builder(Text.literal("Font / Style"),b->{
-                ScreenText t=current(); if(t!=null){String[] styles={"default","bold","italic","bold_italic","flow"};int n=0;for(;n<styles.length;n++)if(styles[n].equals(t.font))break;t.font=styles[(n+1)%styles.length];t.bold=t.font.equals("bold")||t.font.equals("bold_italic");t.italic=t.font.equals("italic")||t.font.equals("bold_italic");save();clearAndInit();}
+                ScreenText t=current(); if(t!=null){String[] styles={"default","bold","italic","bold_italic"};int n=0;for(;n<styles.length;n++)if(styles[n].equals(t.font))break;t.font=styles[(n+1)%styles.length];t.bold=t.font.equals("bold")||t.font.equals("bold_italic");t.italic=t.font.equals("italic")||t.font.equals("bold_italic");save();clearAndInit();}
             }).dimensions(x,288,146,20).build());
+            addDrawableChild(ButtonWidget.builder(Text.literal("Effect: " + (current()==null ? "Flow" : current().effect)),b->{
+                ScreenText t=current();if(t!=null){String[] effects={"flow","pulse","static"};int n=0;for(;n<effects.length;n++)if(effects[n].equals(t.effect))break;t.effect=effects[(n+1)%effects.length];save();clearAndInit();}
+            }).dimensions(x,352,146,20).build());
             addDrawableChild(ButtonWidget.builder(Text.literal("Color"),b->{
                 ScreenText t=current();if(t!=null){int[] colors={0xFFFFFFFF,0xFFFFD54F,0xFF69D8FF,0xFFFF6B6B,0xFF78E08F};int n=0;for(;n<colors.length;n++)if(colors[n]==t.color)break;t.color=colors[(n+1)%colors.length];save();}
             }).dimensions(x,320,68,20).build());
@@ -663,10 +667,13 @@ public class StreamerCounterClient implements ClientModInitializer {
                 float scale=Math.max(8,Math.min(96,item.size))/9.0f;
                 ctx.getMatrices().pushMatrix(); ctx.getMatrices().translate(item.x,item.y); ctx.getMatrices().scale(scale,scale);
                 
-                if("flow".equals(item.font)){
-                    int[] flow={0xFFFF5C8A,0xFFFFB347,0xFFFFFF66,0xFF75E08A,0xFF62D9FF,0xFFB58CFF};int px=0;
-                    for(int ci=0;ci<item.text.length();ci++){String ch=String.valueOf(item.text.charAt(ci));ctx.drawText(textRenderer,Text.literal(ch),px,0,flow[ci%flow.length],item.shadow);px+=textRenderer.getWidth(ch);}
-                }else{Text styled=Text.literal(item.text).styled(st->st.withBold(item.bold).withItalic(item.italic));ctx.drawText(textRenderer,styled,0,0,item.color,item.shadow);} ctx.getMatrices().popMatrix();
+                if("flow".equals(item.effect)){
+                    drawFlowText(ctx,textRenderer,item.text,0,0,item.color,item.shadow);
+                }else if("pulse".equals(item.effect)){
+                    int pulse=(int)(128+127*Math.sin(System.currentTimeMillis()/180.0));Text styled=Text.literal(item.text).styled(st->st.withBold(item.bold).withItalic(item.italic));ctx.drawText(textRenderer,styled,0,0,pulse>185?0xFFFFFFFF:item.color,item.shadow);
+                }else{
+                    Text styled=Text.literal(item.text).styled(st->st.withBold(item.bold).withItalic(item.italic));ctx.drawText(textRenderer,styled,0,0,item.color,item.shadow);
+                } ctx.getMatrices().popMatrix();
             }
             ScreenText chosen=current();
             if(chosen!=null) ctx.drawText(textRenderer,"Selected: "+(chosen.text==null?"":chosen.text)+"   |   Size: "+chosen.size,right+16,top+365,0xFFB8C7D9,true);
@@ -867,7 +874,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                 for(int j=0;j<lines.length;j++)drawFlowText(ctx,textRenderer,lines[j],x+18,bodyTop+18+j*24,j==0?0xFFFFFFFF:textColor(),true);
             }else if(activeTab==1&&streamerNames().isEmpty()){drawFlowText(ctx,textRenderer,"No streamers detected yet.",x+18,bodyTop+18,0xFFFFFFFF,true);drawFlowText(ctx,textRenderer,"Streamers appear here after /tpahere <name>.",x+18,bodyTop+42,textColor(),true);
             }else if(activeTab==2)drawFlowText(ctx,textRenderer,"Toggle the HUD or open its editor.",x+220,bodyTop+6,textColor(),true);
-            else if(activeTab==3){String[] statuses={"Idle","Idle","Edit your on-screen text","Coming soon","Coming soon","Off",data.showHud?"1 plate on":"Off"};for(int i=0;i<statuses.length;i++)drawFlowText(ctx,textRenderer,statuses[i],x+260,bodyTop+10+i*42,textColor(),true);}
+            
             else if(activeTab==4)drawFlowText(ctx,textRenderer,"Choose from 8 VIP themes: Gold, Ice, Christmas, Halloween, Nether, Emerald, Purple and Ocean.",x+220,bodyTop+6,textColor(),true);
             else if(activeTab==5)drawFlowText(ctx,textRenderer,"Adjust HUD visibility and size, reset its position, or manage counter data.",x+220,bodyTop+6,textColor(),true);
             super.render(ctx,mx,my,delta);

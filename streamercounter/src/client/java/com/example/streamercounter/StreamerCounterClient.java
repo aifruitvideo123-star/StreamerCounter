@@ -65,6 +65,8 @@ public class StreamerCounterClient implements ClientModInitializer {
         int hudX = -1;
         int hudY = 8;
         float hudScale = 1.0f;
+        float hudOpacity = 0.6f;
+        boolean compactHud = false;
         int textColor = 0xFFFFC85A;
         boolean iceTheme = false;
         String vipTheme = "GOLD";
@@ -226,13 +228,15 @@ public class StreamerCounterClient implements ClientModInitializer {
                         ? data.lastName : key);
     }
 
+    private static int hudPanelColor() { int alpha=(int)(153 * Math.max(0.15f,Math.min(1.0f,data.hudOpacity))); return (alpha << 24) | 0x000B111A; }
+
     private static int hudWidth(float scale) {
         return (int) (132 * scale);
     }
 
     private static int hudHeight(float scale) {
         int rows = Math.max(1, hudStreamerNames().size());
-        return (int) ((18 + rows * 11 + 5) * scale);
+        return (int) ((18 + rows * (data.compactHud ? 9 : 11) + 5) * scale);
     }
 
     // Keep the full HUD visible when its growing list reaches the bottom of the screen.
@@ -364,7 +368,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         ctx.getMatrices().pushMatrix();
         ctx.getMatrices().translate(x, y);
         ctx.getMatrices().scale(scale, scale);
-        ctx.fill(0, 0, width, height, 0x990B111A);
+        ctx.fill(0, 0, width, height, hudPanelColor());
         ctx.fill(0, 0, width, 2, data.iceTheme ? 0xFF69D8FF : 0xFFE8B64D);
         drawFlowText(ctx, tr, "STREAMERS VIP", 6, 6, data.textColor, false);
         int rowY = 20;
@@ -373,7 +377,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             String count = String.valueOf(data.counts.getOrDefault(key, 0));
             drawFlowText(ctx, tr, name, 6, rowY, data.textColor, false);
             drawFlowText(ctx, tr, count, width - 7 - tr.getWidth(count), rowY, data.textColor, false);
-            rowY += 11;
+            rowY += data.compactHud ? 9 : 11;
         }
         ctx.getMatrices().popMatrix();
     }
@@ -785,6 +789,9 @@ public class StreamerCounterClient implements ClientModInitializer {
             }else if(activeTab==2){
                 addDrawableChild(ButtonWidget.builder(hudButtonText(),b->{data.showHud=!data.showHud;save();b.setMessage(hudButtonText());}).dimensions(x,bodyTop,190,24).build());
                 addDrawableChild(ButtonWidget.builder(Text.literal("Edit HUD"),b->MinecraftClient.getInstance().setScreen(new HudEditScreen(this))).dimensions(x,bodyTop+38,190,24).build());
+                            addDrawableChild(ButtonWidget.builder(Text.literal("Compact layout: "+(data.compactHud?"ON":"OFF")),b->{data.compactHud=!data.compactHud;save();clearAndInit();}).dimensions(x,bodyTop+70,190,24).build());
+                            addDrawableChild(ButtonWidget.builder(Text.literal("HUD opacity  −"),b->{data.hudOpacity=Math.max(0.15f,data.hudOpacity-0.1f);save();}).dimensions(x,bodyTop+102,92,22).build());
+                addDrawableChild(ButtonWidget.builder(Text.literal("HUD opacity  +"),b->{data.hudOpacity=Math.min(1.0f,data.hudOpacity+0.1f);save();}).dimensions(x+98,bodyTop+102,92,22).build());
             }else if(activeTab==3){
                 String[] tools={"Auction","Timer","Text on screen","HUD"};
                 for(int i=0;i<tools.length;i++){final int tool=i;
@@ -880,7 +887,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         private int ph(int i){return i==0?hudHeight(data.hudScale):i==1?(int)((data.auctionSold?104:76)*Math.max(.6f,Math.min(1.8f,data.auctionHudScale))):(int)(124*Math.max(.6f,Math.min(1.8f,data.timerHudScale)));}
         private void move(int i,int x,int y){if(i==0){data.hudX=x;data.hudY=y;}else if(i==1){data.auctionHudX=x+pw(1)/2;data.auctionHudY=y;}else{data.timerHudX=x+pw(2)/2;data.timerHudY=y+pw(2)/2;}}
         private void scale(int i,float d){if(i==0)data.hudScale=Math.max(.5f,Math.min(2f,data.hudScale+d));else if(i==1)data.auctionHudScale=Math.max(.6f,Math.min(1.8f,data.auctionHudScale+d));else data.timerHudScale=Math.max(.6f,Math.min(1.8f,data.timerHudScale+d));}
-        @Override protected void init(){addDrawableChild(ButtonWidget.builder(Text.literal("Done"),b->MinecraftClient.getInstance().setScreen(parent)).dimensions(width/2-50,height-34,100,22).build());}
+        @Override protected void init(){addDrawableChild(ButtonWidget.builder(Text.literal("Reset layout"),b->{data.hudX=-1;data.hudY=8;data.auctionHudX=-1;data.auctionHudY=28;data.timerHudX=-1;data.timerHudY=-1;data.hudScale=1.0f;data.auctionHudScale=1.0f;data.timerHudScale=1.0f;save();}).dimensions(width/2-108,height-34,104,22).build());addDrawableChild(ButtonWidget.builder(Text.literal("Done"),b->MinecraftClient.getInstance().setScreen(parent)).dimensions(width/2+4,height-34,100,22).build());}
         @Override public boolean mouseClicked(Click click,boolean doubled){if(click.button()==0){for(int i=2;i>=0;i--){int x=px(i),y=py(i),w=pw(i),h=ph(i);if(click.x()>=x&&click.x()<=x+w&&click.y()>=y&&click.y()<=y+h){selected=i;dragging=true;offX=click.x()-x;offY=click.y()-y;return true;}}}return super.mouseClicked(click,doubled);}
         @Override public boolean mouseDragged(Click click,double dx,double dy){if(dragging&&click.button()==0){move(selected,Math.max(0,Math.min(width-pw(selected),(int)(click.x()-offX))),Math.max(0,Math.min(height-ph(selected),(int)(click.y()-offY))));return true;}return super.mouseDragged(click,dx,dy);}
         @Override public boolean mouseReleased(Click click){if(dragging&&click.button()==0){dragging=false;save();return true;}return super.mouseReleased(click);}

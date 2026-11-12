@@ -738,16 +738,17 @@ public class StreamerCounterClient implements ClientModInitializer {
     private static class SessionScreen extends Screen {
         private final Screen parent;
         SessionScreen(Screen parent){super(Text.literal("Sessions"));this.parent=parent;}
+        private CounterMenuScreen sessionMenuForTab(Screen parent,int tab){CounterMenuScreen menu=new CounterMenuScreen(parent);menu.activeTab=tab;menu.page=0;return menu;}
         @Override protected void init(){
             int panelW=Math.min(1120,width-36),left=(width-panelW)/2,top=18,right=left+panelW;
             int navX=left+330;String[] nav={"Overview","Streamers","HUD","Tools","Themes","Settings","Sessions"};
-            for(int i=0;i<nav.length;i++){final int tab=i;addDrawableChild(ButtonWidget.builder(Text.literal(nav[i]),b->{if(tab==6){MinecraftClient.getInstance().setScreen(new SessionScreen(parent));}else MinecraftClient.getInstance().setScreen(new CounterMenuScreen(parent,0,tab));}).dimensions(navX+i*83,top+15,78,24).build());}
+            for(int i=0;i<nav.length;i++){final int tab=i;addDrawableChild(ButtonWidget.builder(Text.literal(nav[i]),b->{if(tab==6){MinecraftClient.getInstance().setScreen(new SessionScreen(parent));}else MinecraftClient.getInstance().setScreen(sessionMenuForTab(parent,tab));}).dimensions(navX+i*83,top+15,78,24).build());}
             int body=top+72,mid=left+(int)(panelW*.39),panelBottom=height-40;
             addDrawableChild(ButtonWidget.builder(Text.literal(data.sessionActive?"End session":"New session"),b->{if(data.sessionActive)endSession();else startSession();MinecraftClient.getInstance().setScreen(new SessionScreen(parent));}).dimensions(mid+panelW/3,body+10,132,25).build());
             addDrawableChild(ButtonWidget.builder(Text.literal("Clear history"),b->{if(data.sessionHistory!=null)data.sessionHistory.clear();save();MinecraftClient.getInstance().setScreen(new SessionScreen(parent));}).dimensions(left+42,panelBottom-38,Math.max(140,mid-left-70),24).build());
-            int row=0;if(data.sessionHistory!=null)for(SessionRecord record:data.sessionHistory){if(row>=Math.max(1,(panelBottom-body-100)/34))break;final int idx=row;String label="Session "+(data.sessionHistory.size()-row)+"  •  "+(record.income-record.expenses>=0?"+":"-")+formatAuctionMoney(Math.abs(record.income-record.expenses));addDrawableChild(ButtonWidget.builder(Text.literal(label),b->{}).dimensions(left+42,body+50+row*34,Math.max(140,mid-left-70),26).build());row++;}
+            int row=0;if(data.sessionHistory!=null)for(SessionRecord record:data.sessionHistory){if(row>=Math.max(1,(panelBottom-body-100)/34))break;String label="Session "+(data.sessionHistory.size()-row)+"  •  "+(record.income-record.expenses>=0?"+":"-")+formatAuctionMoney(Math.abs(record.income-record.expenses));int rowY=body+50+row*34;addDrawableChild(ButtonWidget.builder(Text.literal(label),b->{}).dimensions(left+42,rowY,Math.max(140,mid-left-70),26).build());row++;}
             addDrawableChild(ButtonWidget.builder(Text.literal("Back"),b->MinecraftClient.getInstance().setScreen(parent)).dimensions(width-94,height-42,70,22).build());
-            for(var child:children())if(child instanceof net.minecraft.client.gui.components.AbstractWidget w)w.setAlpha(0.0f);
+            
         }
         
         @Override public void render(DrawContext g,int mx,int my,float delta){
@@ -759,7 +760,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             g.drawTextWithShadow(MinecraftClient.getInstance().textRenderer,Text.literal("TRACK YOUR PLAY SESSION"),left+24,top+36,0xFFBDA58E);
             int navX=left+330;
             String[] nav={"Overview","Streamers","HUD","Tools","Themes","Settings","Sessions"};
-            for(int i=0;i<nav.length;i++){int x=navX+i*83;g.fill(x,top+15,x+78,top+39,i==6?0xFF49301E:0xAA1B120D);g.drawCenteredString(MinecraftClient.getInstance().textRenderer,Text.literal(nav[i]),x+39,top+22,0xFFFFEAD8);}
+            for(int i=0;i<nav.length;i++){int x=navX+i*83;g.fill(x,top+15,x+78,top+39,i==6?0xFF49301E:0xAA1B120D);g.drawCenteredTextWithShadow(MinecraftClient.getInstance().textRenderer,Text.literal(nav[i]),x+39,top+22,0xFFFFEAD8);}
             int body=top+72,mid=left+(int)(panelW*.39),panelBottom=bottom-22;
             g.fill(left+24,body,mid-10,panelBottom,0xA51B130E);g.fill(mid,body,right-24,panelBottom,0xA51B130E);
             g.drawTextWithShadow(MinecraftClient.getInstance().textRenderer,Text.literal("HISTORY"),left+42,body+18,0xFFFFE9D6);
@@ -795,7 +796,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             java.util.Set<String> names=new java.util.TreeSet<>();names.addAll(data.counts.keySet());names.addAll(data.streamerEnabled.keySet());
             if(pending!=null)names.add(pending.toLowerCase(Locale.ROOT));return new java.util.ArrayList<>(names);
         }
-        private void openTab(int tab){activeTab=tab;page=0;clearAndInit();}
+        private void openTab(int tab){if(tab==6){MinecraftClient.getInstance().setScreen(new SessionScreen(this));return;}activeTab=tab;page=0;clearAndInit();}
         private Text hudButtonText(){return Text.literal("HUD: "+(data.showHud?"ON":"OFF"));}
         private static final String[] VIP_THEMES={"GOLD","ICE","CHRISTMAS","HALLOWEEN","NETHER","EMERALD","PURPLE","OCEAN"};
         private String currentTheme(){return data.iceTheme&&"GOLD".equals(data.vipTheme)?"ICE":(data.vipTheme==null?"GOLD":data.vipTheme);}

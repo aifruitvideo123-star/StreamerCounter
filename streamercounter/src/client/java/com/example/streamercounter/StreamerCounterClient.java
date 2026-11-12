@@ -761,13 +761,13 @@ public class StreamerCounterClient implements ClientModInitializer {
         @Override protected void init(){
             int panelW=Math.min(1120,width-36),left=(width-panelW)/2,top=18,right=left+panelW;
             int navX=left+330;String[] nav={"Overview","Streamers","HUD","Tools","Themes","Settings","Sessions"};
-            for(int i=0;i<nav.length;i++){final int tab=i;addRenderableWidget(Button.builder(Component.literal(nav[i]),b->{if(tab==6){Minecraft.getInstance().gui.setScreen(new SessionScreen(parent));}else Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,0,tab));}).bounds(navX+i*83,top+15,78,24).build());}
+            for(int i=0;i<nav.length;i++){final int tab=i;addRenderableWidget(Button.builder(Component.literal(nav[i]),b->{if(tab==6){Minecraft.getInstance().setScreen(new SessionScreen(parent));}else Minecraft.getInstance().setScreen(new CounterMenuScreen(parent,0,tab));}).bounds(navX+i*83,top+15,78,24).build());}
             int body=top+72,mid=left+(int)(panelW*.39),panelBottom=height-40;
-            addRenderableWidget(Button.builder(Component.literal(data.sessionActive?"End session":"New session"),b->{if(data.sessionActive)endSession();else startSession();Minecraft.getInstance().gui.setScreen(new SessionScreen(parent));}).bounds(mid+panelW/3,body+10,132,25).build());
-            addRenderableWidget(Button.builder(Component.literal("Clear history"),b->{if(data.sessionHistory!=null)data.sessionHistory.clear();save();Minecraft.getInstance().gui.setScreen(new SessionScreen(parent));}).bounds(left+42,panelBottom-38,Math.max(140,mid-left-70),24).build());
-            int row=0;if(data.sessionHistory!=null)for(SessionRecord record:data.sessionHistory){if(row>=Math.max(1,(panelBottom-body-100)/34))break;final int idx=row;String label="Session "+(data.sessionHistory.size()-row)+"  •  "+(record.income-record.expenses>=0?"+":"-")+formatAuctionMoney(Math.abs(record.income-record.expenses));addRenderableWidget(Button.builder(Component.literal(label),b->{}).bounds(left+42,body+50+row*34,Math.max(140,mid-left-70),26).build());row++;}
-            addRenderableWidget(Button.builder(Component.literal("Back"),b->Minecraft.getInstance().gui.setScreen(parent)).bounds(width-94,height-42,70,22).build());
-            for(var child:children())if(child instanceof net.minecraft.client.gui.components.AbstractWidget w)w.setAlpha(0.0f);
+            addRenderableWidget(Button.builder(Component.literal(data.sessionActive?"End session":"New session"),b->{if(data.sessionActive)endSession();else startSession();Minecraft.getInstance().setScreen(new SessionScreen(parent));}).bounds(mid+panelW/3,body+10,132,25).build());
+            addRenderableWidget(Button.builder(Component.literal("Clear history"),b->{if(data.sessionHistory!=null)data.sessionHistory.clear();save();Minecraft.getInstance().setScreen(new SessionScreen(parent));}).bounds(left+42,panelBottom-38,Math.max(140,mid-left-70),24).build());
+            int row=0;if(data.sessionHistory!=null)for(SessionRecord record:data.sessionHistory){if(row>=Math.max(1,(panelBottom-body-100)/34))break;String label="Session "+(data.sessionHistory.size()-row)+"  •  "+(record.income-record.expenses>=0?"+":"-")+formatAuctionMoney(Math.abs(record.income-record.expenses));int rowY=body+50+row*34;addRenderableWidget(Button.builder(Component.literal(label),b->{}).bounds(left+42,rowY,Math.max(140,mid-left-70),26).build());row++;}
+            addRenderableWidget(Button.builder(Component.literal("Back"),b->Minecraft.getInstance().setScreen(parent)).bounds(width-94,height-42,70,22).build());
+            
         }
         
         @Override public void extractRenderState(GuiGraphicsExtractor g,int mx,int my,float delta){
@@ -795,7 +795,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             int row=0;if(data.sessionHistory!=null)for(SessionRecord record:data.sessionHistory){if(row>=5)break;String label="Session "+(data.sessionHistory.size()-row)+"  •  "+sessionDuration(record.startedAt,record.endedAt)+"  •  "+(record.income-record.expenses>=0?"+":"-")+formatAuctionMoney(Math.abs(record.income-record.expenses));g.text(font,label,mid+24,gy+44+row*17,0xFFE8D6C4,true);row++;}
             super.extractRenderState(g,mx,my,delta);
         }
-        @Override public void onClose(){Minecraft.getInstance().gui.setScreen(parent);}
+        @Override public void onClose(){Minecraft.getInstance().setScreen(parent);}
     }
 
     private static class CounterMenuScreen extends Screen {
@@ -816,7 +816,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             if(pending!=null) names.add(pending.toLowerCase(Locale.ROOT));
             return new ArrayList<>(names);
         }
-        private void openTab(int tab) { if(tab==6){ Minecraft.getInstance().gui.setScreen(new SessionScreen(this)); return; } Minecraft.getInstance().setScreen(new CounterMenuScreen(parent,0,tab)); }
+        private void openTab(int tab) { if(tab==6){ Minecraft.getInstance().setScreen(new SessionScreen(this)); return; } Minecraft.getInstance().setScreen(new CounterMenuScreen(parent,0,tab)); }
         private Component hudButtonText(){return Component.literal("HUD: "+(data.showHud?"ON":"OFF"));}
         private static final String[] VIP_THEMES={"GOLD","ICE","CHRISTMAS","HALLOWEEN","NETHER","EMERALD","PURPLE","OCEAN"};
         private String currentTheme(){return data.iceTheme&&"GOLD".equals(data.vipTheme)?"ICE":(data.vipTheme==null?"GOLD":data.vipTheme);}

@@ -779,8 +779,8 @@ public class StreamerCounterClient implements ClientModInitializer {
         SessionScreen(Screen parent){super(Component.literal("Sessions"));this.parent=parent;}
         @Override protected void init(){
             int panelW=Math.min(1120,width-36),left=(width-panelW)/2,top=18,right=left+panelW;
-            int navX=left+330;String[] nav={"Overview","Streamers","HUD","Tools","Themes","Settings","Sessions"};
-            for(int i=0;i<nav.length;i++){final int tab=i;addRenderableWidget(Button.builder(Component.literal(nav[i]),b->{if(tab==6){Minecraft.getInstance().gui.setScreen(new SessionScreen(parent));}else Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,0,tab));}).bounds(navX+i*83,top+15,78,24).build());}
+            int navX=left+300;String[] nav={"Overview","Streamers","HUD","Tools","Themes","Settings","OWNER","Sessions"};
+            for(int i=0;i<nav.length;i++){final int tab=i;addRenderableWidget(Button.builder(Component.literal(nav[i]),b->{if(tab==7){Minecraft.getInstance().gui.setScreen(new SessionScreen(parent));}else Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,0,tab));}).bounds(navX+i*70,top+15,67,24).build());}
             int body=top+72,mid=left+(int)(panelW*.39),panelBottom=height-40;
             addRenderableWidget(Button.builder(Component.literal(data.sessionActive?"End session":"New session"),b->{if(data.sessionActive)endSession();else startSession();Minecraft.getInstance().gui.setScreen(new SessionScreen(parent));}).bounds(mid+panelW/3,body+10,132,25).build());
             addRenderableWidget(Button.builder(Component.literal("Clear history"),b->{if(data.sessionHistory!=null)data.sessionHistory.clear();save();Minecraft.getInstance().gui.setScreen(new SessionScreen(parent));}).bounds(left+42,panelBottom-38,Math.max(140,mid-left-70),24).build());
@@ -796,10 +796,13 @@ public class StreamerCounterClient implements ClientModInitializer {
             g.text(font,"StreamerCounter  /  SESSIONS",left+24,top+20,0xFFFFE8D2,true);
             g.text(font,"TRACK YOUR PLAY SESSION",left+24,top+36,0xFFBDA58E,true);
             int navX=left+330;String[] nav={"Overview","Streamers","HUD","Tools","Themes","Settings","Sessions"};
-            for(int i=0;i<nav.length;i++){int x=navX+i*83;g.fill(x,top+15,x+78,top+39,i==6?0xFF49301E:0xAA1B120D);String label=nav[i];g.text(font,label,x+39-font.width(label)/2,top+22,0xFFFFEAD8,true);}
+            for(int i=0;i<nav.length;i++){int x=navX+i*70;g.fill(x,top+15,x+78,top+39,i==7?0xFF49301E:0xAA1B120D);String label=nav[i];g.text(font,label,x+39-font.width(label)/2,top+22,0xFFFFEAD8,true);}
             int body=top+72,mid=left+(int)(panelW*.39),panelBottom=bottom-22;
             g.fill(left+24,body,mid-10,panelBottom,0xA51B130E);g.fill(mid,body,right-24,panelBottom,0xA51B130E);
-            g.text(font,"HISTORY",left+42,body+18,0xFFFFE9D6,true);g.text(font,"SESSION DETAILS",mid+24,body+18,0xFFFFE9D6,true);
+            g.text(font,"HISTORY",left+42,body+18,0xFFFFE9D6,true);
+            g.text(font,data.sessionActive?"END SESSION":"NEW SESSION",mid+24+panelW/3,body+18,0xFFFFEAD8,true);
+            g.text(font,"CLEAR HISTORY",left+42,panelBottom-30,0xFFFF8065,true);g.text(font,"BACK",right-82,bottom-30,0xFFFFEAD8,true);
+            int historyRow=0;if(data.sessionHistory!=null)for(SessionRecord record:data.sessionHistory){if(historyRow>=Math.max(1,(panelBottom-body-100)/34))break;String item="Session "+(data.sessionHistory.size()-historyRow);String amount=(record.income-record.expenses>=0?"+":"-")+formatAuctionMoney(Math.abs(record.income-record.expenses));g.text(font,item,left+42,body+52+historyRow*34,0xFFFFEAD8,true);g.text(font,amount,mid-90-font.width(amount),body+52+historyRow*34,record.income>=record.expenses?0xFF8FE35D:0xFFFF6254,true);historyRow++;}g.text(font,"SESSION DETAILS",mid+24,body+18,0xFFFFE9D6,true);
             String status=data.sessionActive?"LIVE  •  "+sessionDuration(data.sessionStartedAt,System.currentTimeMillis()):"NO ACTIVE SESSION";
             g.text(font,status,mid+24,body+44,data.sessionActive?0xFFFF9B35:0xFFBDA58E,true);
             double income=data.sessionIncome,spent=data.sessionExpenses,net=income-spent;

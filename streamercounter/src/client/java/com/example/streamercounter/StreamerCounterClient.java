@@ -479,11 +479,11 @@ public class StreamerCounterClient implements ClientModInitializer {
                         button -> {
                             data.textColor = HUD_COLORS[colorIndex];
                             save();
-                            Minecraft.getInstance().setScreen(parent);
+                            Minecraft.getInstance().gui.setScreen(parent);
                         }).bounds(firstX + column * 118, firstY + row * 28, 108, 20).build());
             }
             addRenderableWidget(Button.builder(Component.literal("Back"), button ->
-                    Minecraft.getInstance().setScreen(parent))
+                    Minecraft.getInstance().gui.setScreen(parent))
                     .bounds(center - 50, firstY + 3 * 28 + 4, 100, 20).build());
         }
 
@@ -514,7 +514,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         protected void init() {
             int center = width / 2;
             addRenderableWidget(Button.builder(Component.literal("Text Color: " + hudColorName()), b ->
-                    Minecraft.getInstance().setScreen(new HudColorScreen(this)))
+                    Minecraft.getInstance().gui.setScreen(new HudColorScreen(this)))
                     .bounds(center - 90, height - 86, 180, 20).build());
             addRenderableWidget(Button.builder(Component.literal("Smaller"), b -> {
                 data.hudScale = Math.max(0.6f, data.hudScale - 0.1f);
@@ -592,7 +592,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         public void onClose() {
             draggingHud = false;
             save();
-            Minecraft.getInstance().setScreen(parent);
+            Minecraft.getInstance().gui.setScreen(parent);
         }
     }
 
@@ -761,7 +761,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             int cx=width/2, y=Math.max(34,height/2-112);
             addRenderableWidget(Button.builder(Component.literal(data.sessionActive?"End Session":"Start Session"),b->{
                 if(data.sessionActive)endSession();else startSession();
-                Minecraft.getInstance().setScreen(new SessionScreen(parent));
+                Minecraft.getInstance().gui.setScreen(new SessionScreen(parent));
             }).bounds(cx-100,y,200,22).build());
             String status=data.sessionActive?"LIVE  •  "+sessionDuration(data.sessionStartedAt,System.currentTimeMillis()):"No active session";
             addRenderableWidget(Button.builder(Component.literal(status),b->{}).bounds(cx-150,y+32,300,20).build());
@@ -775,10 +775,10 @@ public class StreamerCounterClient implements ClientModInitializer {
                 addRenderableWidget(Button.builder(Component.literal(label),b->{}).bounds(cx-190,y+116+row*23,380,20).build());
                 row++;
             }
-            addRenderableWidget(Button.builder(Component.literal("Back"),b->Minecraft.getInstance().setScreen(parent)).bounds(cx-55,height-42,110,20).build());
+            addRenderableWidget(Button.builder(Component.literal("Back"),b->Minecraft.getInstance().gui.setScreen(parent)).bounds(cx-55,height-42,110,20).build());
         }
         @Override public void extractRenderState(GuiGraphicsExtractor g,int mouseX,int mouseY,float delta){super.extractRenderState(g,mouseX,mouseY,delta);String title="SESSION TRACKER";g.text(font,title,width/2-font.width(title)/2,Math.max(16,height/2-130),0xFFFFD45F,true);}
-        @Override public void onClose(){Minecraft.getInstance().setScreen(parent);}
+        @Override public void onClose(){Minecraft.getInstance().gui.setScreen(parent);}
     }
 
     private static class CounterMenuScreen extends Screen {
@@ -799,7 +799,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             if(pending!=null) names.add(pending.toLowerCase(Locale.ROOT));
             return new ArrayList<>(names);
         }
-        private void openTab(int tab) { Minecraft.getInstance().setScreen(new CounterMenuScreen(parent,0,tab)); }
+        private void openTab(int tab) { Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,0,tab)); }
         private Component hudButtonText(){return Component.literal("HUD: "+(data.showHud?"ON":"OFF"));}
         private static final String[] VIP_THEMES={"GOLD","ICE","CHRISTMAS","HALLOWEEN","NETHER","EMERALD","PURPLE","OCEAN"};
         private String currentTheme(){return data.iceTheme&&"GOLD".equals(data.vipTheme)?"ICE":(data.vipTheme==null?"GOLD":data.vipTheme);}
@@ -915,28 +915,28 @@ public class StreamerCounterClient implements ClientModInitializer {
                     String name=names.get(n); int count=data.counts.getOrDefault(name,0);
                     int y=bodyTop+(n-from)*ROW_HEIGHT, actionW=58, gap2=6, toggleW=contentW-actionW*2-gap2*2;
                     addRenderableWidget(Button.builder(streamerButtonText(name,count),b->{
-                        data.streamerEnabled.put(name,!data.streamerEnabled.getOrDefault(name,true));save();Minecraft.getInstance().setScreen(new CounterMenuScreen(parent,current,1));
+                        data.streamerEnabled.put(name,!data.streamerEnabled.getOrDefault(name,true));save();Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,current,1));
                     }).bounds(contentX,y,toggleW,21).build());
-                    addRenderableWidget(Button.builder(Component.literal("Reset"),b->{data.counts.put(name,0);save();Minecraft.getInstance().setScreen(new CounterMenuScreen(parent,current,1));})
+                    addRenderableWidget(Button.builder(Component.literal("Reset"),b->{data.counts.put(name,0);save();Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,current,1));})
                         .bounds(contentX+toggleW+gap2,y,actionW,21).build());
                     addRenderableWidget(Button.builder(Component.literal("Delete"),b->{
                         data.counts.remove(name);data.streamerEnabled.remove(name);data.displayNames.remove(name);
                         if(data.lastName!=null&&data.lastName.equalsIgnoreCase(name))data.lastName=null;
-                        if(pending!=null&&pending.equalsIgnoreCase(name))pending=null;save();Minecraft.getInstance().setScreen(new CounterMenuScreen(parent,current,1));
+                        if(pending!=null&&pending.equalsIgnoreCase(name))pending=null;save();Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,current,1));
                     }).bounds(contentX+toggleW+gap2+actionW+gap2,y,actionW,21).build());
                 }
                 if(pages>1){
-                    Button prev=addRenderableWidget(Button.builder(Component.literal("‹ Previous"),b->Minecraft.getInstance().setScreen(new CounterMenuScreen(parent,current-1,1))).bounds(width/2-104,bodyBottom-28,98,22).build());
+                    Button prev=addRenderableWidget(Button.builder(Component.literal("‹ Previous"),b->Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,current-1,1))).bounds(width/2-104,bodyBottom-28,98,22).build());
                     prev.active=current>0;
-                    Button next=addRenderableWidget(Button.builder(Component.literal("Next ›"),b->Minecraft.getInstance().setScreen(new CounterMenuScreen(parent,current+1,1))).bounds(width/2+6,bodyBottom-28,98,22).build());
+                    Button next=addRenderableWidget(Button.builder(Component.literal("Next ›"),b->Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,current+1,1))).bounds(width/2+6,bodyBottom-28,98,22).build());
                     next.active=current<pages-1;
                 }
             } else if(activeTab==2){
                 addRenderableWidget(Button.builder(hudButtonText(),b->{data.showHud=!data.showHud;save();b.setMessage(hudButtonText());})
                     .bounds(contentX,bodyTop,190,24).build());
-                addRenderableWidget(Button.builder(Component.literal("Edit HUD"),b->Minecraft.getInstance().setScreen(new HudEditScreen(this)))
+                addRenderableWidget(Button.builder(Component.literal("Edit HUD"),b->Minecraft.getInstance().gui.setScreen(new HudEditScreen(this)))
                     .bounds(contentX,bodyTop+38,190,24).build());
-                            addRenderableWidget(Button.builder(Component.literal("Compact layout: "+(data.compactHud?"ON":"OFF")),b->{data.compactHud=!data.compactHud;save();Minecraft.getInstance().setScreen(new CounterMenuScreen(parent,0,2));})
+                            addRenderableWidget(Button.builder(Component.literal("Compact layout: "+(data.compactHud?"ON":"OFF")),b->{data.compactHud=!data.compactHud;save();Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,0,2));})
                     .bounds(contentX,bodyTop+70,190,24).build());
                             addRenderableWidget(Button.builder(Component.literal("HUD opacity  −"),b->{data.hudOpacity=Math.max(0.15f,data.hudOpacity-0.1f);save();})
                     .bounds(contentX,bodyTop+102,92,22).build());
@@ -946,24 +946,24 @@ public class StreamerCounterClient implements ClientModInitializer {
                 String[] tools={"Auction","Timer","Text on screen","HUD","Sessions"};
                 for(int i=0;i<tools.length;i++){final int tool=i;
                     addRenderableWidget(Button.builder(Component.literal("›  "+tools[i]),b->{
-                        if(tool==0)Minecraft.getInstance().setScreen(new AuctionScreen(this));
-                        else if(tool==1)Minecraft.getInstance().setScreen(new TimerScreen(this));
-                        else if(tool==2)Minecraft.getInstance().setScreen(new TextOnScreenScreen(this));
+                        if(tool==0)Minecraft.getInstance().gui.setScreen(new AuctionScreen(this));
+                        else if(tool==1)Minecraft.getInstance().gui.setScreen(new TimerScreen(this));
+                        else if(tool==2)Minecraft.getInstance().gui.setScreen(new TextOnScreenScreen(this));
                         else if(tool==3)openTab(2);
-                         else if(tool==4)Minecraft.getInstance().setScreen(new SessionScreen(this));
+                         else if(tool==4)Minecraft.getInstance().gui.setScreen(new SessionScreen(this));
                     }).bounds(contentX,bodyTop+i*42,230,28).build());
                 }
             } else if(activeTab==4){
-                addRenderableWidget(Button.builder(themeButtonText(),b->{String[] themes=VIP_THEMES;int n=0;for(;n<themes.length;n++)if(themes[n].equals(currentTheme()))break;data.vipTheme=themes[(n+1)%themes.length];data.iceTheme=data.vipTheme.equals("ICE");save();Minecraft.getInstance().setScreen(new CounterMenuScreen(parent,0,4));})
+                addRenderableWidget(Button.builder(themeButtonText(),b->{String[] themes=VIP_THEMES;int n=0;for(;n<themes.length;n++)if(themes[n].equals(currentTheme()))break;data.vipTheme=themes[(n+1)%themes.length];data.iceTheme=data.vipTheme.equals("ICE");save();Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,0,4));})
                     .bounds(contentX,bodyTop,250,24).build());
             } else if(activeTab==5){
                 addRenderableWidget(Button.builder(Component.literal("HUD: "+(data.showHud?"ON":"OFF")),b->{data.showHud=!data.showHud;save();b.setMessage(Component.literal("HUD: "+(data.showHud?"ON":"OFF")));}).bounds(contentX,bodyTop,180,22).build());
                 addRenderableWidget(Button.builder(Component.literal("HUD Size −"),b->{data.hudScale=Math.max(0.5f,data.hudScale-0.1f);save();}).bounds(contentX,bodyTop+30,88,22).build());
                 addRenderableWidget(Button.builder(Component.literal("HUD Size +"),b->{data.hudScale=Math.min(2.0f,data.hudScale+0.1f);save();}).bounds(contentX+94,bodyTop+30,88,22).build());
                 addRenderableWidget(Button.builder(Component.literal("Reset HUD Position"),b->{data.hudX=-1;data.hudY=8;save();}).bounds(contentX,bodyTop+60,180,22).build());
-                addRenderableWidget(Button.builder(Component.literal("Reset All Counters"),b->{data.counts.clear();data.lastName=null;pending=null;save();Minecraft.getInstance().setScreen(new CounterMenuScreen(parent,0,5));}).bounds(contentX,bodyTop+90,180,22).build());
+                addRenderableWidget(Button.builder(Component.literal("Reset All Counters"),b->{data.counts.clear();data.lastName=null;pending=null;save();Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,0,5));}).bounds(contentX,bodyTop+90,180,22).build());
                 addRenderableWidget(Button.builder(Component.literal("Close Menu"),b->onClose()).bounds(contentX,bodyTop+120,180,22).build());
-                addRenderableWidget(Button.builder(Component.literal("Move and resize HUDs"),b->Minecraft.getInstance().setScreen(new LayoutEditScreen(this))).bounds(contentX,bodyTop+154,230,26).build());
+                addRenderableWidget(Button.builder(Component.literal("Move and resize HUDs"),b->Minecraft.getInstance().gui.setScreen(new LayoutEditScreen(this))).bounds(contentX,bodyTop+154,230,26).build());
                             }
         
             // Apply translucency to the actual top-level VIP menu controls.
@@ -1027,7 +1027,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             String credit="VIP EDITION  •  MADE BY ALPBEY3503";
             drawFlowText(g,font,credit,left+22,bottom-18,textColor(),true);
         }
-        @Override public void onClose(){Minecraft.getInstance().setScreen(parent);}
+        @Override public void onClose(){Minecraft.getInstance().gui.setScreen(parent);}
     }
 
 
@@ -1043,7 +1043,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         private int ph(int i){return i==0?hudHeight():i==1?(int)((data.auctionSold?104:76)*Math.max(.6f,Math.min(1.8f,data.auctionHudScale))):(int)(124*Math.max(.6f,Math.min(1.8f,data.timerHudScale)));}
         private void move(int i,int x,int y){if(i==0){data.hudX=x;data.hudY=y;}else if(i==1){data.auctionHudX=x+pw(1)/2;data.auctionHudY=y;}else{data.timerHudX=x+pw(2)/2;data.timerHudY=y+pw(2)/2;}}
         private void scale(int i,float d){if(i==0)data.hudScale=Math.max(.5f,Math.min(2f,data.hudScale+d));else if(i==1)data.auctionHudScale=Math.max(.6f,Math.min(1.8f,data.auctionHudScale+d));else data.timerHudScale=Math.max(.6f,Math.min(1.8f,data.timerHudScale+d));}
-        @Override protected void init(){addRenderableWidget(Button.builder(Component.literal("Reset layout"),b->{data.hudX=-1;data.hudY=8;data.auctionHudX=-1;data.auctionHudY=28;data.timerHudX=-1;data.timerHudY=-1;data.hudScale=1.0f;data.auctionHudScale=1.0f;data.timerHudScale=1.0f;save();}).bounds(width/2-108,height-34,104,22).build());addRenderableWidget(Button.builder(Component.literal("Done"),b->Minecraft.getInstance().setScreen(parent)).bounds(width/2+4,height-34,100,22).build());}
+        @Override protected void init(){addRenderableWidget(Button.builder(Component.literal("Reset layout"),b->{data.hudX=-1;data.hudY=8;data.auctionHudX=-1;data.auctionHudY=28;data.timerHudX=-1;data.timerHudY=-1;data.hudScale=1.0f;data.auctionHudScale=1.0f;data.timerHudScale=1.0f;save();}).bounds(width/2-108,height-34,104,22).build());addRenderableWidget(Button.builder(Component.literal("Done"),b->Minecraft.getInstance().gui.setScreen(parent)).bounds(width/2+4,height-34,100,22).build());}
         @Override public boolean mouseClicked(MouseButtonEvent e,boolean doubled){if(e.button()==0){for(int i=2;i>=0;i--){int x=px(i),y=py(i),w=pw(i),h=ph(i);if(e.x()>=x&&e.x()<=x+w&&e.y()>=y&&e.y()<=y+h){selected=i;dragging=true;offX=e.x()-x;offY=e.y()-y;return true;}}}return super.mouseClicked(e,doubled);}
         @Override public boolean mouseDragged(MouseButtonEvent e,double dx,double dy){if(dragging&&e.button()==0){move(selected,Math.max(0,Math.min(width-pw(selected),(int)(e.x()-offX))),Math.max(0,Math.min(height-ph(selected),(int)(e.y()-offY))));return true;}return super.mouseDragged(e,dx,dy);}
         @Override public boolean mouseReleased(MouseButtonEvent e){if(dragging&&e.button()==0){dragging=false;save();return true;}return super.mouseReleased(e);}
@@ -1051,7 +1051,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         @Override public void extractRenderState(GuiGraphicsExtractor g,int mx,int my,float delta){g.fill(0,0,width,height,0xB0000000);String title="MOVE & RESIZE HUDS",help="Drag a panel to move it • Scroll to resize • ESC to finish";g.text(font,title,width/2-font.width(title)/2,24,0xFFFFA044,true);g.text(font,help,width/2-font.width(help)/2,42,0xFFFFFFFF,true);
             for(int i=0;i<3;i++){int x=px(i),y=py(i),w=pw(i),h=ph(i);g.fill(x-2,y-2,x+w+2,y+h+2,i==selected?0xFFFF8126:0xAA8A603E);g.fill(x,y,x+w,y+h,0xDD120C08);g.fill(x,y,x+w,y+2,0xFFFF8126);String label=i==0?"STREAMER HUD":i==1?"AUCTION HUD":"TIMER HUD";g.text(font,label,x+w/2-font.width(label)/2,y+8,0xFFFFFFFF,true);String desc=i==0?"Player counters":i==1?"Item • countdown • highest bid":"00:45";g.text(font,desc,x+w/2-font.width(desc)/2,y+25,0xFFFFC04A,true);}
             String status="Selected: "+(selected==0?"Streamer HUD":selected==1?"Auction HUD":"Timer HUD")+" • "+Math.round((selected==0?data.hudScale:selected==1?data.auctionHudScale:data.timerHudScale)*100)+"%";g.text(font,status,width/2-font.width(status)/2,height-54,0xFFFFC04A,true);}
-        @Override public void onClose(){save();Minecraft.getInstance().setScreen(parent);}
+        @Override public void onClose(){save();Minecraft.getInstance().gui.setScreen(parent);}
     }
 
     private static class TimerScreen extends Screen {
@@ -1064,9 +1064,9 @@ public class StreamerCounterClient implements ClientModInitializer {
             secondsField.setValue(String.valueOf(data.timerDurationSeconds));addRenderableWidget(secondsField);
             int[] vals={10,30,60,120,300,600}; String[] labels={"10 sec","30 sec","1 min","2 min","5 min","10 min"};
             for(int i=0;i<vals.length;i++){final int v=vals[i];addRenderableWidget(Button.builder(Component.literal(labels[i]),b->{data.timerDurationSeconds=v;secondsField.setValue(String.valueOf(v));save();}).bounds(cx-180+(i%3)*120,top+91+(i/3)*31,110,25).build());}
-            addRenderableWidget(Button.builder(Component.literal(data.timerActive?"Stop timer":"Reset"),b->{data.timerActive=false;data.timerFinished=false;timerFinishedAt=0;data.timerEndTime=0;save();Minecraft.getInstance().setScreen(new TimerScreen(parent));}).bounds(cx-70,top+158,140,25).build());
-            addRenderableWidget(Button.builder(Component.literal("Start timer"),b->{try{data.timerDurationSeconds=Math.max(1,Math.min(86400,Integer.parseInt(secondsField.getValue().trim())));}catch(Exception ignored){data.timerDurationSeconds=60;}data.timerEndTime=System.currentTimeMillis()+data.timerDurationSeconds*1000L;data.timerActive=true;data.timerFinished=false;timerFinishedAt=0;save();Minecraft.getInstance().setScreen(parent);}).bounds(cx-160,top+194,150,28).build());
-            addRenderableWidget(Button.builder(Component.literal("Back to Tools"),b->Minecraft.getInstance().setScreen(parent)).bounds(cx+10,top+194,150,28).build());
+            addRenderableWidget(Button.builder(Component.literal(data.timerActive?"Stop timer":"Reset"),b->{data.timerActive=false;data.timerFinished=false;timerFinishedAt=0;data.timerEndTime=0;save();Minecraft.getInstance().gui.setScreen(new TimerScreen(parent));}).bounds(cx-70,top+158,140,25).build());
+            addRenderableWidget(Button.builder(Component.literal("Start timer"),b->{try{data.timerDurationSeconds=Math.max(1,Math.min(86400,Integer.parseInt(secondsField.getValue().trim())));}catch(Exception ignored){data.timerDurationSeconds=60;}data.timerEndTime=System.currentTimeMillis()+data.timerDurationSeconds*1000L;data.timerActive=true;data.timerFinished=false;timerFinishedAt=0;save();Minecraft.getInstance().gui.setScreen(parent);}).bounds(cx-160,top+194,150,28).build());
+            addRenderableWidget(Button.builder(Component.literal("Back to Tools"),b->Minecraft.getInstance().gui.setScreen(parent)).bounds(cx+10,top+194,150,28).build());
         }
         @Override public void extractRenderState(GuiGraphicsExtractor g,int mouseX,int mouseY,float delta){
             g.fill(0,0,width,height,0x99000000);int cx=width/2,top=height/2-132;
@@ -1102,7 +1102,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                 for(int i=0;i<ds.length;i++){
                     final int seconds=ds[i];
                     addRenderableWidget(Button.builder(Component.literal(labels[i]),b->{
-                        data.auctionDurationSeconds=seconds;save();Minecraft.getInstance().setScreen(new AuctionScreen(parent));
+                        data.auctionDurationSeconds=seconds;save();Minecraft.getInstance().gui.setScreen(new AuctionScreen(parent));
                     }).bounds(left+i*56,t+144,52,20).build());
                 }
                 addRenderableWidget(Button.builder(Component.literal("Start auction"),b->{
@@ -1110,7 +1110,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                     data.auctionBids.clear();data.auctionHighestBid=0;data.auctionHighestPlayer="No bids yet";
                     data.auctionSold=false;data.auctionActive=true;
                     data.auctionEndTime=System.currentTimeMillis()+data.auctionDurationSeconds*1000L;
-                    save();Minecraft.getInstance().setScreen(new AuctionScreen(parent));
+                    save();Minecraft.getInstance().gui.setScreen(new AuctionScreen(parent));
                 }).bounds(left,t+226,280,26).build());
 
                 Minecraft mc=Minecraft.getInstance();
@@ -1124,7 +1124,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                         int col=shown%2,row=shown/2;
                         String label=itemName.length()>15?itemName.substring(0,14)+"…":itemName;
                         addRenderableWidget(Button.builder(Component.literal(label+" x"+count),b->{
-                            data.auctionItem=itemName;save();Minecraft.getInstance().setScreen(new AuctionScreen(parent));
+                            data.auctionItem=itemName;save();Minecraft.getInstance().gui.setScreen(new AuctionScreen(parent));
                         }).bounds(cx+22+col*150,t+78+row*27,144,22).build());
                         shown++;
                     }
@@ -1136,10 +1136,10 @@ public class StreamerCounterClient implements ClientModInitializer {
                 addRenderableWidget(Button.builder(Component.literal("End now"),b->finish()).bounds(left,t+178,132,22).build());
                 addRenderableWidget(Button.builder(Component.literal("Cancel"),b->{
                     data.auctionActive=false;data.auctionBids.clear();data.auctionSold=false;save();
-                    Minecraft.getInstance().setScreen(new AuctionScreen(parent));
+                    Minecraft.getInstance().gui.setScreen(new AuctionScreen(parent));
                 }).bounds(left+140,t+178,132,22).build());
             }
-            addRenderableWidget(Button.builder(Component.literal("Back to Tools"),b->Minecraft.getInstance().setScreen(parent))
+            addRenderableWidget(Button.builder(Component.literal("Back to Tools"),b->Minecraft.getInstance().gui.setScreen(parent))
                 .bounds(left,t+278,160,22).build());
         }
 
@@ -1148,7 +1148,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             data.auctionActive=false;data.auctionSold=true;
             data.auctionWinner=data.auctionHighestBid>0?data.auctionHighestPlayer:"No bids";
             data.auctionSoldUntil=System.currentTimeMillis()+10000L;save();
-            Minecraft.getInstance().setScreen(new AuctionScreen(parent));
+            Minecraft.getInstance().gui.setScreen(new AuctionScreen(parent));
         }
 
         @Override public void extractRenderState(GuiGraphicsExtractor g,int mx,int my,float delta){
@@ -1213,10 +1213,10 @@ public class StreamerCounterClient implements ClientModInitializer {
             if(data.auctionActive&&System.currentTimeMillis()>=data.auctionEndTime)finish();
             if(data.auctionSold&&System.currentTimeMillis()>data.auctionSoldUntil){
                 data.auctionSold=false;data.auctionWinner="";data.auctionHighestBid=0;data.auctionHighestPlayer="No bids yet";save();
-                Minecraft.getInstance().setScreen(parent);
+                Minecraft.getInstance().gui.setScreen(parent);
             }
         }
-        @Override public void onClose(){Minecraft.getInstance().setScreen(parent);}
+        @Override public void onClose(){Minecraft.getInstance().gui.setScreen(parent);}
     } 
 
 }

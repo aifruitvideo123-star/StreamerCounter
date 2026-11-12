@@ -884,6 +884,9 @@ public class StreamerCounterClient implements ClientModInitializer {
                 int total=0;for(Integer value:data.counts.values())if(value!=null)total+=value;
                 String[] lines={"Your live overview","Tracked streamers: "+streamerNames().size(),"Total TP counter: "+total,
                     "Last detected: "+(data.lastName==null?"—":data.lastName),"HUD: "+(data.showHud?"Enabled":"Disabled"),
+                    "Enabled streamers: "+streamerNames().stream().filter(n->data.streamerEnabled.getOrDefault(n,true)).count(),
+                    "Auction: "+(data.auctionActive?"Live":"Idle"),"Timer: "+(data.timerActive?"Running":(data.timerFinished?"Finished":"Idle")),
+                    "HUD layout: "+(data.compactHud?"Compact":"Standard")+" • "+Math.round(data.hudOpacity*100)+"% opacity",
                     "Use the tabs above to manage streamers, HUD, text and theme."};
                 for(int j=0;j<lines.length;j++)drawFlowText(g,font,lines[j],x+18,bodyTop+18+j*24,j==0?0xFFFFFFFF:textColor(),true);
             }else if(activeTab==1&&streamerNames().isEmpty()){

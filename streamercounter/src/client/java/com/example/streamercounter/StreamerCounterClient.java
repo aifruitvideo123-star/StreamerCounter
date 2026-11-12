@@ -764,6 +764,10 @@ public class StreamerCounterClient implements ClientModInitializer {
             int body=top+72,mid=left+(int)(panelW*.39),panelBottom=bottom-22;
             g.fill(left+24,body,mid-10,panelBottom,0xA51B130E);g.fill(mid,body,right-24,panelBottom,0xA51B130E);
             g.drawTextWithShadow(MinecraftClient.getInstance().textRenderer,Text.literal("HISTORY"),left+42,body+18,0xFFFFE9D6);
+            g.drawTextWithShadow(MinecraftClient.getInstance().textRenderer,Text.literal(data.sessionActive?"END SESSION":"NEW SESSION"),mid+24+panelW/3,body+18,0xFFFFEAD8);
+            g.drawTextWithShadow(MinecraftClient.getInstance().textRenderer,Text.literal("CLEAR HISTORY"),left+42,panelBottom-30,0xFFFF8065);
+            g.drawTextWithShadow(MinecraftClient.getInstance().textRenderer,Text.literal("BACK"),right-82,bottom-30,0xFFFFEAD8);
+            int historyRow=0;if(data.sessionHistory!=null)for(SessionRecord record:data.sessionHistory){if(historyRow>=Math.max(1,(panelBottom-body-100)/34))break;String item="Session "+(data.sessionHistory.size()-historyRow);String amount=(record.income-record.expenses>=0?"+":"-")+formatAuctionMoney(Math.abs(record.income-record.expenses));g.drawTextWithShadow(MinecraftClient.getInstance().textRenderer,Text.literal(item),left+42,body+52+historyRow*34,0xFFFFEAD8);g.drawTextWithShadow(MinecraftClient.getInstance().textRenderer,Text.literal(amount),mid-90,body+52+historyRow*34,record.income>=record.expenses?0xFF8FE35D:0xFFFF6254);historyRow++;}
             g.drawTextWithShadow(MinecraftClient.getInstance().textRenderer,Text.literal("SESSION DETAILS"),mid+24,body+18,0xFFFFE9D6);
             String status=data.sessionActive?"LIVE  •  "+sessionDuration(data.sessionStartedAt,System.currentTimeMillis()):"NO ACTIVE SESSION";
             g.drawTextWithShadow(MinecraftClient.getInstance().textRenderer,Text.literal(status),mid+24,body+44,data.sessionActive?0xFFFF9B35:0xFFBDA58E);

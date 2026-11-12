@@ -845,7 +845,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                     .bounds(contentX,bodyTop,190,24).build());
                 addRenderableWidget(Button.builder(Component.literal("Edit HUD"),b->Minecraft.getInstance().gui.setScreen(new HudEditScreen(this)))
                     .bounds(contentX,bodyTop+38,190,24).build());
-                            addRenderableWidget(Button.builder(Component.literal("Compact layout: "+(data.compactHud?"ON":"OFF")),b->{data.compactHud=!data.compactHud;save();clearAndInit();})
+                            addRenderableWidget(Button.builder(Component.literal("Compact layout: "+(data.compactHud?"ON":"OFF")),b->{data.compactHud=!data.compactHud;save();Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,0,2));})
                     .bounds(contentX,bodyTop+70,190,24).build());
             } else if(activeTab==3){
                 String[] tools={"Auction","Timer","Text on screen","HUD"};

@@ -60,6 +60,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         int hudX = -1;
         int hudY = 8;
         float hudScale = 1.0f;
+        boolean compactHud = false;
         boolean iceTheme = false;
         String vipTheme = "GOLD";
         int selectedTextSection = 0;
@@ -349,7 +350,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             else drawFlowText(graphics, mc.font, name, x + 6, rowY, data.textColor, false);
             drawFlowText(graphics, mc.font, count, x + width - 7 - mc.font.width(count),
                     rowY, data.textColor, false);
-            rowY += 11;
+            rowY += data.compactHud ? 9 : 11;
         }
     }
 
@@ -844,6 +845,8 @@ public class StreamerCounterClient implements ClientModInitializer {
                     .bounds(contentX,bodyTop,190,24).build());
                 addRenderableWidget(Button.builder(Component.literal("Edit HUD"),b->Minecraft.getInstance().gui.setScreen(new HudEditScreen(this)))
                     .bounds(contentX,bodyTop+38,190,24).build());
+                            addRenderableWidget(Button.builder(Component.literal("Compact layout: "+(data.compactHud?"ON":"OFF")),b->{data.compactHud=!data.compactHud;save();clearAndInit();})
+                    .bounds(contentX,bodyTop+70,190,24).build());
             } else if(activeTab==3){
                 String[] tools={"Auction","Timer","Text on screen","HUD"};
                 for(int i=0;i<tools.length;i++){final int tool=i;
@@ -960,7 +963,7 @@ public class StreamerCounterClient implements ClientModInitializer {
         private int ph(int i){return i==0?hudHeight():i==1?(int)((data.auctionSold?104:76)*Math.max(.6f,Math.min(1.8f,data.auctionHudScale))):(int)(124*Math.max(.6f,Math.min(1.8f,data.timerHudScale)));}
         private void move(int i,int x,int y){if(i==0){data.hudX=x;data.hudY=y;}else if(i==1){data.auctionHudX=x+pw(1)/2;data.auctionHudY=y;}else{data.timerHudX=x+pw(2)/2;data.timerHudY=y+pw(2)/2;}}
         private void scale(int i,float d){if(i==0)data.hudScale=Math.max(.5f,Math.min(2f,data.hudScale+d));else if(i==1)data.auctionHudScale=Math.max(.6f,Math.min(1.8f,data.auctionHudScale+d));else data.timerHudScale=Math.max(.6f,Math.min(1.8f,data.timerHudScale+d));}
-        @Override protected void init(){addRenderableWidget(Button.builder(Component.literal("Done"),b->Minecraft.getInstance().gui.setScreen(parent)).bounds(width/2-50,height-34,100,22).build());}
+        @Override protected void init(){addRenderableWidget(Button.builder(Component.literal("Reset layout"),b->{data.hudX=-1;data.hudY=8;data.auctionHudX=-1;data.auctionHudY=28;data.timerHudX=-1;data.timerHudY=-1;data.hudScale=1.0f;data.auctionHudScale=1.0f;data.timerHudScale=1.0f;save();}).bounds(width/2-108,height-34,104,22).build());addRenderableWidget(Button.builder(Component.literal("Done"),b->Minecraft.getInstance().gui.setScreen(parent)).bounds(width/2+4,height-34,100,22).build());}
         @Override public boolean mouseClicked(MouseButtonEvent e,boolean doubled){if(e.button()==0){for(int i=2;i>=0;i--){int x=px(i),y=py(i),w=pw(i),h=ph(i);if(e.x()>=x&&e.x()<=x+w&&e.y()>=y&&e.y()<=y+h){selected=i;dragging=true;offX=e.x()-x;offY=e.y()-y;return true;}}}return super.mouseClicked(e,doubled);}
         @Override public boolean mouseDragged(MouseButtonEvent e,double dx,double dy){if(dragging&&e.button()==0){move(selected,Math.max(0,Math.min(width-pw(selected),(int)(e.x()-offX))),Math.max(0,Math.min(height-ph(selected),(int)(e.y()-offY))));return true;}return super.mouseDragged(e,dx,dy);}
         @Override public boolean mouseReleased(MouseButtonEvent e){if(dragging&&e.button()==0){dragging=false;save();return true;}return super.mouseReleased(e);}

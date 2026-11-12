@@ -115,6 +115,8 @@ public class StreamerCounterClient implements ClientModInitializer {
         double sessionIncome = 0.0;
         double sessionExpenses = 0.0;
         int sessionTransactions = 0;
+        boolean sessionHudEnabled = true;
+        int sessionHudX = -1, sessionHudY = 8;
         List<SessionRecord> sessionHistory = new ArrayList<>();
         boolean ownerGlow = true;
         boolean ownerParticles = true;
@@ -319,22 +321,37 @@ public class StreamerCounterClient implements ClientModInitializer {
                 graphics.pose().translate(entry.x, entry.y);
                 graphics.pose().scale(scale, scale);
                 
-                if ("flow".equals(entry.font)) {
-                    int[] flow = {0xFFFF5C8A,0xFFFFB347,0xFFFFFF66,0xFF75E08A,0xFF62D9FF,0xFFB58CFF};
-                    int px=0;
-                    for(int ci=0;ci<entry.text.length();ci++){
-                        String ch=String.valueOf(entry.text.charAt(ci));
-                        graphics.text(mc.font,ch,px,0,flow[ci%flow.length],entry.shadow);
-                        px+=mc.font.width(ch);
-                    }
+                if ("flow".equals(entry.effect)) {
+                    drawFlowText(graphics, mc.font, entry.text, 0, 0, entry.color, entry.shadow);
+                } else if ("pulse".equals(entry.effect)) {
+                    int pulse = (int)(128 + 127 * Math.sin(System.currentTimeMillis() / 180.0));
+                    Component styled = Component.literal(entry.text).withStyle(st -> st.withBold(entry.bold).withItalic(entry.italic));
+                    graphics.text(mc.font, styled, 0, 0, pulse > 185 ? 0xFFFFFFFF : entry.color, entry.shadow);
                 } else {
-                    Component styled=Component.literal(entry.text).withStyle(st->st.withBold(entry.bold).withItalic(entry.italic));
-                    graphics.text(mc.font,styled,0,0,entry.color,entry.shadow);
+                    Component styled = Component.literal(entry.text).withStyle(st -> st.withBold(entry.bold).withItalic(entry.italic));
+                    graphics.text(mc.font, styled, 0, 0, entry.color, entry.shadow);
                 }
                 graphics.pose().popMatrix();
             }
         }
     
+ 
+        if (data.sessionActive && data.sessionHudEnabled) {
+            int sw=mc.getWindow().getGuiScaledWidth(), sh=mc.getWindow().getGuiScaledHeight(), bw=220, bh=42;
+            int sx=data.sessionHudX<0?(sw-bw)/2:Math.max(0,Math.min(data.sessionHudX,sw-bw));
+            int sy=Math.max(0,Math.min(data.sessionHudY,sh-bh));
+            double net=data.sessionIncome-data.sessionExpenses;
+            int valueColor=net>=0?0xFF8FE35D:0xFFFF6254;
+            graphics.fill(sx,sy,sx+bw,sy+bh,0xD916100C);
+            graphics.fill(sx,sy,sx+bw,sy+2,0xFFFF8A24);
+            graphics.fill(sx+10,sy+11,sx+14,sy+15,0xFF69E58B);
+            graphics.text(mc.font,"LIVE",sx+22,sy+10,0xFFFFEAD8,true);
+            String netLabel=(net>=0?"+":"-")+formatAuctionMoney(Math.abs(net));
+            graphics.text(mc.font,netLabel,sx+bw-12-mc.font.width(netLabel),sy+7,valueColor,true);
+            String detail="IN "+formatAuctionMoney(data.sessionIncome)+"  OUT "+formatAuctionMoney(data.sessionExpenses)+"  •  "+data.sessionTransactions+" bets";
+            graphics.text(mc.font,detail,sx+12,sy+27,0xFFBDA58E,true);
+        }
+
         if (data.auctionSold && System.currentTimeMillis() > data.auctionSoldUntil) { data.auctionSold=false; data.auctionWinner=""; data.auctionHighestBid=0; data.auctionHighestPlayer="No bids yet"; save(); }
         if (data.auctionShowWorld && (data.auctionActive || (data.auctionSold && System.currentTimeMillis() <= data.auctionSoldUntil))) {
             int hudW=mc.getWindow().getGuiScaledWidth(), hudH=mc.getWindow().getGuiScaledHeight();
@@ -782,6 +799,8 @@ public class StreamerCounterClient implements ClientModInitializer {
             int navX=left+300;String[] nav={"Overview","Streamers","HUD","Tools","Themes","Settings","OWNER","Sessions"};
             for(int i=0;i<nav.length;i++){final int tab=i;addRenderableWidget(Button.builder(Component.literal(nav[i]),b->{if(tab==7){Minecraft.getInstance().gui.setScreen(new SessionScreen(parent));}else Minecraft.getInstance().gui.setScreen(new CounterMenuScreen(parent,0,tab));}).bounds(navX+i*70,top+15,67,24).build());}
             int body=top+72,mid=left+(int)(panelW*.39),panelBottom=height-40;
+            addRenderableWidget(Button.builder(Component.literal("Live HUD: "+(data.sessionHudEnabled?"ON":"OFF")),b->{data.sessionHudEnabled=!data.sessionHudEnabled;save();Minecraft.getInstance().gui.setScreen(new SessionScreen(parent));}).bounds(right-158,body+10,126,24).build());
+
             addRenderableWidget(Button.builder(Component.literal(data.sessionActive?"End session":"New session"),b->{if(data.sessionActive)endSession();else startSession();Minecraft.getInstance().gui.setScreen(new SessionScreen(parent));}).bounds(mid+panelW/3,body+10,132,25).build());
             addRenderableWidget(Button.builder(Component.literal("Clear history"),b->{if(data.sessionHistory!=null)data.sessionHistory.clear();save();Minecraft.getInstance().gui.setScreen(new SessionScreen(parent));}).bounds(left+42,panelBottom-38,Math.max(140,mid-left-70),24).build());
             int row=0;if(data.sessionHistory!=null)for(SessionRecord record:data.sessionHistory){if(row>=Math.max(1,(panelBottom-body-100)/34))break;final int idx=row;String label="Session "+(data.sessionHistory.size()-row)+"  •  "+(record.income-record.expenses>=0?"+":"-")+formatAuctionMoney(Math.abs(record.income-record.expenses));addRenderableWidget(Button.builder(Component.literal(label),b->{}).bounds(left+42,body+50+row*34,Math.max(140,mid-left-70),26).build());row++;}

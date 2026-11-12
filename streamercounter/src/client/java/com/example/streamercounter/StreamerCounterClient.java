@@ -742,7 +742,7 @@ public class StreamerCounterClient implements ClientModInitializer {
             int cx=width/2, y=Math.max(34,height/2-112);
             addDrawableChild(ButtonWidget.builder(Text.literal(data.sessionActive?"End Session":"Start Session"),b->{
                 if(data.sessionActive)endSession();else startSession();
-                Minecraft.getInstance().setScreen(new SessionScreen(parent));
+                MinecraftClient.getInstance().setScreen(new SessionScreen(parent));
             }).dimensions(cx-100,y,200,22).build());
             String status=data.sessionActive?"LIVE  •  "+sessionDuration(data.sessionStartedAt,System.currentTimeMillis()):"No active session";
             addDrawableChild(ButtonWidget.builder(Text.literal(status),b->{}).dimensions(cx-150,y+32,300,20).build());
@@ -756,7 +756,7 @@ public class StreamerCounterClient implements ClientModInitializer {
                 addDrawableChild(ButtonWidget.builder(Text.literal(label),b->{}).dimensions(cx-190,y+116+row*23,380,20).build());
                 row++;
             }
-            addDrawableChild(ButtonWidget.builder(Text.literal("Back"),b->Minecraft.getInstance().setScreen(parent)).dimensions(cx-55,height-42,110,20).build());
+            addDrawableChild(ButtonWidget.builder(Text.literal("Back"),b->MinecraftClient.getInstance().setScreen(parent)).dimensions(cx-55,height-42,110,20).build());
         }
         @Override public void render(DrawContext ctx,int mouseX,int mouseY,float delta){renderBackground(ctx,mouseX,mouseY,delta);super.render(ctx,mouseX,mouseY,delta);ctx.drawCenteredTextWithShadow(MinecraftClient.getInstance().textRenderer,Text.literal("SESSION HISTORY"),width/2,Math.max(16,height/2-130),0xFFFFD45F);}
         @Override public void close(){MinecraftClient.getInstance().setScreen(parent);}
